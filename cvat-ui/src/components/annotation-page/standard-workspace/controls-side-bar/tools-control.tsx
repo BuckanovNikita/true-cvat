@@ -52,6 +52,7 @@ import { TrackerControlsUpdateContext } from 'components/annotation-page/standar
 
 import ApproximationAccuracy from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import ConfidenceThreshold from 'components/annotation-page/standard-workspace/controls-side-bar/confidence-threshold';
+import { recordModelCreation } from 'utils/team-analytics-logging';
 import withVisibilityHandling from './handle-popover-visibility';
 import ToolsTooltips from './interactor-tooltips';
 
@@ -101,7 +102,7 @@ interface StateToProps {
 
 interface DispatchToProps {
     updateAnnotations: (states: ObjectState[]) => Promise<void>;
-    createAnnotations: (states: ObjectState[]) => void;
+    createAnnotations: (states: ObjectState[]) => Promise<number[]>;
     fetchAnnotations: () => void;
     onInteractionStart: typeof interactWithCanvas;
     updateActiveControl: typeof updateActiveControl;
@@ -1511,7 +1512,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             });
                         });
 
-                        createAnnotations([...tagStates, ...shapeStates]);
+                        const detected = [...tagStates, ...shapeStates];
+                        // the create thunk answers [] when it could not create the objects
+                        const createdIDs = await createAnnotations(detected);
+                        if (createdIDs.length) recordModelCreation(jobInstance, detected);
                     } catch (error: any) {
                         notification.error({
                             description: <CVATMarkdown>{error.message}</CVATMarkdown>,

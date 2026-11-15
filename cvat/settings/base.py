@@ -877,3 +877,27 @@ USER_LAST_ACTIVITY_UPDATE_MIN_INTERVAL = timedelta(days=1)
 
 # Health check settings
 HEALTH_CHECK = {"DISK_USAGE_MAX": int(os.getenv("CVAT_HEALTH_DISK_USAGE_MAX", 90))}
+
+# Fork: only administrators create organizations (upstream's default lets every account with the
+# "user" role). An organization's owner reads its Team Analytics, so whoever may create an
+# organization may make themself a reader. The environment variable is upstream's and still wins.
+ORGANIZATIONS_MIN_ROLE_TO_CREATE = os.getenv("CVAT_ORGANIZATIONS_MIN_ROLE_TO_CREATE", "admin")
+
+# Team Analytics (fork): the app and the periodic refresh of its stored totals, only where analytics
+# is enabled. See docs/adr/0006-team-analytics-inside-the-backend-with-reads-on-a-worker.md
+# Its queue is defined everywhere: syncperiodicjobs looks only at configured queues, so this is what
+# lets it remove the stored refresh schedule on an instance where analytics was switched off.
+RQ_QUEUES["team_analytics"] = {
+    **REDIS_INMEM_SETTINGS,
+    "DEFAULT_TIMEOUT": "10m",
+}
+if ANALYTICS_ENABLED:
+    INSTALLED_APPS += ["cvat.apps.team_analytics"]
+    PERIODIC_RQ_JOBS.append(
+        {
+            "queue": "team_analytics",
+            "id": "team_analytics_refresh",
+            "func": "cvat.apps.team_analytics.jobs.refresh_totals",
+            "cron_string": "* * * * *",
+        }
+    )

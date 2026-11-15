@@ -14,10 +14,11 @@ import Progress from 'antd/lib/progress';
 import Badge from 'antd/lib/badge';
 import { Task, RQStatus, Request } from 'cvat-core-wrapper';
 import Preview from 'components/common/preview';
-import { ActiveInference, PluginComponent } from 'reducers';
+import { ActiveInference, PluginComponent, TaskJobsSummary } from 'reducers';
 import StatusMessage from 'components/requests-page/request-status';
 import { useContextMenuClick, useIsMounted } from 'utils/hooks';
 import AutomaticAnnotationProgress from './automatic-annotation-progress';
+import TaskJobsProgress from './task-jobs-progress';
 import TaskActionsComponent from './actions-menu';
 
 export interface TaskItemProps {
@@ -26,6 +27,7 @@ export interface TaskItemProps {
     activeInference: ActiveInference | null;
     activeRequest: Request | null;
     ribbonPlugins: PluginComponent[];
+    jobsSummary: TaskJobsSummary | null;
     cancelAutoAnnotation(): void;
     updateTaskInState(task: Task): void;
     selected: boolean;
@@ -45,6 +47,7 @@ function TaskItemComponent(props: TaskItemProps): JSX.Element {
         activeInference,
         activeRequest,
         ribbonPlugins,
+        jobsSummary,
         cancelAutoAnnotation,
         updateTaskInState,
         selected,
@@ -147,33 +150,39 @@ function TaskItemComponent(props: TaskItemProps): JSX.Element {
             <Col span={7}>
                 <Row>
                     <Col span={24} className='cvat-task-item-progress-wrapper'>
-                        <div>
-                            {numOfCompleted > 0 && (
-                                <Text strong className='cvat-task-completed-progress'>
-                                    {`\u2022 ${numOfCompleted} done `}
-                                </Text>
-                            )}
-                            {numOfValidation > 0 && (
-                                <Text strong className='cvat-task-validation-progress'>
-                                    {`\u2022 ${numOfValidation} on review `}
-                                </Text>
-                            )}
-                            {numOfAnnotation > 0 && (
-                                <Text strong className='cvat-task-annotation-progress'>
-                                    {`\u2022 ${numOfAnnotation} annotating `}
-                                </Text>
-                            )}
-                            <Text strong type='secondary'>
-                                {`\u2022 ${numOfJobs} total`}
-                            </Text>
-                        </div>
-                        <Progress
-                            percent={jobsProgress}
-                            success={{ percent: (numOfCompleted * 100) / numOfJobs }}
-                            strokeColor='#1890FF'
-                            showInfo={false}
-                            size='small'
-                        />
+                        {jobsSummary ? (
+                            <TaskJobsProgress summary={jobsSummary} totalJobs={numOfJobs} />
+                        ) : (
+                            <>
+                                <div>
+                                    {numOfCompleted > 0 && (
+                                        <Text strong className='cvat-task-completed-progress'>
+                                            {`\u2022 ${numOfCompleted} done `}
+                                        </Text>
+                                    )}
+                                    {numOfValidation > 0 && (
+                                        <Text strong className='cvat-task-validation-progress'>
+                                            {`\u2022 ${numOfValidation} on review `}
+                                        </Text>
+                                    )}
+                                    {numOfAnnotation > 0 && (
+                                        <Text strong className='cvat-task-annotation-progress'>
+                                            {`\u2022 ${numOfAnnotation} annotating `}
+                                        </Text>
+                                    )}
+                                    <Text strong type='secondary'>
+                                        {`\u2022 ${numOfJobs} total`}
+                                    </Text>
+                                </div>
+                                <Progress
+                                    percent={jobsProgress}
+                                    success={{ percent: (numOfCompleted * 100) / numOfJobs }}
+                                    strokeColor='#1890FF'
+                                    showInfo={false}
+                                    size='small'
+                                />
+                            </>
+                        )}
                     </Col>
                 </Row>
                 <AutomaticAnnotationProgress
