@@ -1,4 +1,4 @@
-"""Evidence checks of Team Analytics on a verification stack (ticket 09 of local/scratch/team-analytics-admin-settings),
+"""Evidence checks of Team Analytics on a verification stack (ticket 09 of local/scratch/team-analytics-admin-settings at e107249f),
 driven by run.sh. Each command prints what it expected and what it saw, prints `[evidence] PASS` or `FAIL`, exits
 non-zero on a mismatch, and puts back what it changed in the stack's pods (a chart value it needs is set and
 restored by run.sh around it).

@@ -1,5 +1,5 @@
-"""Acceptance of Team Analytics on the backend path (ticket 11 of local/scratch/standard-fork), driven by run.sh. Each
-command judges itself (non-zero exit on a failure) and prints the numbers it measured.
+"""Acceptance of Team Analytics on the backend path (ticket 11 of local/scratch/standard-fork at e107249f), driven by run.sh.
+Each command judges itself (non-zero exit on a failure) and prints the numbers it measured.
 
     acceptance.py cross-org             an overview an administrator loaded for organization A is not served for
                                         organization B nor for instance scope with the same parameters, the instance

@@ -70,8 +70,8 @@ NONE: frozenset[str] = frozenset()
 VIEWS = frozenset({"view issue", "view comment"})
 REFUSED = "refused"
 SHOWN = {True: "ALLOW", False: "DENY "}
-# Every refusal of the matrix, actions and lists, answered 403 on the stack (2026-11-15,
-# local/evidence/2026-11-14-stack-issue-matrix.md); any other code fails its row.
+# Every refusal of the matrix, actions and lists, answered 403 on the stack; any other code
+# fails its row.
 REFUSAL_STATUS = 403
 
 # (actor, organization the request names or None, target issue, allowed patched, allowed stock).
