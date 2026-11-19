@@ -11,7 +11,8 @@ include = [
     "verify/**/*.py",
     "tools/gate/**/*.py",
     "docs/**/*.py",
-    ".scratch/**/*.py",
+    # the records and the test stack that the release branch drops
+    "local/**/*.py",
 ]
 # force-exclude applies exclusions to paths named on the command line as well.
 force-exclude = true

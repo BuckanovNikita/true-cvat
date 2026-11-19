@@ -23,7 +23,7 @@ The feature is delivered and verified on Kubernetes against CVAT v2.82.0 and not
 
 ## Amendments, 2026-11-14
 
-Decided by the owner; see `.scratch/defect-fixes/plan.md` for the work that follows from them.
+Decided by the owner; see `local/scratch/defect-fixes/plan.md` for the work that follows from them.
 
 - The chart comes through the filtered import after all: the filter is widened, accepting new import identifiers once. The first consequence above no longer holds. Chart dependencies are still fetched and pinned as before.
 - The two Compose checks are migrated to the Kubernetes stack, and the Compose overlay and launchers are removed. The last consequence above no longer holds.
@@ -34,3 +34,7 @@ Decided by the owner; see `.scratch/defect-fixes/plan.md` for the work that foll
 - **Two custom images, not three.** The analytics service and its manifests are gone ([ADR 0006](0006-team-analytics-inside-the-backend-with-reads-on-a-worker.md)): the UI image and the fork server image remain, and the analytics worker is a Deployment of the chart that runs the fork server image.
 - **The chart is upstream's own directory.** The repository is a full-source fork ([ADR 0005](0005-a-full-source-fork-joined-to-upstream-history.md)), so `helm-chart/` is at the root and arrives by merge. The fork adds one template for the analytics worker; its values have their defaults in the template, so upstream's `values.yaml` is not edited. The stack's proxy no longer routes a service prefix.
 - **The images are not built from the stock server image.** The opening paragraph's "the analytics service built from the stock server image" is gone with the service, and the fork server image is no longer the stock image with files copied over it (ADR 0004): it is built from the fork's tree on public bases ([ADR 0007](0007-the-fork-builds-its-images-from-public-bases-the-server-on-debian-12.md)), and no Dockerfile of the fork starts from a `cvat/` image.
+
+## Amendments, 2026-11-19
+
+Where the amendments above say that the repository is a full-source fork by ADR 0005 and that `helm-chart/` "arrives by merge": the fork's shape is now that of [ADR 0009](0009-three-branches-in-a-github-fork-and-develop-rebased-onto-upstream.md), and the chart arrives with the upstream release that `main` is moved to and `develop` is rebased onto.

@@ -10,7 +10,7 @@
 // the count and whose tooltip names it, the task's total, and no "not available" bucket or other
 // bucket; the upstream fallback labels must be absent. Every legend entry must be readable on the
 // card (contrast at least 4.5:1 after compositing its colour onto the card's background); for the
-// single annotation/new job this is the case of docs/evidence/2026-11-13-task-legend-verification.md.
+// single annotation/new job this is the case of local/evidence/2026-11-13-task-legend-verification.md.
 //
 // Environment: TA_BASE_URL, TA_SEED_PASSWORD, TA_BROWSER_BIN (google-chrome),
 // TA_SCREENSHOT_DIR (optional: a PNG of the list).

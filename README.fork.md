@@ -1,8 +1,13 @@
 # CVAT fork
 
-Форк — полный исходный код CVAT (`cvat-ai/cvat`), соединённый с историей upstream
-одним merge-коммитом: корень репозитория совпадает с корнем upstream, изменения
-форка — обычные коммиты поверх, новый релиз забирается через `git merge <тег>`.
+Форк — полный исходный код CVAT: репозиторий `BuckanovNikita/true-cvat`,
+GitHub-форк `cvat-ai/cvat`, с тремя ветками ([ADR 0009](docs/adr/0009-three-branches-in-a-github-fork-and-develop-rebased-onto-upstream.md)).
+`main` — релиз upstream, на котором стоит форк, без единого изменения.
+`develop` — изменения форка: линейная цепочка коммитов поверх `main`.
+`release` — то, что форк распространяет: `develop` без каталога `local/`.
+Новый релиз забирается переносом `main` на его тег и перебазированием
+`develop`; каждое слияние в `release` получает тег этапа вида `v2.82.0.N`,
+который только отмечает этап работ и не меняет ни одной версии.
 Форк добавляет отображение прогресса задач по стадиям и состояниям, расширенные
 права участников организации на issues и комментарии и страницу Team Analytics,
 которая работает внутри бэкенда CVAT (`cvat/apps/team_analytics/`).
@@ -97,9 +102,9 @@ Analytics settings» на странице. Переменная окружен�
   нужно сохранить, полный список изменённых файлов upstream, точки интеграции и
   сценарии приёмки.
 - [Порядок обновления upstream](docs/upstream-upgrade.md): получение тега
-  релиза, слияние, перенос изменений `Dockerfile` upstream в
+  релиза, перебазирование `develop`, выпуск `release`, перенос изменений `Dockerfile` upstream в
   `Dockerfile.server`, сборка образов и проверка результата.
-- [Базовый снимок от 2026-11-13](docs/evidence/2026-11-13-fork-baseline.md):
+- [Базовый снимок от 2026-11-13](local/evidence/2026-11-13-fork-baseline.md):
   исходные ревизии и границы проверки на момент снимка.
 - [Права на issues и комментарии](docs/fork-specification.md#iam-1-organization-issue-and-comment-permissions)
   и [сборка и доставка политик](docs/fork-specification.md#build-1-packaging-and-policy-delivery):
@@ -112,12 +117,14 @@ Team Analytics:
   приёмки.
 - [Проверки Team Analytics при обновлении](docs/upstream-upgrade.md#team-analytics):
   тесты расчётов, два набора тестов фронтенда и полный прогон на тестовом стенде.
-- [Тестовый стенд](verify/team-analytics-stack/README.md).
-- [Итоговый прогон от 2026-11-14](docs/evidence/2026-11-14-team-analytics-final-run.md)
+- [Тестовый стенд](local/team-analytics-stack/README.md).
+- [Итоговый прогон от 2026-11-14](local/evidence/2026-11-14-team-analytics-final-run.md)
   (ещё на отдельном сервисе) и
-  [переход на полный форк от 2026-11-15](docs/evidence/2026-11-15-full-fork-conversion.md).
-- Решения: [ADR 0005](docs/adr/0005-a-full-source-fork-joined-to-upstream-history.md)
-  (полный форк), [ADR 0006](docs/adr/0006-team-analytics-inside-the-backend-with-reads-on-a-worker.md)
+  [переход на полный форк от 2026-11-15](local/evidence/2026-11-15-full-fork-conversion.md).
+- Решения: [ADR 0009](docs/adr/0009-three-branches-in-a-github-fork-and-develop-rebased-onto-upstream.md)
+  (три ветки в GitHub-форке; заменяет соединение историй из
+  [ADR 0005](docs/adr/0005-a-full-source-fork-joined-to-upstream-history.md)),
+  [ADR 0006](docs/adr/0006-team-analytics-inside-the-backend-with-reads-on-a-worker.md)
   (Team Analytics внутри бэкенда),
   [ADR 0007](docs/adr/0007-the-fork-builds-its-images-from-public-bases-the-server-on-debian-12.md)
   (образы из базовых образов, публичных по умолчанию, сервер на Debian 12) и
@@ -125,10 +132,18 @@ Team Analytics:
   (форк — оригинал для двух репозиториев: два чарта и параметры сборки).
 
 `README.md` в корне — файл upstream, и форк его не меняет: любой релиз, который
-его трогает, давал бы конфликт при слиянии. Поэтому текст форка лежит здесь, в
-`README.fork.md`; это оговорённое исключение из правила, что README пишется
-по-русски (ADR 0005).
+его трогает, давал бы конфликт при перебазировании. Поэтому текст форка лежит
+здесь, в `README.fork.md`; это оговорённое исключение из правила, что README
+пишется по-русски (ADR 0009).
 
-[INFRA_MIGRATION.md](INFRA_MIGRATION.md) описывает миграцию инфраструктуры проверки
-на Kubernetes и её итог: Compose-файлы и скрипты удалены, проверки перенесены на
-тестовый стенд.
+## Каталог `local/`
+
+Всё, что относится к машине, на которой форк разрабатывается, и к прошлым
+работам, собрано в одном каталоге — `local/`
+([описание](local/README.md)): датированные свидетельства проверок
+(`local/evidence/`), локальный трекер до 2026-11-17 (`local/scratch/`), тестовый
+стенд в Kubernetes (`local/team-analytics-stack/`) и
+[local/INFRA_MIGRATION.md](local/INFRA_MIGRATION.md) — описание переноса
+инфраструктуры проверки на Kubernetes. Каталог есть в `develop` и отсутствует в
+`release`, поэтому ссылки этого файла на `local/` в ветке `release` никуда не
+ведут.

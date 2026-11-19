@@ -27,7 +27,7 @@ Team Analytics gets its figures from a small dedicated service, not from the exi
 - One rule is approximate in SQL: time spent on navigation while a box is being drawn goes to that drawing only when the navigation lies wholly inside one drawing or alignment.
 - ClickHouse in this deployment cannot schedule a refresh itself, which is why the service triggers it.
 
-Measured on a synthetic year of 36 million events: [design measurements, 2026-11-13](../evidence/2026-11-13-team-analytics-design-measurements.md).
+Measured on a synthetic year of 36 million events: [design measurements, 2026-11-13](../../local/evidence/2026-11-13-team-analytics-design-measurements.md).
 
 ## Superseded, 2026-11-15
 

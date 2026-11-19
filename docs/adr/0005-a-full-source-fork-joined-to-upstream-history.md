@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by ADR 0009
 ---
 
 # The repository is a full-source fork, joined to upstream's history by one merge
@@ -22,3 +22,7 @@ The repository held a path-filtered copy of upstream CVAT under `cvat/`, pulled 
 - Upstream's whole-repository linters would sweep the fork's own directories. They are not run as upstream runs them; the fork's gate (`prek.toml`) checks the fork's files with upstream's configuration where the file lives in upstream's tree, and with the fork's own elsewhere.
 - Compose stays unsupported (the amendment of ADR 0003). Upstream's Compose files arrive with the tree and are left as they are.
 - The upstream remote has no default fetch rule. Tags are fetched by name, so a routine fetch never brings in every upstream branch and tag.
+
+## Superseded, 2026-11-19
+
+[ADR 0009](0009-three-branches-in-a-github-fork-and-develop-rebased-onto-upstream.md) takes the first option above, a branch rooted on the upstream tag, in a new repository, `BuckanovNikita/true-cvat`, instead of over the published `main`. The join by one merge, `git merge <tag>` for a release and the first-parent reading of `main` describe `cvat-fork` and no longer the fork. The consequences about what upstream owns still hold and are restated there: upstream's `README.md` and the fork's `README.fork.md`, the appended `.gitignore` block, the removed `.github/`, the fork's own gate, unsupported Compose and the upstream remote without a default fetch rule.

@@ -1,5 +1,5 @@
 # Values for the CVAT chart v2.82.0 of the tree (helm-chart) in the Team Analytics test stack.
-# Based on docs/evidence/2026-11-13-team-analytics-helm-check/values.local.yaml.
+# Based on local/evidence/2026-11-13-team-analytics-helm-check/values.local.yaml.
 # Do NOT also pass the chart's cvat.values.yaml: it enables ingress and Traefik, which add
 # cluster-wide objects. run.sh sets the backend image (TA_SERVER_IMAGE), the frontend image,
 # Grafana's root URL and the Team Analytics settings (cvat.backend.additionalEnv, from

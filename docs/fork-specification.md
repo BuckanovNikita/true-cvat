@@ -3,35 +3,45 @@
 This document describes the existing fork behavior to preserve when updating
 CVAT. It does not propose new features. Use it with the
 [upgrade procedure](upstream-upgrade.md) and the
-[dated baseline](evidence/2026-11-13-fork-baseline.md). Paths below are relative
+[dated baseline](../local/evidence/2026-11-13-fork-baseline.md). Paths below are relative
 to the repository root.
 
 ## Ownership and scope
 
-The repository is a full-source fork of `cvat-ai/cvat`
-([ADR 0005](adr/0005-a-full-source-fork-joined-to-upstream-history.md)): its
-root is upstream's root, joined to upstream's history by one merge commit, and
-the fork's changes are ordinary commits on top. Upstream's tree is the base;
-the fork adds its own paths beside it and edits a short list of upstream files.
+The repository, `BuckanovNikita/true-cvat`, is a full-source fork of
+`cvat-ai/cvat` with three branches
+([ADR 0009](adr/0009-three-branches-in-a-github-fork-and-develop-rebased-onto-upstream.md)):
+`main` is the upstream release the fork is on and nothing else, `develop` is
+`main` plus the fork's changes as a linear line of commits, and `release` is
+`develop` without `local/`. Upstream's tree is the base; the fork adds its own
+paths beside it and edits a short list of upstream files.
 
 | Area | Maintained source | Purpose |
 | --- | --- | --- |
-| Upstream base | Everything not listed below, as the merged release has it | CVAT itself; taken from upstream with `git merge <release tag>` |
+| Upstream base | Everything not listed below, as the release has it | CVAT itself; `main` is moved to the release tag and `develop` is rebased onto it |
 | Task progress | Eight UI files (UI integration map) | Per-stage/state job counts, legend and progress segments |
 | Organization issues/comments | `cvat/apps/engine/rules/issues.rego`, `cvat/apps/engine/rules/comments.rego` and their test configurations | Broader actions and listing for members of the resource organization who hold at least the `worker` global role (IAM-1) |
 | Organization creation | `ORGANIZATIONS_MIN_ROLE_TO_CREATE` in `cvat/settings/base.py` | Only administrators create organizations (IAM-2) |
 | Team Analytics | `cvat/apps/team_analytics/`, the page and logging directories under `cvat-ui/src/`, wiring in eleven UI files, two backend settings files, one entry point component file and one chart template (TA-1) | Work figures per annotator and project from CVAT's own events |
 | Build and deployment | `build-ui.sh`, `Dockerfile.ui.dockerignore`, `build-server.sh`, `Dockerfile.server` | The UI image and the fork server image (BUILD-1) |
-| Verification | `verify/` | Frontend regression tests, the policy tests and the policy bundle check, the Team Analytics seams and calculation tests, and the test stack on Kubernetes (`verify/team-analytics-stack/`) that runs the live checks |
+| Verification | `verify/` | Frontend regression tests, the policy tests and the policy bundle check, the Team Analytics seams and calculation tests, and, outside it, the test stack on Kubernetes (`local/team-analytics-stack/`) that runs the live checks |
 | Check pipeline | `prek.toml`, `ruff.toml`, `tools/gate/` | The fork's checks on the fork's files ([upgrade procedure, section 4](upstream-upgrade.md#4-verify-the-integrated-changes)) |
 
-Fork-owned paths at the root, none of which upstream has: `.scratch/`, `docs/`,
-`tools/`, `verify/`, `AGENTS.md`, `CLAUDE.md`, `GLOSSARY.md`,
-`INFRA_MIGRATION.md`, `README.fork.md`, `build-server.sh`, `build-ui.sh`,
+Fork-owned paths at the root, none of which upstream has: `docs/`, `local/`,
+`tools/`, `verify/`, `helm-chart-nuclio/`, `AGENTS.md`, `CLAUDE.md`,
+`GLOSSARY.md`, `README.fork.md`, `build-server.sh`, `build-ui.sh`,
 `Dockerfile.server`, `Dockerfile.ui.dockerignore`, `prek.toml`, `ruff.toml` and
 `skills-lock.json`. The gate's Python pin (`pyproject.toml`, `uv.lock`) lives in
 `tools/gate/`, because the root names are upstream's. Upstream's `README.md`
 is left as upstream wrote it; the fork's text is `README.fork.md`.
+
+`local/` holds what belongs to the machine the fork is developed on and to its
+past work, and is the one directory the `release` branch does not carry: the
+dated evidence (`local/evidence/`), the local tracker used until 2026-11-17
+(`local/scratch/`), the infrastructure migration note and the Kubernetes test
+stack (`local/team-analytics-stack/`). [`local/README.md`](../local/README.md)
+lists it and maps the paths older documents cite. A path under `local/` named
+in this document therefore exists on `develop` and not on `release`.
 
 The fork's complete delta inside upstream's paths:
 
@@ -63,19 +73,31 @@ The fork's complete delta inside upstream's paths:
   the Team Analytics wiring (TA-1).
 - `backend_entrypoint.d/team_analytics.conf`, added.
 - `helm-chart/templates/cvat_backend/worker_team_analytics/deployment.yml`,
-  added. Upstream's `helm-chart/values.yaml` is not edited.
+  added.
+- `helm-chart/`, for the deployment that vendors it
+  ([ADR 0008](adr/0008-the-fork-is-the-original-for-two-repositories.md)):
+  `Chart.yaml`, `values.yaml`, `templates/_helpers.tpl` and five templates
+  edited (`cvat_backend/initializer/job.yml`, `cvat_backend/server/deployment.yml`,
+  `cvat_backend/service.yml`, `cvat_kvrocks/statefulset.yml`,
+  `cvat_opa/service.yml`); four templates added
+  (`analytics/clickhouse/secret.yml`, `image-tags-guard.yml`,
+  `ingress-redirect.yaml`, `ingress-tls-secret.yaml`); `Chart.lock` and the six
+  dependency tarballs under `charts/` committed; and `analytics/`, a symlink
+  upstream, replaced by real copies of the files it pointed at.
+- `Dockerfile.ui`, edited: its two bases and the npm registry are build
+  arguments (ADR 0008).
 
 cvat-core, cvat-canvas and the other UI packages are not edited. The list is
-exact for the release the fork is on; to see it, compare with that release tag
-(`v2.82.0` today):
+exact for the release the fork is on; to see it, compare `develop` with `main`,
+which is that release (`v2.82.0` today):
 
 ```bash
-git diff --name-status v2.82.0.. -- . ':!docs' ':!.scratch' ':!verify' ':!tools'
-git log --first-parent --oneline v2.82.0..
+git diff --name-status main develop -- . ':!docs' ':!local' ':!verify' ':!tools' ':!helm-chart-nuclio'
+git log --oneline main..develop
 ```
 
-The first-parent line of `main` is the fork's own history; `git log` without
-it also shows every upstream commit.
+`main..develop` is the fork's own history, a line without merges; everything
+below `main` is upstream's.
 
 ## UI-1: Task job summaries
 
@@ -313,7 +335,7 @@ working tree. The script never pushes. `IMAGE` (default
 - upstream's `Dockerfile` differs from the one `Dockerfile.server` was ported
   from: the script records that file's SHA-256 (`PORTED_FROM_SHA256`), so a
   release that changes upstream's `Dockerfile` cannot be built until the
-  change is ported ([upgrade procedure, section 3](upstream-upgrade.md#3-merge-the-policies-and-update-the-images));
+  change is ported ([upgrade procedure, section 3](upstream-upgrade.md#3-check-the-policies-and-update-the-images));
 - a file under the copied paths is not tracked (the image would lack it while
   the working tree has it), or a tracked file there is missing from the
   working tree;
@@ -517,7 +539,7 @@ refresh, history a day at a time),
 - Why: the owner decided on 2026-11-15 that the page, its API and its
   settings are for administrators only, and closed issue 19 of the Team
   Analytics tracker
-  (`.scratch/team-analytics/issues/19-any-account-can-move-the-cutover-and-add-its-own-figures.md`)
+  (`local/scratch/team-analytics/issues/19-any-account-can-move-the-cutover-and-add-its-own-figures.md`)
   as an accepted risk on that ground. Any account can still send events that
   move the cutover or add figures for itself (the trust model under "Figures
   and their limits" stands), but only administrators read the figures.
@@ -912,7 +934,7 @@ of each, and the limits of the settings endpoints (1,000 technical accounts,
 The API process does no analytical work, so the failures below show on the
 Team Analytics page and nowhere else in CVAT. The stack checks this on a
 running CVAT (`run.sh check-isolation [worker-down|clickhouse-down|totals-dropped|redis-down]`, see the
-[stack's README](../verify/team-analytics-stack/README.md)).
+[stack's README](../local/team-analytics-stack/README.md)).
 
 - The worker stopped: reads are queued up to the queue limit, each request
   waits the read wait and replies 429, and once the queue is full requests
@@ -1038,7 +1060,7 @@ running CVAT (`run.sh check-isolation [worker-down|clickhouse-down|totals-droppe
   to the first tagged event, or all of them when there is none. Its cost
   therefore grows with the history before the cutover. What it cost at the
   volume of the design measurements, in each of these cases, is in
-  `docs/evidence/2026-11-14-cutover-search-cost.md`. The search in the
+  `local/evidence/2026-11-14-cutover-search-cost.md`. The search in the
   make-ready and in the daily check runs with limits that ClickHouse enforces
   on the statement: 23 s in the make-ready, 60 s in the daily check, and
   512 MiB of memory in both. ClickHouse stops a search that reaches one; that
@@ -1075,7 +1097,7 @@ running CVAT (`run.sh check-isolation [worker-down|clickhouse-down|totals-droppe
   and organization of a client event from the request, and takes the job,
   task and project ids, counts, durations, payload and time from the client).
   The owner closed the question of bounding the cutover search on 2026-11-15
-  (`.scratch/team-analytics/issues/19-any-account-can-move-the-cutover-and-add-its-own-figures.md`)
+  (`local/scratch/team-analytics/issues/19-any-account-can-move-the-cutover-and-add-its-own-figures.md`)
   as an accepted risk: the search stays as decided in ticket 17 of the defect
   fixes, events stay unchecked, and only administrators read the figures
   (Access, above).
@@ -1441,7 +1463,7 @@ decision on whether it is an operation. A rename breaks the figures silently.
 
 | ID | Expected observable outcome | Existing evidence mechanism |
 | --- | --- | --- |
-| TA-A | The real server accepts every record the UI logging adds, and each reaches the events table with its fields | Seam 2 (`tools/gate/node-suite.sh verify/team_analytics_logging.cjs`) for the serialized batch; `verify/team-analytics-stack/run.sh check-final` for a real browser, server and ClickHouse |
+| TA-A | The real server accepts every record the UI logging adds, and each reaches the events table with its fields | Seam 2 (`tools/gate/node-suite.sh verify/team_analytics_logging.cjs`) for the serialized batch; `local/team-analytics-stack/run.sh check-final` for a real browser, server and ClickHouse |
 | TA-B | Stock event logging and working time are unchanged by the new logging; the closing input summary leaves with the closing save | Seam 2; `check-final` (client scopes, `client_id`, `send:working_time`, all event POSTs answered 201) |
 | TA-C | For given events the app returns the agreed figures for sessions, working time, operations, creation methods, Model, saved boxes, keyboard and mouse, projects, trends, history and late events | Seam 1 (`verify/team_analytics_backend.sh`, the calculation tests against a real ClickHouse); `check-final` for real UI work and loaded volume |
 | TA-D | Administrators read Team Analytics with and without an organization selected, and every other account, an organization's owner and maintainer included, is refused with 403 on every endpoint, the settings included; signed out is 401; an administrator taken out of the admin group is refused on the very next request, in the session it has and in a fresh one; a non-administrator's page shows "not available" at once and sends no Team Analytics request; no cached answer is served across organizations or between an organization and the instance | Upstream's generated policy tests for `rules/team_analytics.rego`; `check-tracer`, `check-final`, `check-access` and `check-settings` against the real CVAT; seam 3 and `check-tracer` for the non-administrator's page; `check-cross-org` for cached answers |
@@ -1471,7 +1493,7 @@ of the volume goes through the events API (older weeks are inserted directly,
 since the API cannot date records back), and `run.sh check-access` runs a
 revoked administrator, an administrator by group, a personal workspace and
 header credentials against the real CVAT. Its `revoked-admin` case
-(`verify/team-analytics-stack/access_cases.py`) has an account in the
+(`local/team-analytics-stack/access_cases.py`) has an account in the
 `admin` group without the superuser flag read the status with and without an
 organization, an organization's overview and the settings; an administrator
 then takes it out of the group through CVAT's API, and its very next
@@ -1497,7 +1519,7 @@ passes on the others; `check-load` takes the end of a refresh run from rq's
 run per pod's log, two narrow windows in which a real repeated read would be
 excused (otherwise the rule errs towards false failures).
 The stack's own subcommands and what each judges are in its
-[README](../verify/team-analytics-stack/README.md). Two independent reviews
+[README](../local/team-analytics-stack/README.md). Two independent reviews
 are recorded with the dated evidence: the record of 2026-11-15 is of the
 access rules before Team Analytics became administrators-only, and the
 record of 2026-11-16 is of the administrators-only rules, the settings and
@@ -1514,9 +1536,9 @@ the checks described here.
 | UI-E | Failed summary fetch preserves task display and the upstream progress fallback | Mocked failure tests; browser for complete task-item fallback |
 | IAM-A | Unassigned organization members with at least the `worker` global role can act on issues/comments and list the organization's resources; below the floor the result is stock's | `verify/opa_issues_test.rego` through `verify/policy_test.sh`; upstream's generated policy tests with the added configuration rows; the stack's issue and comment matrix (`run.sh check-issues`) |
 | IAM-B | Nonmembers, removed members, other organizations and sandbox/context mismatches do not gain access from the patch | Same policy suites; the stack's matrix for a nonmember, another organization's member, each organization's members on the other's issue, the personal workspace and an account with no global role. A removed member is covered by the policy suites only |
-| IAM-C | Sandbox behavior and upstream filter shape remain compatible with the target release | Stock-versus-patched policy suite with the release's helpers; upstream's generated suite on the merged tree |
+| IAM-C | Sandbox behavior and upstream filter shape remain compatible with the target release | Stock-versus-patched policy suite with the release's helpers; upstream's generated suite on the rebased tree |
 | IAM-D | Only administrators create organizations: an account with the `user` or `worker` role, and an organization's owner or maintainer, is refused with 403 and nothing is created; an administrator creates one | The stack's `run.sh check-org-creation` (part of `up`) against the real API |
-| BUILD-A | Built image serves the changed UI without stale bundles/source maps; the backend runs the fork server image, built from the fork's tree by `Dockerfile.server` with the known deviations from upstream's image (BUILD-1) and no other | Image inspection and browser verification; `build-server.sh`'s refusals and six checks; a one-time comparison of the first image built this way with the previous fork server image, in `docs/evidence/2026-11-16-open-lines-closed-and-admin-settings.md` (the earlier comparison, `docs/evidence/2026-11-14-fork-server-image.md`, is of the overlay image and does not cover this build); the stack's render check for the backend image name only |
+| BUILD-A | Built image serves the changed UI without stale bundles/source maps; the backend runs the fork server image, built from the fork's tree by `Dockerfile.server` with the known deviations from upstream's image (BUILD-1) and no other | Image inspection and browser verification; `build-server.sh`'s refusals and six checks; a one-time comparison of the first image built this way with the previous fork server image, in `local/evidence/2026-11-16-open-lines-closed-and-admin-settings.md` (the earlier comparison, `local/evidence/2026-11-14-fork-server-image.md`, is of the overlay image and does not cover this build); the stack's render check for the backend image name only |
 | BUILD-B | Both served policy files equal the tree's, each by itself, and real requests exhibit the patched behavior | `verify/policy_bundle.sh` on the image, `run.sh check-policies` on the served bundle, and `run.sh check-issues`; not marker presence alone |
 
 The frontend suite executes real TypeScript, Redux and server-rendered React
@@ -1528,7 +1550,7 @@ wiring, complete page layout or a live server. Policy tests evaluate synthetic
 inputs using upstream helper rules; they do not prove bundle delivery or
 Django/API integration.
 
-The live checks run on the test stack (`verify/team-analytics-stack/`), each
+The live checks run on the test stack (`local/team-analytics-stack/`), each
 judging its own outcome. The issue and comment matrix runs every row through
 the real API with real accounts, one of them with no global role, against the
 fork server image; the stock column is checked against the policy engine only
@@ -1545,55 +1567,21 @@ Upstream's own Django and REST suites are not part of the fork's checks. Its
 REST test for issues (`tests/python/rest_api/test_issues.py`) encodes the
 stock issue policy and disagrees with IAM-1.
 
-### The test stack on a shared machine and in a public repository
+### The test stack
 
-The stack's namespace is `cvat-ta-it-<TA_RUN_ID>`, and `TA_RUN_ID` defaults to
-the machine user. Every checkout of the same user therefore shares one stack:
-one namespace, one state directory and one port-forward, and the ownership
-label is the same for all of them. An `up` from a second checkout upgrades the
-first one's release and its `down` deletes it. Give each concurrent run its own
-`TA_RUN_ID` (and its own reserved host port). `down` refuses a namespace
-without the label and stops only its own port-forward.
+The live checks run on a Kubernetes test stack that is not part of what the
+fork distributes: it lives in `local/team-analytics-stack/` and its defaults
+name the cluster of the machine the fork is developed on. How it shares that
+cluster, what its render check judges, when its namespace is recreated and
+what a public repository shows about it are in
+[`local/test-stack-on-a-shared-machine.md`](../local/test-stack-on-a-shared-machine.md).
 
-Before anything is applied, the launcher's render check (`render_guard.py`,
-listed in the stack's README) judges every object. These ways of reaching
-another project on the shared cluster through storage or routes are judged by
-allowlist, against what the genuine render contains: pod volume sources,
-claims naming a volume, any Ingress (the stack has none; its address is the
-proxy behind a port-forward), hand-written Endpoints or EndpointSlices, and
-Secret types. With analytics on it also requires the Team Analytics worker,
-and with analytics off refuses it. Not judged: a
-claim, or a claim template, that binds an existing volume without naming it
-(a label selector, a data source, or an empty storage class); the genuine
-render has none. The checks for
-reaching the host still refuse by list. It judges the `helm template` render,
-not what the installation creates.
-
-The cluster's sweeper drops a namespace at its age limit or when it was created
-before the cluster's last restart. The launcher recreates a namespace older
-than `TA_MAX_REUSE_HOURS`, and one created before the restart time the
-sweeper's last tick recorded (`infra-janitor/last-run`, `restart_at`). That
-time can lag a restart by one tick, and k8s-infra does not yet count the
-sweeper's restart detection as proven; without a readable time only the age
-rule applies.
-
-The repository is public. What it shows about the stack, none of it a secret
-of a running system: the default of the disposable seed password
-(`stack.env`); upstream's default database and cache passwords in the chart's
-`helm-chart/values.yaml`; and, in evidence dated before 2026-11-15, the
-stack's former default namespace and Ingress host, which carry the machine
-user's name; and a machine
-path outside the home directory in `INFRA_MIGRATION.md`, the platform's own
-notice text. Older evidence is not rewritten. The seed password
-reaches the backend pod through the seed script's standard input, not a
-command line. One more of upstream's chart defaults matters for a real
-deployment, not for the stack (read in the chart's values and in CVAT's
-analytics policy, not tried): with analytics enabled, the chart's Grafana
-gives every visitor the Admin role without a sign-in. The stack reaches it
-only through the loopback port-forward, after CVAT's own analytics access
-check, but any pod in the cluster can reach its Service directly. The check
-pipeline's output is not redacted: a failing hook prints absolute paths, so
-its output must not be pasted into evidence.
+One of upstream's chart defaults matters for a real deployment, not for the
+stack (read in the chart's values and in CVAT's analytics policy, not tried):
+with analytics enabled, the chart's Grafana gives every visitor the Admin role
+without a sign-in, and any pod in the cluster can reach its Service directly.
+The check pipeline's output is not redacted: a failing hook prints absolute
+paths, so its output must not be pasted into evidence.
 
 Upstream's Kubernetes test mode flushes databases in whatever namespace the
 current kube context names; it is not run against a shared cluster.
@@ -1602,9 +1590,9 @@ current kube context names; it is not run against a shared cluster.
 
 The fork carries no ClickHouse change: `components/analytics/clickhouse/init.py`
 is upstream's, and the fork's delta (Ownership and scope, above) does not list
-it. Earlier submodule, patch-series and filtered-import workflows have been
-replaced by the merge of upstream releases. The UI is built by upstream's own
-`Dockerfile.ui`; the server by `Dockerfile.server`, a port of upstream's
+it. Earlier submodule, patch-series, filtered-import and merge-join workflows have been
+replaced by a rebase of `develop` onto the upstream release (ADR 0009). The UI is built by upstream's
+`Dockerfile.ui`, whose bases and npm registry the fork made build arguments (ADR 0008); the server by `Dockerfile.server`, a port of upstream's
 `Dockerfile` that is re-ported when a release changes it (BUILD-1). The old HTML head fix is absent from the current
 baseline diff, and upstream Google Fonts links are retained. Reapply current
 behavior, not every historical commit.
@@ -1613,5 +1601,5 @@ Live verification runs only on the Kubernetes test stack; the earlier Compose
 overlay, its launchers and the copied policies are gone. Upstream's Compose
 files arrive with the tree and are left as they are; they do not start the
 Team Analytics worker.
-[`INFRA_MIGRATION.md`](../INFRA_MIGRATION.md) records that outcome and what is
+[`local/INFRA_MIGRATION.md`](../local/INFRA_MIGRATION.md) records that outcome and what is
 still needed before the notice can be deleted.

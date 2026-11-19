@@ -995,7 +995,7 @@ restore_chart() {
 }
 # The command restore-chart runs with, for a person to run by hand from the repository root.
 restore_command() {
-    printf 'TA_KUBE_CONTEXT=%q TA_NAMESPACE=%q TA_RELEASE=%q TA_HOST_PORT=%q TA_REFRESH_INTERVAL_S=%q TA_SERVER_IMAGE=%q TA_UI_IMAGE=%q bash verify/team-analytics-stack/run.sh restore-chart' \
+    printf 'TA_KUBE_CONTEXT=%q TA_NAMESPACE=%q TA_RELEASE=%q TA_HOST_PORT=%q TA_REFRESH_INTERVAL_S=%q TA_SERVER_IMAGE=%q TA_UI_IMAGE=%q bash local/team-analytics-stack/run.sh restore-chart' \
         "$TA_KUBE_CONTEXT" "$TA_NAMESPACE" "$TA_RELEASE" "$TA_HOST_PORT" "$STACK_REFRESH_INTERVAL_S" "$TA_SERVER_IMAGE" "$TA_UI_IMAGE"
 }
 # Back to the stack's own values, in a process of its own: the values a step set for itself (TA_EXTRA_SET,

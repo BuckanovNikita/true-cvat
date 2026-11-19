@@ -4,7 +4,7 @@
 
 ### Issue tracker
 
-Active issues, specs and plans live in Linear (team `SIP`, project `cvat-fork`). Delivery is a GitHub PR from a task branch: agents push the branch and open the PR, humans merge. Read `docs/agents/issue-tracker.md` before planning, picking up or delivering work. `.scratch/` is the superseded local tracker, kept as a historical record.
+Active issues, specs and plans live in Linear (team `SIP`, project `cvat-fork`). Delivery is a GitHub PR from a task branch against `develop` in `BuckanovNikita/true-cvat`, never against the parent `cvat-ai/cvat`: agents push the branch and open the PR, humans merge. Read `docs/agents/issue-tracker.md` before planning, picking up or delivering work. `local/scratch/` is the superseded local tracker, kept as a historical record.
 
 ### Triage labels
 
