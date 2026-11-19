@@ -1,4 +1,4 @@
-# Tools of the fork's check pipeline (prek.toml) that come from Python packages.
+# Tools of the fork's checks (AGENTS.md, "Checks") that come from Python packages.
 # uv.lock locks them; ruff.toml holds ruff's settings, the root pyproject.toml black's and isort's. Not a package: the table
 # below only gives uv the Python range the lock is resolved for.
 [project]
