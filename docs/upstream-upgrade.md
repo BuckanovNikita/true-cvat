@@ -2,26 +2,43 @@
 
 Use this procedure when taking a new CVAT release into the fork. The
 [fork specification](fork-specification.md) defines the behavior to preserve
-and lists the fork's delta inside upstream's paths. The repository is a
-full-source fork joined to upstream's history
-([ADR 0005](adr/0005-a-full-source-fork-joined-to-upstream-history.md)), so a
-release is taken by merging its tag. The fork is on `v2.82.0`; `TARGET` below
-is the release being taken (for example `v2.83.0`). Commands run from the
-repository root unless stated otherwise.
+and lists the fork's delta inside upstream's paths. The repository is a GitHub
+fork of `cvat-ai/cvat` with three branches
+([ADR 0009](adr/0009-three-branches-in-a-github-fork-and-develop-rebased-onto-upstream.md)):
+`main` is the upstream release the fork is on, `develop` is the fork's line of
+commits on top of it, and `release` is what the fork distributes. A release is
+taken by moving `main` to its tag and rebasing `develop` onto it. The fork is on
+`v2.82.0`; `TARGET` below is the release being taken (for example `v2.83.0`).
+Commands run from the repository root unless stated otherwise.
 
 ## 1. Record the starting point
 
-Inspect working and staged changes, the current branch, local `main` comparison
-and cached remote-tracking state. Preserve unrelated work. Record whether
-remote references have actually been fetched. Start the upgrade on a dedicated
-branch from the intended clean fork revision.
+Inspect working and staged changes, the current branch, its comparison with
+local `develop` and the cached remote-tracking state. Preserve unrelated work.
+Fetch `origin` and record, once, the commits the upgrade starts from. They are
+kept as two refs in the clone, not as shell variables, so they survive a new
+shell and cannot be reset by accident; every later step names them and the
+remote-tracking refs, never a local `main` or `develop`, which may be behind:
+
+```bash
+git fetch origin &&
+git update-ref refs/upgrade/base origin/main &&     # the release the fork is on
+git update-ref refs/upgrade/start origin/develop    # the fork's line that is rebased
+```
+
+Do not run these lines again to resume an upgrade: `refs/upgrade/start` would
+move to a `develop` whose newest commits the upgrade branch does not carry, and
+section 5 would then replace `develop` without them. Only `TARGET` is a shell
+variable; set it again in a new shell.
 
 The `upstream` remote is `https://github.com/cvat-ai/cvat.git` and has no
 default fetch rule, so a routine fetch never brings in upstream's branches and
 tags. Tags are fetched by name. On a fresh clone, add the remote without the
-rule `git remote add` writes, and fetch the tag the fork is on: the check
-pipeline, the policy tests and the stack's stock policy check compare with it,
-and tags are not pushed.
+rule `git remote add` writes, and fetch the tag the fork is on if the clone
+does not have it: the check pipeline, the policy tests and the stack's stock
+policy check compare with it. `main` must name the same commit as that tag. The
+fork's own stage tags (`v2.82.0.1` and later, "Cut a release" below) are pushed
+to `origin`; they never name an upstream commit.
 
 ```bash
 git remote add upstream https://github.com/cvat-ai/cvat.git
@@ -37,17 +54,19 @@ a tag that names another commit instead of force-updating it.
 Inspect the current customization with:
 
 ```bash
-git diff --name-status v2.82.0 HEAD
-git diff v2.82.0 HEAD -- . ':!docs' ':!.scratch' ':!verify' ':!tools'
-git log --first-parent --oneline v2.82.0..HEAD
+git diff --name-status refs/upgrade/base refs/upgrade/start
+git diff refs/upgrade/base refs/upgrade/start -- . ':!docs' ':!local' ':!verify' ':!tools' ':!helm-chart-nuclio'
+git log --oneline refs/upgrade/base..refs/upgrade/start
 ```
 
 The first command lists every path the fork added, changed or deleted against
 the release, its own directories included; the second shows the changes
 inside upstream's paths and the fork's root files. Both must match the
-ownership list of the specification.
+ownership list of the specification. The third is the fork's history: a line
+of commits without a merge, which is what makes the rebase of section 2
+possible.
 
-## 2. Merge the target release
+## 2. Rebase onto the target release
 
 Choose the target tag and record its full commit ID, resolving an annotated
 tag to its commit. Review upstream's release changes relevant to the UI, the
@@ -55,14 +74,35 @@ policies, the Helm chart, the image build, server/database compatibility and
 the upstream internals the specification lists (section 4, "Team Analytics").
 
 ```bash
-git fetch --filter=blob:none --no-tags upstream "refs/tags/${TARGET}:refs/tags/${TARGET}"
-git switch -c "upgrade/cvat-${TARGET}"
-git merge --no-ff "${TARGET}"
+TARGET=v2.83.0   # the release being taken
+git fetch --filter=blob:none --no-tags upstream "refs/tags/${TARGET}:refs/tags/${TARGET}" &&
+git merge-base --is-ancestor refs/upgrade/base "${TARGET}^{commit}" &&       # the release descends from the one the fork is on
+[ -z "$(git rev-list --merges refs/upgrade/base..refs/upgrade/start)" ] &&   # the fork's line has no merge commit
+git switch -c "upgrade/cvat-${TARGET}" refs/upgrade/start &&
+git rebase --onto "${TARGET}^{commit}" refs/upgrade/base
 ```
 
-From here on the branch is never rebased: a rebase drops the merge and with it
-the join to upstream's history. To take later commits of `main`, merge `main`
-into the branch. Section 5 says how the branch is delivered.
+The lines are chained, so a failed check stops the rest. The rebase replays the
+fork's commits one by one onto the release, so a conflict stops it at the
+commit that made the conflicting change; resolve it there and continue. Neither
+`main` nor `develop` moves in this section: the work happens on the upgrade
+branch, and section 5 says how the branches are moved.
+
+A commit that lands on `develop` while the upgrade is in progress is taken onto
+the upgrade branch by a cherry-pick, never by a merge, once the rebase has
+finished and with the upgrade branch checked out:
+
+```bash
+git fetch origin &&
+git cherry-pick refs/upgrade/start..origin/develop &&
+git update-ref refs/upgrade/start origin/develop
+```
+
+The last line runs only when every picked commit applied. If the pick stops on
+a conflict, resolve it, `git cherry-pick --continue`, and then run the last
+line by itself without fetching again. `refs/upgrade/start` must only ever name
+a `develop` commit whose whole history the upgrade branch carries: section 5
+replaces exactly that `develop` and refuses any other.
 
 Expect conflicts only where the fork and upstream both changed a file:
 
@@ -73,22 +113,30 @@ Expect conflicts only where the fork and upstream both changed a file:
 - `.github/`: the fork deleted it. A file the release changes there is
   reported as deleted here and modified there; keep it deleted
   (`git rm <path>`). A file the release adds under `.github/` arrives without
-  a conflict; remove it in the same merge.
+  a conflict, because it is part of the new base; remove it in a commit of its
+  own at the end of the branch.
 - `cvat/settings/base.py` and `cvat/urls.py`: the fork's lines are appended at
   the end of each file. A release that changes the end of either file
   conflicts there; keep upstream's lines and the fork's block after them.
 - `.gitignore`: the fork's block is appended after upstream's entries; resolve
   as for the settings.
+- `helm-chart/` and `Dockerfile.ui`: the chart's `Chart.yaml`, `values.yaml`,
+  helpers and templates and the UI Dockerfile's arguments are edited by the
+  fork and are a compatibility surface for the repository that vendors them
+  ([ADR 0008](adr/0008-the-fork-is-the-original-for-two-repositories.md)).
+  Keep every value and argument name the fork publishes, and keep each build
+  input an argument with a public default that the build scripts pass on from
+  the environment, so the result still builds behind a package mirror in a
+  closed network.
 
-Upstream's `README.md` is not edited by the fork and merges cleanly; the
+Upstream's `README.md` is not edited by the fork and never conflicts; the
 fork's text is `README.fork.md`. Upstream's `Dockerfile` is not edited by the
-fork either and merges cleanly; a change to it is ported into
-`Dockerfile.server` in section 3.
+fork either; a change to it is ported into `Dockerfile.server` in section 3.
 
 Then confirm the fork's delta against the new tag:
 
 ```bash
-git diff --name-status "${TARGET}" HEAD -- . ':!docs' ':!.scratch' ':!verify' ':!tools'
+git diff --name-status "${TARGET}" HEAD -- . ':!docs' ':!local' ':!verify' ':!tools' ':!helm-chart-nuclio'
 git diff "${TARGET}" HEAD -- cvat cvat-ui cvat-core helm-chart backend_entrypoint.d .gitignore
 git status --short
 ```
@@ -96,16 +144,16 @@ git status --short
 The first list must be the specification's ownership list (the `.github/`
 deletions, `.gitignore`, the edited and added upstream files, the fork's root
 files) and nothing else. Include working and staged changes in the review
-until all resolutions are committed, then repeat the comparison on the merge
-commit. If upstream now provides an equivalent feature, verify the acceptance
+until all resolutions are committed, then repeat the comparison on the
+rebased branch. If upstream now provides an equivalent feature, verify the acceptance
 scenarios before removing its local replacement.
 
-## 3. Merge the policies and update the images
+## 3. Check the policies and update the images
 
 The issue and comment policies are edited in the tree
 (`cvat/apps/engine/rules/issues.rego` and `comments.rego`, IAM-1), so the
-merge of section 2 merges upstream's changes to them like any other file;
-nothing is reapplied by hand. Each policy must come out of the merge as the
+rebase of section 2 carries the fork's change onto upstream's new files like
+any other edit; nothing is reapplied by hand. Each policy must come out of the rebase as the
 target's stock file plus the same two additions marked
 `# Local patch (role floor):`, and nothing else, and each test configuration
 as the target's file plus the fork's added rows:
@@ -113,16 +161,16 @@ as the target's file plus the fork's added rows:
 Retain the target's upstream context checks and filter wrapper, and compare
 its helper policies (`cvat/apps/iam/rules/utils.rego`,
 `cvat/apps/organizations/rules/organizations.rego`) with the old ones; the
-merged tree carries all four files from one upstream revision. Then run the
+rebased tree carries all four files from one upstream revision. Then run the
 issue and comment matrix's expectations against both sides with the new tag,
 without a server:
-`STOCK_TAG="${TARGET}" verify/team-analytics-stack/run.sh check-issue-policies patched`
+`STOCK_TAG="${TARGET}" local/team-analytics-stack/run.sh check-issue-policies patched`
 and `... check-issue-policies stock`. Every stack `up` runs both as well.
 
 Read the scopes of both stock policies in the target release against the
 previous one. The added rule has no scope whitelist, so every scope upstream
 adds to the issue or comment policy is granted to organization members at or
-above the floor once the merge is committed. Decide for each new scope whether
+above the floor once the rebase is complete. Decide for each new scope whether
 that is wanted; if not, the added rule needs an exclusion, which is a change to
 the specification. A new scope also needs its row in the test configuration.
 
@@ -130,10 +178,11 @@ Update the release in the default tags together. The tools read the release
 tag as `STOCK_TAG` (`verify/policy_test.sh`, the stack's
 `check-issue-policies`) and `UPSTREAM_TAG` (`tools/gate/ui-lint.sh`). Search
 the fork's own files for the old release number, outside dated evidence and
-the archived local tracker:
+the archived local tracker; the stack under `local/` is searched:
 
 ```bash
-git grep -n -F v2.82.0 -- $(git diff --name-only --diff-filter=AM "${TARGET}" HEAD -- . ':!docs/evidence' ':!.scratch')
+git grep -n -F v2.82.0 -- $(git diff --name-only --diff-filter=AM "${TARGET}" HEAD -- . \
+    ':!local/evidence' ':!local/scratch' ':!local/INFRA_MIGRATION.md')
 ```
 
 At least these name it: `build-ui.sh` (the UI tag), `build-server.sh` (the
@@ -184,7 +233,7 @@ build installs the tree's requirements. A new system library that a package
 needs shows as a failed build or in the build's check for missing shared
 libraries.
 
-Build the fork server image from the merged tree. The build needs network
+Build the fork server image from the rebased tree. The build needs network
 access, compiles FFmpeg and takes long; `MAKE_JOBS` sets the parallel jobs of
 each compile step:
 
@@ -193,7 +242,7 @@ IMAGE="cvat/server:${TARGET}-fork" ./build-server.sh
 ```
 
 It tags the image only when its six checks pass (BUILD-1): the bundle holds
-the merged policies and, with analytics enabled, the Team Analytics policy;
+the rebased tree's policies and, with analytics enabled, the Team Analytics policy;
 the programs CVAT starts run on the venv's Python 3.12, supervisord runs and
 `nginx -t` accepts the shipped nginx configuration; no shared library is
 missing (judged by `ldd`'s output: any "not found" fails); Django sets up with
@@ -207,7 +256,7 @@ file, or a tracked file missing, under the copied paths; an untracked file is
 added or removed before building again. Check
 its bundle as under "Policies" in section 4. Check added or renamed chart
 services and images against the stack's render checks and image lists
-([stack README](../verify/team-analytics-stack/README.md)). Update the
+([stack README](../local/team-analytics-stack/README.md)). Update the
 specification only for intentional behavior changes, and record their
 acceptance evidence.
 
@@ -268,7 +317,7 @@ Prerequisites on a fresh checkout:
   run, when `uv` installs ruff, black and isort into `tools/gate/.venv` as
   `tools/gate/uv.lock` locks them and Docker pulls the OPA image that
   `verify/policy_test.sh` names.
-- The release tag (section 1; tags are not pushed).
+- The release tag (section 1).
 - `node_modules` at the root and `verify/node_modules`, installed as under
   "Frontend" below.
 
@@ -279,7 +328,7 @@ Kept out of the pipeline, each a separate command with its own prerequisites:
   (`build-server.sh`) and the ClickHouse and Redis images.
 - `verify/policy_bundle.sh`: the bundle check of the fork server image, under
   "Policies"; Docker and the built image.
-- `verify/team-analytics-stack/run.sh cycle`: the stack, under "Team
+- `local/team-analytics-stack/run.sh cycle`: the stack, under "Team
   Analytics"; the two built images, a cluster and the reserved host port.
 - `BROWSER_BIN=<browser> node --test verify/task_progress.cjs`: the browser
   check of the task legend, under "Frontend"; without `BROWSER_BIN` the
@@ -312,7 +361,7 @@ only the UI files the fork added or edited, never the whole tree, and never
 let `--fix` touch upstream's files: they stay as upstream wrote them. A finding
 in an upstream line of a file the fork edited is left alone and recorded in the
 dated evidence. The list compares with the release tag the fork is on
-(`v2.82.0` until the merge of section 2 is committed, then `${TARGET}`); against
+(`v2.82.0` until the rebase of section 2 is complete, then `${TARGET}`); against
 an older tag it would also list every UI file upstream changed since.
 `tools/gate/ui-lint.sh` selects the same files from the working tree:
 
@@ -384,7 +433,7 @@ docker run --rm --network none --cpus=1 --memory=3g -v "$PWD:/mnt/src:ro" -w /mn
 
 `verify/policy_generated.sh` runs the same two commands. The check pipeline
 runs the policy test on both sides and the generated tests.
-After a merge, a generated case that fails on the patched policies means that
+After a rebase, a generated case that fails on the patched policies means that
 upstream changed a policy or its configuration; resolve it against IAM-1. The
 fork's configuration changes add rows and change none of upstream's.
 
@@ -454,7 +503,7 @@ policy tests; and, for IAM-2, the setting `ORGANIZATIONS_MIN_ROLE_TO_CREATE`
 `CVAT_ORGANIZATIONS_MIN_ROLE_TO_CREATE`, the organizations app's taking of its
 default only when the Django settings have none, and the policy's `create`
 rule that reads it. A change there lets every `user` create organizations
-again without an error; the stack's `check-org-creation` shows it. Most of these fail at merge, at the server image's build, at
+again without an error; the stack's `check-org-creation` shows it. Most of these fail at the rebase, at the server image's build, at
 the policy tests or on the stack; the error text and the retry fail nowhere
 but in the page's behavior, so confirm them on the stack's page checks.
 
@@ -502,15 +551,15 @@ the image just built and `CLICKHOUSE_IMAGE` to the ClickHouse version of the
 target chart. If the image's Python, `clickhouse_connect`, `redis`, `rq` or
 Django changed, check that the app still needs nothing beyond them.
 
-Then run the stack once (`verify/team-analytics-stack/README.md`, which names
+Then run the stack once (`local/team-analytics-stack/README.md`, which names
 its image variables, its subcommands and its reserved host port):
 
 ```bash
-verify/team-analytics-stack/run.sh cycle
+local/team-analytics-stack/run.sh cycle
 ```
 
 For a new release, update the stack's chart dependency pins and image lists
-together, as its README describes; the chart itself comes with the merge.
+together, as its README describes; the chart itself comes with the rebase.
 `cycle` brings up a disposable CVAT from the tree's chart on the two images,
 with analytics and its worker, in its own namespace, runs the checks of `up`
 (`check-worker` among them) and tears it down. The acceptance checks of the
@@ -518,11 +567,11 @@ backend path are not part of `up`; run them on a stack brought up with
 `run.sh up`, then `run.sh down`:
 
 ```bash
-verify/team-analytics-stack/run.sh check-cross-org
-verify/team-analytics-stack/run.sh check-fixes page   # the page in a browser: filter bar, selectors, operations card, tooltips, settings
-verify/team-analytics-stack/run.sh check-isolation   # or one part: worker-down, clickhouse-down, totals-dropped, redis-down
-verify/team-analytics-stack/run.sh check-load          # needs the volume data (see the README)
-verify/team-analytics-stack/run.sh check-analytics-off   # last: it leaves the stack with analytics disabled
+local/team-analytics-stack/run.sh check-cross-org
+local/team-analytics-stack/run.sh check-fixes page   # the page in a browser: filter bar, selectors, operations card, tooltips, settings
+local/team-analytics-stack/run.sh check-isolation   # or one part: worker-down, clickhouse-down, totals-dropped, redis-down
+local/team-analytics-stack/run.sh check-load          # needs the volume data (see the README)
+local/team-analytics-stack/run.sh check-analytics-off   # last: it leaves the stack with analytics disabled
 ```
 
 `check-isolation` without a part runs all four, `redis-down` (the in-memory
@@ -548,7 +597,7 @@ three bases `Dockerfile.server`'s `ARG`s name, and no `cvat/` image. Use
 `SAVE=1` only if an archive is needed, for example to carry an image to an
 installation without network access. Inspect served assets in the built UI image and
 check the fork server image's bundle (under "Policies"). Without touching the
-cluster, `verify/team-analytics-stack/run.sh preflight` runs what `up` does
+cluster, `local/team-analytics-stack/run.sh preflight` runs what `up` does
 before its first change to the cluster: the image check, `check-issue-policies`
 on both sides, the chart build with its pinned dependencies and the render
 checks, once with analytics on (the worker required) and once with analytics
@@ -565,25 +614,108 @@ belong to that namespace. Clean up only what a run created.
 ## 5. Record and hand off
 
 Obtain independent review of the integrated behavioral and permission changes
-after verification. Record the upstream release tag and its commit, the merge
-commit, the final fork revision, the remaining customization inventory
+after verification. Record the upstream release tag and its commit, the
+commits of `main` and `develop` before the upgrade, the rebased revision, the
+remaining customization inventory
 (`git diff --name-status "${TARGET}" HEAD`), commands/outcomes and unverified
-acceptance scenarios in a dated file under `docs/evidence/`. Update the README
+acceptance scenarios in a dated file under `local/evidence/`. Update the README
 baseline link and specification integration map as needed. Keep historical
 test counts and deployment results out of the evergreen specification.
 
 Commit only task-owned changes using the repository's commit convention, with
-safe mechanical formatting fixes separate from behavior changes. Deliver the
-upgrade branch as a GitHub PR against `main`
-([delivery rules](agents/issue-tracker.md#delivery)). The human who merges it
-chooses **Create a merge commit**: a squash or rebase merge drops the release's
-parent and breaks the join to upstream's history
-([ADR 0005](adr/0005-a-full-source-fork-joined-to-upstream-history.md)). Say so
-in the PR description, and never rebase the upgrade branch. Publishing an image
-or deployment requires its own authorization. Before an authorized deployment,
-retain the prior UI and fork server images and deployment configuration, and plan
-database backup/rollback according to the target upstream release; reverting
-the merge alone does not undo server database migrations.
+safe mechanical formatting fixes separate from behavior changes. Push the
+upgrade branch to `origin` for review
+([delivery rules](agents/issue-tracker.md#delivery)). A pull request cannot
+deliver it: a rebased branch does not merge into the `develop` it was rebased
+from. Review it by its delta against the release
+(`git diff "${TARGET}" "upgrade/cvat-${TARGET}"`) and by how each fork commit
+changed (`git range-diff refs/upgrade/base..refs/upgrade/start "${TARGET}..upgrade/cvat-${TARGET}"`).
+
+The branches then move together, by the owner or on the owner's word for this
+push:
+
+```bash
+git fetch origin &&
+[ "$(git rev-parse origin/main)" = "$(git rev-parse refs/upgrade/base)" ] &&
+[ "$(git rev-parse origin/develop)" = "$(git rev-parse refs/upgrade/start)" ] &&
+git push --atomic --force-with-lease="develop:$(git rev-parse refs/upgrade/start)" origin \
+    "${TARGET}^{commit}:refs/heads/main" "upgrade/cvat-${TARGET}:develop" &&
+git fetch origin &&
+git update-ref -d refs/upgrade/base &&
+git update-ref -d refs/upgrade/start
+```
+
+`main` only ever fast-forwards from one upstream release to a later one, and
+that half of the push is not forced. `develop` is replaced, which is the one
+forced push the fork allows. The lease names `refs/upgrade/start`, the
+`develop` commit the upgrade branch carries, so the push fails if anything
+landed on `develop` since; take it as section 2 says and push again.
+`--atomic` makes the two branches move together or not at all, so `develop` is
+never left on a release `main` has moved past. From a clone made without blobs
+the push first downloads the files the release changed.
+
+No step of this document reads a local `main`, `develop` or `release`, and the
+push does not move them. A clone brings its own up to date afterwards:
+`git fetch origin main:main` fast-forwards a `main` that is not checked out,
+and `git switch -C develop origin/develop` re-creates `develop` once
+`git log origin/develop..develop` shows it holds nothing of its own that is
+still wanted. Task branches that were open on the old `develop` are rebased
+onto the new one. GitHub's "Sync fork" button is never used: it would merge
+upstream's `develop` into the fork's. Then cut a release as below; the first
+one on a new upstream release is `${TARGET}.1`. Publishing an image or
+deployment requires its own authorization. Before an authorized deployment,
+retain the prior UI and fork server images and deployment configuration, and
+plan database backup/rollback according to the target upstream release; moving
+the branches back does not undo server database migrations.
+
+### Cut a release
+
+`release` is what the fork distributes: `develop` without `local/`. Each
+release is one merge commit on `release` whose second parent is the `develop`
+commit it was cut from, with a stage tag `v<upstream release>.<n>`, where `n`
+starts at 1 for each upstream release. The tag marks a stage of the fork's work
+and nothing else: it changes no version string, chart version or image tag, and
+no GitHub Release is created for it. A release is cut on the owner's word, from
+the published `develop`.
+
+Set the two values, then run the block as one command. Its lines are chained,
+so the first one that fails stops the rest and nothing is tagged or pushed:
+
+```bash
+STAGE=v2.82.0.4                        # v<upstream release>.<n>: one more than the highest of `git tag -l 'v2.82.0.*'`
+WHAT="what the stage delivers"
+
+git fetch origin &&
+! git rev-parse -q --verify "refs/tags/${STAGE}" >/dev/null &&        # the stage tag is new
+! git merge-base --is-ancestor origin/develop origin/release &&      # there is something to cut
+[ -z "$(git status --short --untracked-files=no)" ] &&               # the block overwrites the working tree
+git switch -C release origin/release &&
+git merge --no-ff --no-commit -s ours origin/develop &&              # record develop as the second parent
+git read-tree -u --reset origin/develop &&                           # take develop's tree exactly
+git rm -r -q -f --ignore-unmatch local &&                            # without the local-specific files (-f: they are staged)
+git commit -m "release: ${STAGE}, ${WHAT}" &&
+[ "$(git branch --show-current)" = release ] &&
+[ "$(git rev-parse HEAD^1)" = "$(git rev-parse origin/release)" ] &&
+[ "$(git rev-parse HEAD^2)" = "$(git rev-parse origin/develop)" ] &&
+[ -z "$(git diff --name-only origin/develop HEAD | grep -v '^local/')" ] &&   # differs from develop under local/ only
+[ -z "$(git ls-tree --name-only HEAD -- local)" ] &&
+git tag -a "${STAGE}" -m "Stage ${STAGE##*.}: ${WHAT}" &&
+git push --atomic origin release "${STAGE}"
+```
+
+A stop at the second or third line means the tag exists or `release` already
+holds that `develop`: there is nothing to cut. `git switch -C` starts the local
+`release` from the published one each time, so a commit left by an earlier
+attempt is dropped. If the block stops after the merge began, back out with
+`git merge --abort`, and `git tag -d "${STAGE}"` if the tag was made and not
+pushed, then run it again. The push sends the branch and the tag together or
+neither.
+
+The commands take `develop`'s tree as it is instead of merging contents, so
+they cannot conflict and give the same result after `develop` was rebased. The
+first three stage tags were cut from landings made before `local/` existed, by
+dropping the four paths that later moved into it
+([migration evidence](../local/evidence/2026-11-19-true-cvat-migration.md)).
 
 ### An instance on a fork version that read `TEAM_ANALYTICS_TECHNICAL_ACCOUNTS`
 

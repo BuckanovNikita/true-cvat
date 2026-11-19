@@ -4,7 +4,7 @@ Agreed with the fork owner on 2026-11-13. This is the design of a feature that i
 built yet; it is the input for the specification. Terms are used as defined in
 [`GLOSSARY.md`](../../../GLOSSARY.md). The reasons behind the three structural choices
 are in [`docs/adr/`](../../adr/), and the measurements behind them in
-[the dated evidence](../../evidence/2026-11-13-team-analytics-design-measurements.md).
+[the dated evidence](../../../local/evidence/2026-11-13-team-analytics-design-measurements.md).
 
 The page design is the prototype: sources in [`prototype/`](prototype/), published as a
 design canvas at <https://claude.ai/artifact/LKQ9KVAT3ieFNZCCpixVCn> (private to the

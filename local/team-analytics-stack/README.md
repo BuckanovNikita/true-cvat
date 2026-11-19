@@ -16,9 +16,9 @@ Team Analytics отвечает только администраторам. В�
 ```bash
 ./build-server.sh                          # образы из текущей версии: cvat/server:v2.82.0-fork
 ./build-ui.sh                              # и cvat/ui:v2.82.0-fork
-verify/team-analytics-stack/run.sh up      # поднять, загрузить данные, выполнить проверки
-verify/team-analytics-stack/run.sh down    # удалить всё созданное (успешно и когда ничего нет)
-verify/team-analytics-stack/run.sh cycle   # up, затем down (и когда up упал)
+local/team-analytics-stack/run.sh up      # поднять, загрузить данные, выполнить проверки
+local/team-analytics-stack/run.sh down    # удалить всё созданное (успешно и когда ничего нет)
+local/team-analytics-stack/run.sh cycle   # up, затем down (и когда up упал)
 ```
 
 Это теги по умолчанию (`TA_SERVER_IMAGE`, `TA_UI_IMAGE` в `stack.env`); образы должны быть
@@ -42,8 +42,8 @@ verify/team-analytics-stack/run.sh cycle   # up, затем down (и когда 
 умолчанию, 8491 — второй стенд того же пользователя. Второй стенд из другой рабочей копии:
 
 ```bash
-TA_RUN_ID=fork TA_HOST_PORT=8491 verify/team-analytics-stack/run.sh up
-TA_RUN_ID=fork TA_HOST_PORT=8491 verify/team-analytics-stack/run.sh down
+TA_RUN_ID=fork TA_HOST_PORT=8491 local/team-analytics-stack/run.sh up
+TA_RUN_ID=fork TA_HOST_PORT=8491 local/team-analytics-stack/run.sh down
 ```
 
 Каждая команда этого стенда — с теми же двумя переменными. Без них команда относится к
@@ -63,7 +63,7 @@ HTTP в другой. Учёт, записанный прежним `run.sh` (б
   `curl`, `python3`, `ss`, `setsid`. Рендер читает сам `kubectl`, судит `render_guard.py`
   (только стандартная библиотека Python); отдельного разборщика YAML не нужно.
 - Тег выпуска upstream `v2.82.0` в локальном репозитории (`STOCK_TAG`, по умолчанию
-  `v2.82.0`; репозиторий — дерево upstream с изменениями форка, ADR 0005): `up` и `preflight`
+  `v2.82.0`; репозиторий — дерево upstream с изменениями форка, ADR 0009): `up` и `preflight`
   берут из него стоковые политики для стоковой стороны матрицы прав
   (`check-issue-policies stock`).
 - Доступ в сеть при первой сборке чарта и при каждом изменении чарта или `Chart.lock`:
@@ -124,7 +124,7 @@ HTTP в другой. Учёт, записанный прежним `run.sh` (б
   рабочем каталоге `${XDG_CACHE_HOME:-~/.cache}/cvat-fork/team-analytics/` (`TA_CACHE_DIR`;
   импорт не меняется), каталог сборки назван по хешу файлов чарта и `Chart.lock`.
   Версии зависимостей закреплены `Chart.lock` и `chart-deps.sha256` (дата и источник —
-  `docs/evidence/2026-11-13-team-analytics-test-stack.md`); архив с другим хешем — отказ.
+  `local/evidence/2026-11-13-team-analytics-test-stack.md`); архив с другим хешем — отказ.
 - Проверка политик (`run.sh check-policies`, часть `up` сразу после `port-forward`): стенд
   забирает бандл политик, который сервер отдаёт OPA (`/api/auth/rules`), и проверяет
   `issues.rego` и `comments.rego` каждый отдельно: в архиве не должно быть ничего, кроме
