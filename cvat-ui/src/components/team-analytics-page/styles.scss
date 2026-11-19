@@ -1,0 +1,437 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base';
+
+.cvat-team-analytics-page {
+    height: 100%;
+    overflow: auto;
+    padding: $grid-unit-size * 2 $grid-unit-size * 4;
+
+    // CVAT keeps the app at least 1024 px wide (#root, header); in a narrower window the page
+    // itself fits the window and stays in view, so its cards stack instead of scrolling with it
+    box-sizing: border-box;
+    max-width: 100vw;
+    position: sticky;
+    left: 0;
+}
+
+.cvat-team-analytics-header {
+    margin-bottom: $grid-unit-size * 2;
+
+    h4 {
+        margin: 0;
+    }
+}
+
+.cvat-team-analytics-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+    gap: $grid-unit-size * 2;
+}
+
+.cvat-team-analytics-card {
+    background: $background-color-1;
+    border-radius: $border-radius-base;
+    padding: $grid-unit-size * 2;
+    min-width: 0;
+}
+
+.cvat-team-analytics-card-header {
+    display: flex;
+    justify-content: space-between;
+    gap: $grid-unit-size;
+    margin-bottom: $grid-unit-size * 1.5;
+}
+
+.cvat-team-analytics-annotator-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: $grid-unit-size;
+    margin-bottom: $grid-unit-size;
+}
+
+.cvat-team-analytics-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cvat-team-analytics-value {
+    font-variant-numeric: tabular-nums;
+}
+
+.cvat-team-analytics-bar {
+    grid-column: 1 / -1;
+    height: 6px;
+    margin-top: $grid-unit-size * 0.5;
+    border-radius: 100px;
+    overflow: hidden;
+    background: $border-color-1;
+}
+
+.cvat-team-analytics-bar-fill {
+    height: 100%;
+    min-width: 2px;
+    background: $validation-progress-color;
+}
+
+.cvat-team-analytics-back {
+    display: inline-flex;
+    align-items: center;
+    min-height: $grid-unit-size * 4;
+    padding: 0 $grid-unit-size * 2;
+    border: 1px solid #d9d9d9;
+    border-radius: $border-radius-base;
+    color: $text-color;
+}
+
+.cvat-team-analytics-loading {
+    display: block;
+    margin: $grid-unit-size * 8 auto;
+}
+
+// filter row: period, range, freshness
+.cvat-team-analytics-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $grid-unit-size $grid-unit-size * 2;
+    margin-bottom: $grid-unit-size * 2;
+}
+
+.cvat-team-analytics-period-control {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $grid-unit-size;
+}
+
+.cvat-team-analytics-periods {
+    display: inline-flex;
+    padding: 2px;
+    border-radius: $border-radius-base;
+    background: $border-color-1;
+}
+
+.cvat-team-analytics-period,
+.cvat-team-analytics-step {
+    min-height: $grid-unit-size * 4;
+    padding: 0 $grid-unit-size * 2;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: $text-color;
+    font: inherit;
+    cursor: pointer;
+
+    &[aria-pressed='true'] {
+        background: $background-color-1;
+        font-weight: 600;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 15%);
+    }
+
+    &:disabled {
+        color: $text-color-secondary;
+        cursor: not-allowed;
+    }
+}
+
+.cvat-team-analytics-step {
+    padding: 0 $grid-unit-size;
+    background: $border-color-1;
+}
+
+.cvat-team-analytics-range {
+    display: inline-flex;
+    align-items: center;
+    gap: $grid-unit-size;
+}
+
+.cvat-team-analytics-freshness {
+    display: inline-flex;
+    align-items: center;
+    gap: $grid-unit-size;
+    margin-left: auto;
+    color: $text-color-secondary;
+}
+
+.cvat-team-analytics-stale {
+    display: flex;
+    align-items: center;
+    gap: $grid-unit-size;
+    margin-bottom: $grid-unit-size * 2;
+    padding: $grid-unit-size $grid-unit-size * 2;
+    border: 1px solid #faad14;
+    border-radius: $border-radius-base;
+    background: #fffbe6;
+}
+
+// previous figures while new ones load
+.cvat-team-analytics-pending {
+    opacity: 0.45;
+    transition: opacity 0.2s;
+}
+
+// working time per day or week
+.cvat-team-analytics-time-chart {
+    grid-column: 1 / -1;
+}
+
+.cvat-team-analytics-time-plot {
+    display: flex;
+    gap: $grid-unit-size;
+    height: 200px;
+}
+
+.cvat-team-analytics-time-scale {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: $text-color-secondary;
+    font-size: 12px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.cvat-team-analytics-time-bars,
+.cvat-team-analytics-time-axis {
+    display: flex;
+    flex: 1;
+    gap: 2px;
+    min-width: 0;
+}
+
+.cvat-team-analytics-time-bar {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.cvat-team-analytics-time-value {
+    min-height: 18px;
+    font-size: 12px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.cvat-team-analytics-time-track {
+    display: flex;
+    flex: 1;
+    align-items: flex-end;
+    border-bottom: 1px solid $border-color-1;
+}
+
+.cvat-team-analytics-time-fill {
+    width: 100%;
+    min-height: 1px;
+    border-radius: 2px 2px 0 0;
+    background: $validation-progress-color;
+}
+
+.cvat-team-analytics-time-axis {
+    margin-left: $grid-unit-size * 5;
+
+    > div {
+        flex: 1;
+        min-width: 0;
+        overflow: visible;
+        white-space: nowrap;
+        color: $text-color-secondary;
+        font-size: 12px;
+        text-align: center;
+    }
+}
+
+.cvat-team-analytics-headline-value {
+    font-size: 28px;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+}
+
+// Operations (ticket 08)
+.cvat-team-analytics-legacy-notice {
+    grid-column: 1 / -1;
+    padding: $grid-unit-size * 1.5 $grid-unit-size * 2;
+    border: 1px solid #9cc3ee;
+    border-radius: $border-radius-base;
+    background: #eaf3fd;
+    color: #3d3d3d;
+}
+
+.cvat-team-analytics-legacy-notice-title {
+    font-weight: 600;
+    color: $text-color;
+}
+
+.cvat-team-analytics-split-bar {
+    display: flex;
+    gap: 2px;
+    height: 28px;
+    margin: $grid-unit-size * 1.5 0;
+}
+
+.cvat-team-analytics-split-part {
+    min-width: 0;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    padding-left: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.cvat-team-analytics-split-legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.cvat-team-analytics-split-legend-item {
+    display: flex;
+    align-items: center;
+    gap: $grid-unit-size * 1.25;
+    padding: 7px 0;
+    border-top: 1px solid #ececec;
+}
+
+.cvat-team-analytics-split-legend-name {
+    flex: 1 1 auto;
+}
+
+.cvat-team-analytics-split-legend-share {
+    width: 44px;
+    text-align: right;
+    font-weight: 600;
+}
+
+.cvat-team-analytics-swatch {
+    display: inline-block;
+    flex: none;
+    width: 12px;
+    height: 12px;
+    margin-right: $grid-unit-size;
+    border-radius: 3px;
+    vertical-align: middle;
+}
+
+.cvat-team-analytics-split-legend-item .cvat-team-analytics-swatch {
+    margin-right: 0;
+}
+
+.cvat-team-analytics-table-scroll {
+    overflow-x: auto;
+    margin-top: $grid-unit-size;
+}
+
+.cvat-team-analytics-table {
+    width: 100%;
+    min-width: 440px;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+
+    th {
+        color: #595959;
+        font-size: 12px;
+        font-weight: 400;
+        border-bottom: 1px solid #d9d9d9;
+    }
+
+    th,
+    td {
+        padding: $grid-unit-size $grid-unit-size * 1.5;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    th:first-child,
+    td:first-child {
+        padding-left: 0;
+        text-align: left;
+    }
+
+    td {
+        border-bottom: 1px solid #ececec;
+    }
+}
+
+.cvat-team-analytics-operation-name {
+    font-weight: 600;
+}
+
+.cvat-team-analytics-not-recorded {
+    color: #5c5c5c;
+}
+
+.cvat-team-analytics-footnote {
+    display: block;
+    margin-top: $grid-unit-size;
+    font-size: 12px;
+}
+
+// processed history: progress bar, the notice instead of a period's figures, trends held back
+.cvat-team-analytics-history {
+    display: flex;
+    flex-direction: column;
+    gap: $grid-unit-size;
+    margin-bottom: $grid-unit-size * 2;
+    padding: $grid-unit-size * 1.5 $grid-unit-size * 2;
+    border-radius: $border-radius-base;
+    background: $background-color-1;
+}
+
+.cvat-team-analytics-history-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: $grid-unit-size * 0.5 $grid-unit-size * 2;
+}
+
+.cvat-team-analytics-history-title,
+.cvat-team-analytics-notice-title {
+    font-weight: 600;
+}
+
+.cvat-team-analytics-history-percent {
+    margin-left: auto;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.cvat-team-analytics-history-bar {
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: $border-color-1;
+}
+
+.cvat-team-analytics-history-fill {
+    height: 100%;
+    background: $validation-progress-color;
+}
+
+.cvat-team-analytics-history-note {
+    color: $text-color-secondary;
+}
+
+.cvat-team-analytics-not-processed,
+.cvat-team-analytics-trends-pending {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: $grid-unit-size * 0.5;
+    min-height: 150px;
+    padding: $grid-unit-size * 3;
+    border: 1px dashed $border-color-1;
+    border-radius: $border-radius-base;
+    text-align: center;
+}
+
+.cvat-team-analytics-trends-pending {
+    grid-column: 1 / -1;
+}

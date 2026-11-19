@@ -13,7 +13,7 @@ import {
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
     ConsensusSettings, AboutData, ShapeType, ObjectType, ApiToken, AudioIntervalState,
-    Membership, AnnotationFormats, CloudStorage, UserGrowthData,
+    Membership, AnnotationFormats, CloudStorage, UserGrowthData, JobStage, JobState,
 } from 'cvat-core-wrapper';
 
 import type { IntelligentScissors, OpenCVTracker } from 'utils/opencv-wrapper/opencv-wrapper';
@@ -176,6 +176,11 @@ export interface JobsState {
     };
 }
 
+export interface TaskJobsSummary {
+    counts: Record<JobStage, Record<JobState, number>>;
+    fetched: number;
+}
+
 export interface TasksState {
     fetchingTimestamp: number;
     initialized: boolean;
@@ -190,6 +195,10 @@ export interface TasksState {
     selected: number[];
     previews: {
         [index: number]: Preview;
+    };
+    jobsSummary: {
+        fetching: boolean;
+        data: Record<number, TaskJobsSummary>;
     };
     activities: {
         deletes: {

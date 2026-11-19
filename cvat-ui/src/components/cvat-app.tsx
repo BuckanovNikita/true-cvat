@@ -74,6 +74,7 @@ import showPlatformNotification, {
 import '../styles.scss';
 import appConfig from 'config';
 import EventRecorder from 'utils/event-recorder';
+import { listenForInput } from 'utils/team-analytics-logging';
 import { authQuery } from 'utils/auth-query';
 import CVATMarkdown from './common/cvat-markdown';
 import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
@@ -83,6 +84,7 @@ import CreateJobPage from './create-job-page/create-job-page';
 import QualityControlPage from './quality-control/quality-control-page';
 import AnalyticsReportPage from './analytics-report/analytics-report-page';
 import ConsensusManagementPage from './consensus-management-page/consensus-management-page';
+import TeamAnalyticsRoute from './team-analytics-page/team-analytics-route';
 import InvitationWatcher from './invitation-watcher/invitation-watcher';
 import SelectOrganizationModal from './select-organization-modal/select-organization-modal';
 import BulkProgress from './bulk-progress';
@@ -184,6 +186,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             }
         };
 
+        listenForInput(window); // Team Analytics: the window listeners its counting needs (input-summary.ts)
         visibilityChangeListener(); // initial setup other event listeners
         window.addEventListener('visibilitychange', visibilityChangeListener);
 
@@ -597,6 +600,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/organization' component={OrganizationPage} />
                                         <Route exact path='/requests' component={RequestsPage} />
                                         <Route exact path='/profile' component={ProfilePageComponent} />
+                                        <Route exact path='/team-analytics' component={TeamAnalyticsRoute} />
                                         { routesToRender }
                                         <Route
                                             path='/models'

@@ -68,6 +68,9 @@ import {
 import { reviewActions } from 'actions/review-actions';
 
 import { filterAnnotations } from 'utils/filter-annotations';
+import {
+    alignmentFields, drawingEnded, drawingStarted, groupMoved, operationFields,
+} from 'utils/team-analytics-logging';
 import { ImageFilter } from 'utils/image-processing';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
@@ -675,6 +678,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('mousedown', this.onCanvasMouseDown);
         canvasInstance.html().removeEventListener('click', this.onCanvasClicked);
         canvasInstance.html().removeEventListener('canvas.editstart', this.onCanvasEditStart);
+        canvasInstance.html().removeEventListener('canvas.drawstart', this.onCanvasDrawStart);
         canvasInstance.html().removeEventListener('canvas.edited', this.onCanvasEditDone);
         canvasInstance.html().removeEventListener('canvas.sliced', this.onCanvasSliceDone);
         canvasInstance.html().removeEventListener('canvas.dragstart', this.onCanvasDragStart);
@@ -782,9 +786,13 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
 
         if (isDrawnFromScratch) {
-            jobInstance.logger.log(EventScope.drawObject, { count: 1, duration });
+            jobInstance.logger.log(EventScope.drawObject, {
+                count: 1, duration, ...operationFields(jobInstance, [state]),
+            });
         } else {
-            jobInstance.logger.log(EventScope.pasteObject, { count: 1, duration });
+            jobInstance.logger.log(EventScope.pasteObject, {
+                count: 1, duration, ...operationFields(jobInstance, [state]),
+            });
         }
         const objectState = new cvat.classes.ObjectState(state);
 
@@ -907,10 +915,11 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private onCanvasShapeDragged = (e: CustomEvent<{ duration: number; state: ObjectState }>): void => {
         const { jobInstance } = this.props;
-        const { detail: { duration, state: { serverID } } } = e;
+        const { detail: { duration, state } } = e;
+        const { serverID } = state;
         jobInstance.logger.log(
             EventScope.dragObject,
-            { duration, ...(serverID ? { obj_id: serverID } : {}) },
+            { duration, ...(serverID ? { obj_id: serverID } : {}), ...alignmentFields(jobInstance, state) },
         );
     };
 
@@ -918,9 +927,10 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         e: CustomEvent<{ duration: number; states: { state: ObjectState; points: number[] }[] }>,
     ): Promise<void> => {
         const {
-            selectedStatesID, onUpdateAnnotationsBatch, onSelectObjects,
+            jobInstance, selectedStatesID, onUpdateAnnotationsBatch, onSelectObjects,
         } = this.props;
         const { detail: { states } } = e;
+        groupMoved(jobInstance, e.detail);
 
         // Persist movable members as one undoable change, while retaining fixed members in the selection.
         const updatedStates = states.map((moved): ObjectState => {
@@ -934,11 +944,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private onCanvasShapeResized = (e: CustomEvent<{ duration: number; state: ObjectState }>): void => {
         const { jobInstance } = this.props;
-        const { detail: { duration, state: { serverID } } } = e;
+        const { detail: { duration, state } } = e;
+        const { serverID } = state;
 
         jobInstance.logger.log(
             EventScope.resizeObject,
-            { duration, ...(serverID ? { obj_id: serverID } : {}) },
+            { duration, ...(serverID ? { obj_id: serverID } : {}), ...alignmentFields(jobInstance, state) },
         );
     };
 
@@ -1097,8 +1108,14 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         this.activateOnCanvas();
     };
 
+    // Team Analytics: a drawing keeps the input method of the step that started it
+    private onCanvasDrawStart = (): void => {
+        drawingStarted();
+    };
+
     private onCanvasCancel = (): void => {
         const { onResetCanvas, onUpdateEditedObject } = this.props;
+        drawingEnded();
         onResetCanvas();
         onUpdateEditedObject(null);
     };
@@ -1258,6 +1275,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('mousedown', this.onCanvasMouseDown);
         canvasInstance.html().addEventListener('click', this.onCanvasClicked);
         canvasInstance.html().addEventListener('canvas.editstart', this.onCanvasEditStart);
+        canvasInstance.html().addEventListener('canvas.drawstart', this.onCanvasDrawStart);
         canvasInstance.html().addEventListener('canvas.edited', this.onCanvasEditDone);
         canvasInstance.html().addEventListener('canvas.sliced', this.onCanvasSliceDone);
         canvasInstance.html().addEventListener('canvas.dragstart', this.onCanvasDragStart);

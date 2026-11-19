@@ -81,3 +81,11 @@ cvat-ui/dist
 **/!.yarn/releases
 **/!.yarn/sdks
 **/!.yarn/versions
+
+# Fork: local artefacts of the fork's own tooling
+.ruff_cache/
+/tools/gate/.venv/
+# images saved by the build scripts (SAVE=1)
+/*.tar.gz
+# mirrors left by the retired import tooling
+/.cvat-mirror.git*/

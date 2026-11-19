@@ -1,0 +1,18 @@
+# Fork server image (ADRs 0004 and 0006): the stock CVAT server image of the release the fork is
+# based on, with the fork's backend files copied over it: the patched issue and comment policies,
+# the Team Analytics app with its wiring, and the component file that lets the entry point start
+# the app's worker. No package is installed and nothing outside those files changes.
+#
+# Built by build-server.sh, which gives it a context holding exactly the files of cvat/ and
+# backend_entrypoint.d/ that the fork changed or added since the release, at their paths. The image
+# is valid only while those are the fork's whole difference in what the server image is made of;
+# the script checks that before it builds.
+ARG BASE_IMAGE=cvat/server:v2.82.0
+FROM ${BASE_IMAGE}
+
+# Owner and mode are those of the stock files: the server runs as an unprivileged user and only reads.
+USER root
+COPY --chown=root:root . /opt/cvat/
+# as the stock image does for its own sources, so the unprivileged server does not compile at every start
+RUN python -m compileall -q /opt/cvat/cvat/apps/team_analytics /opt/cvat/cvat/settings /opt/cvat/cvat/urls.py
+USER 1000:1000
