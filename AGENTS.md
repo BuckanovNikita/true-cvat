@@ -80,7 +80,7 @@ ADR 0002 (no new event types), ADR 0003 (Kubernetes only), ADR 0006 (Team Analyt
   | `wontfix`         | `Canceled`, after a comment says why  | Will not be actioned    |
 
   `ready-for-human` is the only role with a label; remove it when the issue leaves the role. An issue with no role yet goes to `Triage`. `In Progress`, `In Review`, `Done` and `Duplicate` are past triage. Category roles are labels: `bug` = `Bug`, `enhancement` = `Feature`.
-- A feature is a parent issue with sub-issues; an issue with an open blocked-by relation is not ready, whatever its status. In Review when implementation and its checks are ready; Done after the merged PR reaches `develop`.
+- A feature is a parent issue with sub-issues; blocked-by relations override readiness. In Review when implementation and its checks are ready; Done after the merged PR reaches `develop`.
 - Work on a task branch from `develop`; push only the task branch; open the PR with `gh pr create -R BuckanovNikita/true-cvat --base develop` and check that the PR URL names true-cvat (a fork PR defaults to `cvat-ai/cvat`). Humans merge by squash or rebase.
 - Never push `main`, `develop`, `release` or a tag, never merge locally to deliver, never use GitHub's "Sync fork". Upstream upgrades and release cuts follow DOCS.md and need the owner's word for each push. Publishing an image and deploying each need their own authorization.
 - Stacked PRs: record grouping in Linear; each descendant targets its parent branch; `--force-with-lease` only on task-owned branches.
