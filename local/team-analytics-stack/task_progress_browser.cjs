@@ -6,11 +6,11 @@
 // The seeding account signs in through CVAT's login form into its personal workspace and opens
 // the tasks list filtered to the seeded tasks. On each task card the summary widget must show,
 // for every stage/state that holds jobs, the legend entry with its count, a segment whose
-// computed colour is the specified one (docs/fork-specification.md, UI-2), whose flex weight is
+// computed colour is the specified one (DOCS.md, UI-2), whose flex weight is
 // the count and whose tooltip names it, the task's total, and no "not available" bucket or other
 // bucket; the upstream fallback labels must be absent. Every legend entry must be readable on the
 // card (contrast at least 4.5:1 after compositing its colour onto the card's background); for the
-// single annotation/new job this is the case of local/evidence/2026-11-13-task-legend-verification.md.
+// single annotation/new job this is the legend case checked by verify/task_progress.cjs.
 //
 // Environment: TA_BASE_URL, TA_SEED_PASSWORD, TA_BROWSER_BIN (google-chrome),
 // TA_SCREENSHOT_DIR (optional: a PNG of the list).

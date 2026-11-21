@@ -37,7 +37,7 @@ if ! git rev-parse -q --verify "$tag^{tree}" >/dev/null; then
     exit 2
 fi
 if [ ! -e "${cmd[1]}" ]; then
-    echo "$0: ${cmd[1]} not found; install node_modules (docs/upstream-upgrade.md, section 4)" >&2
+    echo "$0: ${cmd[1]} not found; install node_modules (AGENTS.md, 'Environment setup')" >&2
     exit 2
 fi
 

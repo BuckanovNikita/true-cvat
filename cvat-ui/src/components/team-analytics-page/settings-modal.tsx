@@ -36,7 +36,7 @@ export const SAVE_TIME_LIMIT_MS = 30000;
 
 type Loaded = { kind: 'loading' } | { kind: 'failed' } | { kind: 'ready' };
 
-// Worded from GLOSSARY.md (Technical account)
+// Worded from DOCS.md, "Domain terms" (Technical accounts list)
 const TECHNICAL_ACCOUNT = 'A technical account is a user account that stands for an automated process rather than ' +
     'a person. It is never listed among people, and every box it saves counts as a Model box.';
 

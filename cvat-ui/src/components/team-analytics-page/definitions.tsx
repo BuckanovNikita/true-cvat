@@ -9,8 +9,8 @@ import Tooltip from 'antd/lib/tooltip';
 
 export type TermName = 'Session' | 'Working time' | 'Time per operation' | 'Model';
 
-// Worded from GLOSSARY.md. Session inlines the session gap (five minutes); Time per operation inlines the idle
-// pause (100 seconds).
+// Worded from DOCS.md, "Domain terms". Session inlines the session gap (five minutes); Time per operation
+// inlines the idle pause (100 seconds).
 export const DEFINITIONS: Record<TermName, string> = {
     Session: 'One uninterrupted interval of job work by one person, at most a day long. A pause longer than ' +
         'five minutes ends it. Seen for a single project, a session counts if it touched that project, and its ' +
