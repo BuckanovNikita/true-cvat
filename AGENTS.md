@@ -68,7 +68,19 @@ ADR 0002 (no new event types), ADR 0003 (Kubernetes only), ADR 0006 (Team Analyt
 
 ## Release and delivery
 
-- Issues, specs, plans and status live in Linear, team `SIP`, project `true-cvat`; cite as `SIP-NN`; search before creating. One readiness label per issue: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. A feature is a parent issue with sub-issues; blocked-by relations override readiness. In Review when implementation and its checks are ready; Done after the merged PR reaches `develop`.
+- Issues, specs, plans and status live in Linear, team `SIP`, project `true-cvat`; cite as `SIP-NN`; search before creating. This project is what a skill calls the issue tracker: pass `team: SIP` and `project: true-cvat` on every issue create and list. Create an issue with an explicit `state`: `In Progress` for work that starts now, otherwise the status of its triage role.
+- The Linear status is the triage role. Where a skill names a role, set the status:
+
+  | Role              | Status                                | Meaning                 |
+  | ----------------- | ------------------------------------- | ----------------------- |
+  | `needs-triage`    | `Triage`, no `ready-for-human` label  | Maintainer evaluates    |
+  | `needs-info`      | `Backlog`                             | Waiting on the reporter |
+  | `ready-for-agent` | `Todo`                                | Specified for an agent  |
+  | `ready-for-human` | `Triage` + label `ready-for-human`    | Human implements        |
+  | `wontfix`         | `Canceled`, after a comment says why  | Will not be actioned    |
+
+  `ready-for-human` is the only role with a label; remove it when the issue leaves the role. An issue with no role yet goes to `Triage`. `In Progress`, `In Review`, `Done` and `Duplicate` are past triage. Category roles are labels: `bug` = `Bug`, `enhancement` = `Feature`.
+- A feature is a parent issue with sub-issues; an issue with an open blocked-by relation is not ready, whatever its status. In Review when implementation and its checks are ready; Done after the merged PR reaches `develop`.
 - Work on a task branch from `develop`; push only the task branch; open the PR with `gh pr create -R BuckanovNikita/true-cvat --base develop` and check that the PR URL names true-cvat (a fork PR defaults to `cvat-ai/cvat`). Humans merge by squash or rebase.
 - Never push `main`, `develop`, `release` or a tag, never merge locally to deliver, never use GitHub's "Sync fork". Upstream upgrades and release cuts follow DOCS.md and need the owner's word for each push. Publishing an image and deploying each need their own authorization.
 - Stacked PRs: record grouping in Linear; each descendant targets its parent branch; `--force-with-lease` only on task-owned branches.
