@@ -15,11 +15,11 @@ import { NOT_PROCESSED, monthAvailable, periodAvailable } from './history';
 // How the cards name the selected period.
 export function periodLabel(address: Address, latestMonth: string): string {
     switch (address.period) {
-        case 'two_weeks': return 'Last 14 days';
-        case 'year': return 'Last 12 months';
+        case 'two_weeks': return 'За 14 дней';
+        case 'year': return 'За 12 месяцев';
         case 'month': return address.month ?
-            `${monthLabel(address.month)}${address.month === latestMonth ? ' · to date' : ''}` : 'Month';
-        default: return 'Last 7 days';
+            `${monthLabel(address.month)}${address.month === latestMonth ? ' · по сегодня' : ''}` : 'Месяц';
+        default: return 'За 7 дней';
     }
 }
 
@@ -34,7 +34,7 @@ interface Props {
     onChange(change: Partial<Address>): void;
 }
 
-// Week, Two weeks, Month (stepping through earlier months) and Year. There is no custom range.
+// Неделя, Две недели, Месяц (stepping through earlier months) and Year. There is no custom range.
 export default function PeriodControl({
     address, latestMonth, period, history, onChange,
 }: Props): JSX.Element {
@@ -49,7 +49,7 @@ export default function PeriodControl({
     }
     return (
         <div className='cvat-team-analytics-period-control'>
-            <div className='cvat-team-analytics-periods' role='group' aria-label='Period'>
+            <div className='cvat-team-analytics-periods' role='group' aria-label='Период'>
                 {PERIODS.map(({ key, label }) => {
                     const available = periodAvailable(history, key);
                     return (
@@ -72,8 +72,8 @@ export default function PeriodControl({
                     <button
                         type='button'
                         className='cvat-team-analytics-step'
-                        aria-label='Previous month'
-                        title={previousAvailable ? 'Previous month' : NOT_PROCESSED}
+                        aria-label='Предыдущий месяц'
+                        title={previousAvailable ? 'Предыдущий месяц' : NOT_PROCESSED}
                         disabled={!previousAvailable}
                         onClick={() => onChange({ month: shiftMonth(address.month as string, -1) })}
                     >
@@ -85,8 +85,8 @@ export default function PeriodControl({
                     <button
                         type='button'
                         className='cvat-team-analytics-step'
-                        aria-label='Next month'
-                        title='Next month'
+                        aria-label='Следующий месяц'
+                        title='Следующий месяц'
                         disabled={(address.month as string) >= latestMonth}
                         onClick={() => onChange({ month: shiftMonth(address.month as string, 1) })}
                     >

@@ -35,7 +35,7 @@ function method(name, objects, averageMs, share) {
     };
 }
 
-// 1,200 by annotators and 800 by Model: shares of 2,000
+// 1 200 by annotators and 800 by Model: shares of 2,000
 function creationMethods({ shapes = 'bounding_boxes', model = 800, technical = 2 } = {}) {
     return {
         shapes,
@@ -75,39 +75,54 @@ const CURRENT = ready({ operations: operations(), creation_methods: creationMeth
 
 test('Model is a fourth method with a count and a share and no time', () => {
     assert.deepEqual(methodRows(render(View, CURRENT)), [
-        'Drawn 600 30% 6.2 s',
-        'Pasted 400 20% 1.5 s',
-        'Propagated 200 10% 0.8 s',
-        'Model 800 40% —',
+        'Нарисовано 600 30% 6,2 с',
+        'Вставлено 400 20% 1,5 с',
+        'Распространено 200 10% 0,8 с',
+        'Модель 800 40% —',
     ]);
 });
 
 test('Model is not part of the annotators\' total or its average', () => {
     const html = render(View, CURRENT);
     const total = html.match(/<tr[^>]*cvat-team-analytics-methods-total[^>]*>(.*?)<\/tr>/);
-    assert.equal(text(total[1]), 'All annotator methods 1,200 3.8 s');
+    assert.equal(text(total[1]), 'Все способы аннотаторов 1 200 3,8 с');
     assert.equal(text(card(html, 'cvat-team-analytics-average-creation')),
-        'Avg time per box 3.8 s drawn 6.2 s · pasted 1.5 s · propagated 0.8 s');
+        'Ср. время на бокс 3,8 с нарисовано 6,2 с · вставлено 1,5 с · распространено 0,8 с');
 });
 
 test('the boxes created headline shows Model boxes beside the annotators\' figure, not inside it', () => {
     const tile = text(card(render(View, CURRENT), 'cvat-team-analytics-objects-created'));
-    assert.equal(tile, 'Boxes created 1,200 by annotators · plus 800 by model');
+    assert.equal(tile, 'Создано боксов 1 200 аннотаторами · плюс 800 моделью');
 });
 
 test('next to the Model figure the card says what Model is and that a re-upload counts again', () => {
     const body = text(card(render(View, CURRENT), 'cvat-team-analytics-creation-methods'));
-    assert.match(body, /Model 800 40% — .*Model: boxes saved by 2 technical accounts or made with the built-in detector\. A re-upload by a technical account counts again\./);
+    assert.match(body, /Модель 800 40% — .*Модель: боксы, сохранённые 2 техническими учётными записями или созданные встроенным детектором\. Повторная загрузка технической учётной записью учитывается снова\./);
 });
 
 test('the note follows the number of technical accounts and the shapes shown', () => {
     const one = ready({ operations: operations({ shapes: 'all' }), creation_methods: creationMethods({ shapes: 'all', technical: 1 }) });
     assert.match(text(card(render(View, one), 'cvat-team-analytics-creation-methods')),
-        /Model: objects saved by 1 technical account or made with the built-in detector\. A re-upload by a technical account counts again\./);
+        /Модель: объекты, сохранённые 1 технической учётной записью или созданные встроенным детектором\. Повторная загрузка технической учётной записью учитывается снова\./);
     const none = ready({ operations: operations(), creation_methods: creationMethods({ technical: 0 }) });
     const body = text(card(render(View, none), 'cvat-team-analytics-creation-methods'));
-    assert.match(body, /Model: boxes made with the built-in detector\./);
-    assert.doesNotMatch(body, /re-upload/);
+    assert.match(body, /Модель: боксы, созданные встроенным детектором\./);
+    assert.doesNotMatch(body, /Повторная загрузка/);
+});
+
+test('the note uses the Russian form for 1, 2, 5, 11 and 21 technical accounts', () => {
+    const forms = {
+        1: 'технической учётной записью',
+        2: 'техническими учётными записями',
+        5: 'техническими учётными записями',
+        11: 'техническими учётными записями',
+        21: 'технической учётной записью',
+    };
+    for (const [count, form] of Object.entries(forms)) {
+        const view = ready({ operations: operations(), creation_methods: creationMethods({ technical: Number(count) }) });
+        assert.match(text(card(render(View, view), 'cvat-team-analytics-creation-methods')),
+            new RegExp(`Модель: боксы, сохранённые ${count} ${form} или созданные встроенным детектором\\.`));
+    }
 });
 
 test('a legacy period shows its saved boxes, labelled as all methods together', () => {
@@ -117,7 +132,25 @@ test('a legacy period shows its saved boxes, labelled as all methods together', 
         saved_boxes: savedBoxes(1450),
     });
     assert.match(text(card(render(View, legacy), 'cvat-team-analytics-creation-methods')),
-        /1,450 single-frame boxes were saved in this period, all methods together\./);
+        /В этом периоде сохранено 1 450 однокадровых боксов, все способы вместе\./);
+});
+
+test('the saved boxes sentence uses the Russian form for 1, 2, 5, 11 and 21', () => {
+    const phrases = {
+        1: 'В этом периоде сохранён 1 однокадровый бокс, все способы вместе.',
+        2: 'В этом периоде сохранено 2 однокадровых бокса, все способы вместе.',
+        5: 'В этом периоде сохранено 5 однокадровых боксов, все способы вместе.',
+        11: 'В этом периоде сохранено 11 однокадровых боксов, все способы вместе.',
+        21: 'В этом периоде сохранён 21 однокадровый бокс, все способы вместе.',
+    };
+    for (const [count, phrase] of Object.entries(phrases)) {
+        const legacy = ready({
+            operations: operations({ shapes: 'all', legacy: true }),
+            creation_methods: creationMethods({ shapes: 'all', model: 0 }),
+            saved_boxes: savedBoxes(Number(count)),
+        });
+        assert.ok(text(card(render(View, legacy), 'cvat-team-analytics-creation-methods')).includes(phrase), phrase);
+    }
 });
 
 test('outside a legacy period saved boxes are not offered as the box figure', () => {
@@ -130,7 +163,7 @@ test('without Model figures the card and the headline stay as they were', () => 
     delete methods.technical_accounts;
     const html = render(View, ready({ operations: operations(), creation_methods: methods }));
     assert.equal(methodRows(html).length, 3);
-    assert.equal(text(card(html, 'cvat-team-analytics-objects-created')), 'Boxes created 1,200 by annotators');
+    assert.equal(text(card(html, 'cvat-team-analytics-objects-created')), 'Создано боксов 1 200 аннотаторами');
 });
 
 test('Model and saved boxes reach the page from the overview response', async () => {

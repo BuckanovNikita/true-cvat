@@ -29,25 +29,25 @@ function headline(html) {
 }
 
 test('the headline shows the number of sessions and their average length', () => {
-    assert.equal(headline(render(View, ready(SESSIONS))), 'Sessions 42 average 38 min');
+    assert.equal(headline(render(View, ready(SESSIONS))), 'Сессии 42 в среднем 38 мин');
 });
 
 test('the average length reads in seconds, minutes or hours as it grows', () => {
-    const average = (ms) => headline(render(View, ready({ ...SESSIONS, average_ms: ms }))).replace(/^Sessions 42 average /, '');
-    assert.equal(average(0), '0 s');
-    assert.equal(average(45000), '45 s');
-    assert.equal(average(59.6 * MINUTE), '60 min');
-    assert.equal(average(60 * MINUTE), '1.0 h');
-    assert.equal(average(150 * MINUTE), '2.5 h');
+    const average = (ms) => headline(render(View, ready({ ...SESSIONS, average_ms: ms }))).replace(/^Сессии 42 в среднем /, '');
+    assert.equal(average(0), '0 с');
+    assert.equal(average(45000), '45 с');
+    assert.equal(average(59.6 * MINUTE), '60 мин');
+    assert.equal(average(60 * MINUTE), '1,0 ч');
+    assert.equal(average(150 * MINUTE), '2,5 ч');
 });
 
 test('large session counts keep digit grouping', () => {
-    assert.match(headline(render(View, ready({ ...SESSIONS, sessions: 12345 }))), /Sessions 12,345 /);
+    assert.match(headline(render(View, ready({ ...SESSIONS, sessions: 12345 }))), /Сессии 12 345 в среднем /);
 });
 
 test('a period without sessions says no sessions instead of an average', () => {
     assert.equal(headline(render(View, ready({ sessions: 0, average_ms: 0, total_ms: 0, by_annotator: [] }))),
-        'Sessions 0 no sessions in this period');
+        'Сессии 0 в этом периоде сессий нет');
 });
 
 test('per-annotator session counts and average lengths reach the page', async () => {

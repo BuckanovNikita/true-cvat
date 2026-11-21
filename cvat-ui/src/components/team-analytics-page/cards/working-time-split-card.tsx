@@ -27,11 +27,9 @@ function WorkingTimeSplitCard({ figures, onFullView }: Props): JSX.Element {
     const header = (
         <div className='cvat-team-analytics-card-header'>
             <Text strong>
-                Where
+                Куда уходит
                 {' '}
-                <Term name='Working time'>working time</Term>
-                {' '}
-                goes
+                <Term name='working_time'>рабочее время</Term>
             </Text>
             <FullViewButton onClick={onFullView} />
         </div>
@@ -40,7 +38,7 @@ function WorkingTimeSplitCard({ figures, onFullView }: Props): JSX.Element {
         return (
             <section className='cvat-team-analytics-card cvat-team-analytics-split'>
                 {header}
-                <Text type='secondary' className='cvat-team-analytics-empty'>No job work in this period</Text>
+                <Text type='secondary' className='cvat-team-analytics-empty'>В этом периоде нет работы в заданиях</Text>
             </section>
         );
     }
@@ -60,7 +58,7 @@ function WorkingTimeSplitCard({ figures, onFullView }: Props): JSX.Element {
         <section className='cvat-team-analytics-card cvat-team-analytics-split'>
             {header}
             <Text type='secondary'>
-                {`${shapeWording(figures).label} · ${formatHours(figures.active_time_ms)} of working time`}
+                {`${shapeWording(figures).label} · ${formatHours(figures.active_time_ms)} рабочего времени`}
             </Text>
             <div className='cvat-team-analytics-split-bar'>
                 {parts.map((part) => (
@@ -80,7 +78,9 @@ function WorkingTimeSplitCard({ figures, onFullView }: Props): JSX.Element {
                         <span className='cvat-team-analytics-swatch' style={{ background: part.look.color }} />
                         <span className='cvat-team-analytics-split-legend-name'>{part.look.name}</span>
                         <span className='cvat-team-analytics-value'>{part.time}</span>
-                        <span className='cvat-team-analytics-value cvat-team-analytics-split-legend-share'>{part.share}</span>
+                        <span className='cvat-team-analytics-value cvat-team-analytics-split-legend-share'>
+                            {part.share}
+                        </span>
                     </li>
                 ))}
             </ul>

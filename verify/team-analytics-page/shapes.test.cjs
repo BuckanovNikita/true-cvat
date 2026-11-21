@@ -1,4 +1,4 @@
-// Bounding boxes and All shapes: the switch, what the operation figures say they cover, and the switch
+// Bounding boxes (Боксы) and All shapes (Все фигуры): the switch, what the operation figures say they cover, and the switch
 // kept in the page address and sent to the service.
 const assert = require('node:assert/strict');
 const test = require('node:test');
@@ -49,12 +49,12 @@ function ready(figures, shown = WEEK) {
 function section(html, className) {
     const match = html.match(new RegExp(`<section[^>]*${className}[^>]*>(.*?)</section>`));
     assert.ok(match, `${className} is shown`);
-    // the card's Full view button (full-view.test.cjs) is not part of its wording
+    // the card's Full view button (Полный вид) (full-view.test.cjs) is not part of its wording
     return text(match[1].replace(/<button[^>]*cvat-team-analytics-full-view-button.*?<\/button>/g, ''));
 }
 
 function switchButtons(html) {
-    const group = html.match(/<div[^>]*aria-label="Shapes"[^>]*>(.*?)<\/div>/);
+    const group = html.match(/<div[^>]*aria-label="Фигуры"[^>]*>(.*?)<\/div>/);
     if (!group) return null;
     return [...group[1].matchAll(/<button[^>]*aria-pressed="(true|false)"[^>]*>(.*?)<\/button>/g)]
         .map((button) => `${text(button[2])}${button[1] === 'true' ? ' (on)' : ''}`);
@@ -62,34 +62,34 @@ function switchButtons(html) {
 
 test('bounding box figures name boxes in every operation card', () => {
     const html = render(View, ready(operations('bounding_boxes')));
-    assert.equal(section(html, 'cvat-team-analytics-objects-created'), 'Boxes created 120 by annotators');
-    assert.equal(section(html, 'cvat-team-analytics-average-creation'), 'Avg time per box 3.0 s to create one');
-    assert.ok(section(html, 'cvat-team-analytics-split').startsWith('Where working time goes Bounding boxes · 10.0 h'));
+    assert.equal(section(html, 'cvat-team-analytics-objects-created'), 'Создано боксов 120 аннотаторами');
+    assert.equal(section(html, 'cvat-team-analytics-average-creation'), 'Ср. время на бокс 3,0 с на создание одного');
+    assert.ok(section(html, 'cvat-team-analytics-split').startsWith('Куда уходит рабочее время Боксы · 10,0 ч'));
     assert.ok(section(html, 'cvat-team-analytics-operations')
-        .startsWith('Bounding box operations Counts and average time per box · bounding boxes'));
+        .startsWith('Операции с боксами Количество и среднее время на бокс · боксы'));
 });
 
 test('all-shape figures name objects in every operation card', () => {
     const html = render(View, ready(operations('all'), { ...WEEK, shapes: 'all' }));
-    assert.equal(section(html, 'cvat-team-analytics-objects-created'), 'Objects created 120 by annotators');
-    assert.equal(section(html, 'cvat-team-analytics-average-creation'), 'Avg time per object 3.0 s to create one');
-    assert.ok(section(html, 'cvat-team-analytics-split').startsWith('Where working time goes All shapes · 10.0 h'));
+    assert.equal(section(html, 'cvat-team-analytics-objects-created'), 'Создано объектов 120 аннотаторами');
+    assert.equal(section(html, 'cvat-team-analytics-average-creation'), 'Ср. время на объект 3,0 с на создание одного');
+    assert.ok(section(html, 'cvat-team-analytics-split').startsWith('Куда уходит рабочее время Все фигуры · 10,0 ч'));
     assert.ok(section(html, 'cvat-team-analytics-operations')
-        .startsWith('Object operations Counts and average time per object · all shapes'));
+        .startsWith('Операции с объектами Количество и среднее время на объект · все фигуры'));
 });
 
 test('the filter row has a switch between Bounding boxes and All shapes', () => {
     assert.deepEqual(switchButtons(render(View, ready(operations('bounding_boxes')))),
-        ['Bounding boxes (on)', 'All shapes']);
+        ['Боксы (on)', 'Все фигуры']);
     assert.deepEqual(switchButtons(render(View, ready(operations('all'), { ...WEEK, shapes: 'all' }))),
-        ['Bounding boxes', 'All shapes (on)']);
+        ['Боксы', 'Все фигуры (on)']);
 });
 
 test('a legacy period shows all shapes with the notice and no switch', () => {
     const html = render(View, ready(operations('all', { legacy: true })));
     assert.equal(switchButtons(html), null);
     assert.match(html, /cvat-team-analytics-legacy-notice/);
-    assert.equal(section(html, 'cvat-team-analytics-objects-created'), 'Objects created 120 by annotators');
+    assert.equal(section(html, 'cvat-team-analytics-objects-created'), 'Создано объектов 120 аннотаторами');
 });
 
 test('the page opens on Bounding boxes; All shapes is kept in the address', () => {
@@ -141,18 +141,18 @@ test('switching to All shapes reads and shows all-shape figures and records the 
     try {
         await view.settle();
         assert.equal(lastShapes(), 'bounding_boxes');
-        assert.equal(created(view.container), 'Boxes created 120 by annotators');
+        assert.equal(created(view.container), 'Создано боксов 120 аннотаторами');
 
-        const all = [...view.container.querySelectorAll('[aria-label="Shapes"] button')]
-            .find((button) => button.textContent === 'All shapes');
+        const all = [...view.container.querySelectorAll('[aria-label="Фигуры"] button')]
+            .find((button) => button.textContent === 'Все фигуры');
         await act(async () => { all.dispatchEvent(new window.MouseEvent('click', { bubbles: true })); });
         await view.settle();
 
         assert.equal(lastShapes(), 'all');
         assert.equal(history.location.search, '?shapes=all&period=week');
-        assert.equal(created(view.container), 'Objects created 300 by annotators');
+        assert.equal(created(view.container), 'Создано объектов 300 аннотаторами');
         assert.match(text(view.container.querySelector('.cvat-team-analytics-operations').innerHTML),
-            /^Object operations /);
+            /^Операции с объектами /);
     } finally {
         await view.unmount();
     }

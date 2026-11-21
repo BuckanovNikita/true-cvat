@@ -36,37 +36,37 @@ function page(figures, timeZone = 'UTC') {
     });
 }
 
-const LEGACY = /This period was recorded before the new activity logging/;
-const PARTLY = /The new activity logging started on 2 November 2026/;
-const SINCE = /Bounding box figures, class changes and hotkey use cover only the days since/;
+const LEGACY = /Этот период записан до перехода на новый учёт действий/;
+const PARTLY = /Новый учёт действий начался 2 ноября 2026/;
+const SINCE = /Показатели по боксам, смены класса и использование горячих клавиш охватывают только дни после этой даты/;
 
 test('a period that holds the cutover names the date, says what covers only the days since, and keeps the switch', () => {
     const html = page(operations({ partly: true }));
     assert.match(text(html), PARTLY);
     assert.match(text(html), SINCE);
     assert.doesNotMatch(text(html), LEGACY);
-    assert.match(html, /aria-label="Shapes"/);
+    assert.match(html, /aria-label="Фигуры"/);
     assert.match(html, /cvat-team-analytics-partly-legacy-notice/);
 });
 
 test('the cutover date is the viewer\'s calendar day', () => {
     const late = { ...operations({ partly: true }), cutover: '2026-11-01T22:00:00+00:00' };
     assert.match(text(page(late, 'Europe/Moscow')), PARTLY);
-    assert.match(text(page(late, 'UTC')), /started on 1 November 2026/);
+    assert.match(text(page(late, 'UTC')), /начался 1 ноября 2026/);
 });
 
 test('a legacy period shows the legacy notice only, and no switch', () => {
     const html = page(operations({ legacy: true }));
     assert.match(text(html), LEGACY);
     assert.doesNotMatch(text(html), PARTLY);
-    assert.doesNotMatch(html, /aria-label="Shapes"/);
+    assert.doesNotMatch(html, /aria-label="Фигуры"/);
 });
 
 test('a period after the cutover has neither notice', () => {
     const html = page(operations());
     assert.doesNotMatch(text(html), LEGACY);
-    assert.doesNotMatch(text(html), /new activity logging started/);
-    assert.match(html, /aria-label="Shapes"/);
+    assert.doesNotMatch(text(html), /Новый учёт действий начался/);
+    assert.match(html, /aria-label="Фигуры"/);
 });
 
 test('an empty period that holds the cutover shows only the empty state, without either notice', () => {
@@ -80,7 +80,7 @@ test('an empty period that holds the cutover shows only the empty state, without
         })),
     };
     const html = page(empty);
-    assert.match(text(html), /No job work in this period/);
+    assert.match(text(html), /В этом периоде нет работы в заданиях/);
     assert.doesNotMatch(text(html), LEGACY);
-    assert.doesNotMatch(text(html), /new activity logging started/);
+    assert.doesNotMatch(text(html), /Новый учёт действий начался/);
 });

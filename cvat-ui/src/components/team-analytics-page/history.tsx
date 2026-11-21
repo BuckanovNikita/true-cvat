@@ -9,9 +9,10 @@
 import React from 'react';
 
 import { HistoryStatus } from './service';
-import { dayLabel } from './format';
+import { NBSP, dayLabel, formatNumber } from './format';
+import { plural } from './plural';
 
-export const NOT_PROCESSED = 'Not processed yet';
+export const NOT_PROCESSED = 'Ещё не обработано';
 
 // Whether period `key` (a period of address.ts) is wholly processed.
 export function periodAvailable(history: HistoryStatus | null | undefined, key: string): boolean {
@@ -32,18 +33,23 @@ export function HistoryProgress({ history }: { history?: HistoryStatus | null })
     // A status without the day counts (an older server) shows the percentage alone.
     const counted = typeof daysReady === 'number' && typeof daysTotal === 'number';
     const percent = history.percent ?? 0;
-    const ready = readyFromDay ? `Ready from ${dayLabel(readyFromDay, true)}` : 'Nothing ready yet';
+    const ready = readyFromDay ? `Готово с ${dayLabel(readyFromDay, true)}` : 'Пока ничего не готово';
+    let days = '';
+    if (counted) {
+        const of = `${formatNumber(daysReady as number)} из ${formatNumber(daysTotal as number)}${NBSP}`;
+        days = plural(daysTotal as number, [`${of}дня`, `${of}дней`, `${of}дней`]);
+    }
     return (
         <div className='cvat-team-analytics-history'>
             <div className='cvat-team-analytics-history-head'>
-                <span className='cvat-team-analytics-history-title'>Processing history</span>
-                {counted && <span>{`${ready} · ${daysReady} of ${daysTotal} days`}</span>}
+                <span className='cvat-team-analytics-history-title'>Обработка истории</span>
+                {counted && <span>{`${ready} · ${days}`}</span>}
                 <span className='cvat-team-analytics-history-percent'>{`${percent}%`}</span>
             </div>
             <div
                 className='cvat-team-analytics-history-bar'
                 role='progressbar'
-                aria-label='History processed'
+                aria-label='Обработанная история'
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-valuenow={percent}
@@ -51,8 +57,9 @@ export function HistoryProgress({ history }: { history?: HistoryStatus | null })
                 <div className='cvat-team-analytics-history-fill' style={{ width: `${percent}%` }} />
             </div>
             <div className='cvat-team-analytics-history-note'>
-                Recent days are processed first. Two weeks, earlier months and the year become selectable as
-                processing reaches them; the page never shows a period that is only partly processed.
+                Сначала обрабатываются последние дни. Периоды «Две недели» и «Год» и более ранние месяцы
+                становятся доступны по мере обработки; страница никогда не показывает период, обработанный
+                лишь частично.
             </div>
         </div>
     );
@@ -62,16 +69,21 @@ export function HistoryProgress({ history }: { history?: HistoryStatus | null })
 export function NotProcessedNotice(): JSX.Element {
     return (
         <div className='cvat-team-analytics-not-processed' role='status'>
-            <div className='cvat-team-analytics-notice-title'>This period is not processed yet</div>
+            <div className='cvat-team-analytics-notice-title'>Этот период ещё не обработан</div>
             <div>
-                Its figures appear once every day of it is processed, so a partial total is never shown.
-                Pick a shorter period meanwhile.
+                Показатели появятся, когда будет обработан каждый день периода, поэтому неполный итог не
+                показывается. А пока выберите более короткий период.
             </div>
         </div>
     );
 }
 
-const COUNTS = ['None are', 'One is', 'Two are'];
+// by the number of complete weeks: 0, 1, 2
+const WEEKS_READY = [
+    'Для динамики нужно не менее трёх полных недель. Пока нет ни одной.',
+    'Для динамики нужно не менее трёх полных недель. Пока готова одна.',
+    'Для динамики нужно не менее трёх полных недель. Пока готовы две.',
+];
 
 // Trends need three complete weeks of processed history; until then this notice stands in for them.
 // The trends card renders as `children` and appears once they are ready.
@@ -80,11 +92,11 @@ export function TrendsGate({ history, children = null }: {
     children?: React.ReactNode;
 }): JSX.Element | null {
     if (!history || history.trends_ready) return children ? <>{children}</> : null;
-    const ready = COUNTS[Math.min(history.complete_weeks, 2)];
+    const ready = WEEKS_READY[Math.min(history.complete_weeks, 2)];
     return (
         <div className='cvat-team-analytics-card cvat-team-analytics-trends-pending'>
-            <div className='cvat-team-analytics-notice-title'>Trends appear as history is processed</div>
-            <div>{`A trend needs at least three complete weeks. ${ready} ready so far.`}</div>
+            <div className='cvat-team-analytics-notice-title'>Динамика появится по мере обработки истории</div>
+            <div>{ready}</div>
         </div>
     );
 }

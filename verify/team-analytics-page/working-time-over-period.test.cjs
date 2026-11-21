@@ -29,25 +29,25 @@ function chart(series) {
 
 test('a week shows one bar per day with every value and every day readable without hovering', () => {
     const { text: shown, bars, labels } = chart({ unit: 'day', buckets: days('2026-11-07', 7, (i) => [0, 0, 2.5, 8, 7.25, 6, 1][i]) });
-    assert.match(shown, /Working time by day/);
-    assert.deepEqual(bars.map((bar) => bar.caption), ['0.0', '0.0', '2.5', '8.0', '7.3', '6.0', '1.0']);
-    assert.deepEqual(labels, ['Nov 7', 'Nov 8', 'Nov 9', 'Nov 10', 'Nov 11', 'Nov 12', 'Nov 13']);
-    assert.equal(bars[3].title, 'Nov 10: 8.00 h');
+    assert.match(shown, /Рабочее время по дням/);
+    assert.deepEqual(bars.map((bar) => bar.caption), ['0,0', '0,0', '2,5', '8,0', '7,3', '6,0', '1,0']);
+    assert.deepEqual(labels, ['7\u00a0нояб.', '8\u00a0нояб.', '9\u00a0нояб.', '10\u00a0нояб.', '11\u00a0нояб.', '12\u00a0нояб.', '13\u00a0нояб.']);
+    assert.equal(bars[3].title, '10\u00a0нояб.: 8,00\u00a0ч');
 });
 
 test('two weeks still show values on the bars and label every other day, today included', () => {
     const { bars, labels } = chart({ unit: 'day', buckets: days('2026-10-31', 14) });
     assert.equal(bars.length, 14);
-    assert.ok(bars.every((bar) => bar.caption === '1.0'));
-    assert.deepEqual(labels, ['Nov 1', 'Nov 3', 'Nov 5', 'Nov 7', 'Nov 9', 'Nov 11', 'Nov 13']);
+    assert.ok(bars.every((bar) => bar.caption === '1,0'));
+    assert.deepEqual(labels, ['1\u00a0нояб.', '3\u00a0нояб.', '5\u00a0нояб.', '7\u00a0нояб.', '9\u00a0нояб.', '11\u00a0нояб.', '13\u00a0нояб.']);
 });
 
 test('a month has too many bars for values: they move to the hover text and labels thin out', () => {
     const { bars, labels } = chart({ unit: 'day', buckets: days('2026-10-01', 31, (i) => i) });
     assert.equal(bars.length, 31);
     assert.ok(bars.every((bar) => bar.caption === ''));
-    assert.equal(bars[30].title, 'Oct 31: 30.00 h');
-    assert.deepEqual(labels, ['Oct 1', 'Oct 6', 'Oct 11', 'Oct 16', 'Oct 21', 'Oct 26', 'Oct 31']);
+    assert.equal(bars[30].title, '31\u00a0окт.: 30,00\u00a0ч');
+    assert.deepEqual(labels, ['1\u00a0окт.', '6\u00a0окт.', '11\u00a0окт.', '16\u00a0окт.', '21\u00a0окт.', '26\u00a0окт.', '31\u00a0окт.']);
 });
 
 test('a year shows weeks instead of days', () => {
@@ -57,14 +57,14 @@ test('a year shows weeks instead of days', () => {
         weeks.push({ start: date.toISOString().slice(0, 10), working_time_ms: 40 * HOUR });
     }
     const { text: shown, bars, labels } = chart({ unit: 'week', buckets: weeks });
-    assert.match(shown, /Working time by week/);
-    assert.doesNotMatch(shown, /Working time by day/);
+    assert.match(shown, /Рабочее время по неделям/);
+    assert.doesNotMatch(shown, /Рабочее время по дням/);
     assert.equal(bars.length, 53);
-    assert.equal(bars[0].title, 'Week of Nov 14: 3.00 h');
-    assert.equal(bars[52].title, 'Week of Nov 9: 40.00 h');
+    assert.equal(bars[0].title, 'Неделя с 14\u00a0нояб.: 3,00\u00a0ч');
+    assert.equal(bars[52].title, 'Неделя с 9\u00a0нояб.: 40,00\u00a0ч');
     assert.ok(bars.every((bar) => bar.caption === ''));
     assert.equal(labels.length, 7);
-    assert.equal(labels[labels.length - 1], 'Nov 9');
+    assert.equal(labels[labels.length - 1], '9\u00a0нояб.');
 });
 
 test('bar heights follow the values against a shared scale', () => {
@@ -79,5 +79,5 @@ test('bar heights follow the values against a shared scale', () => {
 test('dates are the service days, whatever the zone the page runs in', () => {
     // run this file under TZ=America/Los_Angeles too: a date string must not move a day
     const { labels } = chart({ unit: 'day', buckets: days('2026-11-01', 7) });
-    assert.equal(labels[0], 'Nov 1');
+    assert.equal(labels[0], '1\u00a0нояб.');
 });

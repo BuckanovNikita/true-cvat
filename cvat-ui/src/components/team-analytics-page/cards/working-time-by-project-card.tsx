@@ -24,12 +24,12 @@ interface Props {
 
 // Working time per project: the largest rows (within the annotator filter) and the rest as one line.
 function WorkingTimeByProjectCard({
-    rows, rest, legacy = false, names, selected, onPick, periodLabel = 'Last 7 days', onFullView,
+    rows, rest, legacy = false, names, selected, onPick, periodLabel = 'За 7 дней', onFullView,
 }: Props): JSX.Element {
     return (
         <WorkingTimeBreakdown
             kind='project'
-            title={<><Term name='Working time'>Working time</Term> by project</>}
+            title={<><Term name='working_time'>Рабочее время</Term> по проектам</>}
             subtitle={periodLabel}
             rows={rows.map((row) => ({
                 id: row.project_id,

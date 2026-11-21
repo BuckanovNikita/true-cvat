@@ -5,6 +5,9 @@
 import React from 'react';
 import Text from 'antd/lib/typography/Text';
 
+import { NBSP, formatCount } from '../format';
+import { plural } from '../plural';
+
 interface Props {
     // active annotators and their projects within the scope and both filters
     annotators: number;
@@ -18,13 +21,14 @@ interface Props {
 function AnnotatorsCard({
     annotators, projects, of = null, projectSelected,
 }: Props): JSX.Element {
-    let hint = `across ${projects.toLocaleString('en-US')} ${projects === 1 ? 'project' : 'projects'}`;
-    if (projectSelected) hint = 'worked in the selected project';
+    const n = formatCount(projects);
+    let hint = plural(projects, [`в ${n}${NBSP}проекте`, `в ${n}${NBSP}проектах`, `в ${n}${NBSP}проектах`]);
+    if (projectSelected) hint = 'работали в выбранном проекте';
     return (
         <section className='cvat-team-analytics-card cvat-team-analytics-annotators'>
-            <Text type='secondary'>Active annotators</Text>
+            <Text type='secondary'>Активные аннотаторы</Text>
             <div className='cvat-team-analytics-headline-value'>
-                {of === null ? annotators.toLocaleString('en-US') : `${annotators} of ${of.toLocaleString('en-US')}`}
+                {of === null ? formatCount(annotators) : `${formatCount(annotators)} из ${formatCount(of)}`}
             </div>
             <Text type='secondary'>{hint}</Text>
         </section>

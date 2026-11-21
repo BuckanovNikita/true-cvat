@@ -14,8 +14,8 @@ const pad = (n) => String(n).padStart(2, '0');
 const today = new Date();
 const CURRENT = `${today.getFullYear()}-${pad(today.getMonth() + 1)}`;
 const PREVIOUS = today.getMonth() === 0 ? `${today.getFullYear() - 1}-12` : `${today.getFullYear()}-${pad(today.getMonth())}`;
-const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September',
-    'October', 'November', 'December'];
+const MONTH_NAMES = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь',
+    'Октябрь', 'Ноябрь', 'Декабрь'];
 const label = (month) => `${MONTH_NAMES[Number(month.slice(5)) - 1]} ${month.slice(0, 4)}`;
 
 function overviewFor(url) {
@@ -72,28 +72,28 @@ test('the period control offers Week, Two weeks, Month and Year, and no custom r
     const periods = html.match(/<div class="cvat-team-analytics-periods"[^>]*>(.*?)<\/div>/s);
     assert.ok(periods);
     const labels = [...periods[1].matchAll(/<button[^>]*>(.*?)<\/button>/g)].map((m) => text(m[1]));
-    assert.deepEqual(labels, ['Week', 'Two weeks', 'Month', 'Year']);
-    assert.match(periods[1], /aria-pressed="true"[^>]*>Week</);
-    assert.doesNotMatch(html, /type="date"|Custom/);
+    assert.deepEqual(labels, ['Неделя', 'Две недели', 'Месяц', 'Год']);
+    assert.match(periods[1], /aria-pressed="true"[^>]*>Неделя</);
+    assert.doesNotMatch(html, /type="date"|Custom|Произвольн/);
 });
 
 test('the page opens on Week and asks the service for it', async () => {
     const page = await openPage();
     assert.deepEqual(page.overviews().map((q) => [q.period, q.month]), [['week', undefined]]);
-    assert.match(page.text(), /Last 7 days/);
+    assert.match(page.text(), /За 7 дней/);
     await page.view.unmount();
 });
 
 test('a chosen period goes into the address and Back returns to the previous selection', async () => {
     const page = await openPage();
-    await page.click('Two weeks');
+    await page.click('Две недели');
     assert.equal(new URLSearchParams(page.history.location.search).get('period'), 'two_weeks');
     assert.match(page.text(), /alice-two_weeks/);
-    assert.match(page.text(), /Last 14 days/);
+    assert.match(page.text(), /За 14 дней/);
 
-    await page.click('Year');
+    await page.click('Год');
     assert.equal(new URLSearchParams(page.history.location.search).get('period'), 'year');
-    assert.match(page.text(), /Last 12 months/);
+    assert.match(page.text(), /За 12 месяцев/);
 
     await page.go((history) => history.goBack());
     assert.equal(new URLSearchParams(page.history.location.search).get('period'), 'two_weeks');
@@ -106,11 +106,11 @@ test('a chosen period goes into the address and Back returns to the previous sel
 
 test('Month opens on the current month, to date, and later months cannot be chosen', async () => {
     const page = await openPage();
-    await page.click('Month');
+    await page.click('Месяц');
     const address = new URLSearchParams(page.history.location.search);
     assert.deepEqual([address.get('period'), address.get('month')], ['month', CURRENT]);
-    assert.match(page.text(), new RegExp(`${label(CURRENT)} · to date`));
-    assert.equal(page.button('Next month').disabled, true);
+    assert.match(page.text(), new RegExp(`${label(CURRENT)} · по сегодня`));
+    assert.equal(page.button('Следующий месяц').disabled, true);
     assert.deepEqual(page.overviews().at(-1), {
         period: 'month', tz: page.overviews()[0].tz, month: CURRENT, shapes: 'bounding_boxes',
     });
@@ -119,16 +119,16 @@ test('Month opens on the current month, to date, and later months cannot be chos
 
 test('the team lead steps to earlier months and back, each month in the address', async () => {
     const page = await openPage({ address: '/team-analytics?period=month' });
-    await page.click('Previous month');
+    await page.click('Предыдущий месяц');
     assert.equal(new URLSearchParams(page.history.location.search).get('month'), PREVIOUS);
     assert.match(page.text(), new RegExp(label(PREVIOUS)));
-    assert.doesNotMatch(page.text(), /to date/);
-    assert.equal(page.button('Next month').disabled, false);
+    assert.doesNotMatch(page.text(), /по сегодня/);
+    assert.equal(page.button('Следующий месяц').disabled, false);
     assert.equal(page.overviews().at(-1).month, PREVIOUS);
 
-    await page.click('Next month');
+    await page.click('Следующий месяц');
     assert.equal(new URLSearchParams(page.history.location.search).get('month'), CURRENT);
-    assert.match(page.text(), /to date/);
+    assert.match(page.text(), /по сегодня/);
 
     await page.go((history) => history.goBack());
     assert.equal(page.overviews().at(-1).month, PREVIOUS);
@@ -153,7 +153,7 @@ test('choosing the period already shown adds no history entry, so Back still lea
     const page = await openPage();
     try {
         const entries = page.history.length;
-        await page.click('Week');
+        await page.click('Неделя');
         assert.equal(page.history.length, entries);
         assert.equal(page.history.location.search, '');
         assert.equal(page.overviews().length, 1);
@@ -164,8 +164,8 @@ test('choosing the period already shown adds no history entry, so Back still lea
 
 test('changing the period keeps other parts of the address', async () => {
     const page = await openPage({ address: '/team-analytics?project=4&org=team-org&view=annotators' });
-    await page.click('Month');
-    await page.click('Week');
+    await page.click('Месяц');
+    await page.click('Неделя');
     const address = new URLSearchParams(page.history.location.search);
     assert.equal(address.get('project'), '4');
     assert.equal(address.get('view'), 'annotators');
@@ -181,12 +181,12 @@ test('while figures for a new period load, the previous ones stay on screen dimm
             { body: overviewFor(url) }),
     });
     try {
-        await page.click('Year');
+        await page.click('Год');
         assert.match(page.text(), /alice-week/, 'the previous figures stay');
         const header = () => page.view.container
             .querySelector('.cvat-team-analytics-working-time-by-annotator .cvat-team-analytics-card-header')
             .textContent;
-        assert.match(header(), /Last 7 days/, 'still named for the period they cover');
+        assert.match(header(), /За 7 дней/, 'still named for the period they cover');
         const cards = page.view.container.querySelector('.cvat-team-analytics-cards');
         assert.ok(cards.classList.contains('cvat-team-analytics-pending'), 'and are dimmed');
         assert.equal(cards.getAttribute('aria-busy'), 'true');
@@ -195,7 +195,7 @@ test('while figures for a new period load, the previous ones stay on screen dimm
         await act(async () => { release(); });
         await page.view.settle();
         assert.match(page.text(), /alice-year/);
-        assert.match(header(), /Last 12 months/);
+        assert.match(header(), /За 12 месяцев/);
         assert.ok(!page.view.container.querySelector('.cvat-team-analytics-cards')
             .classList.contains('cvat-team-analytics-pending'));
     } finally {

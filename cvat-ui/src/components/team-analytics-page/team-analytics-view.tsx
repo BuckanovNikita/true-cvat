@@ -91,14 +91,14 @@ function annotatorLabel(id: number | null, overview: Overview | null): string {
     // an overview without figures (a period not wholly processed) has no rows; the filter echo still names them
     const shown = overview?.by_annotator?.rows.find((row) => row.user_id === id)?.user_name;
     const echoed = overview?.filters?.annotator?.user_id === id ? overview.filters.annotator.user_name : null;
-    return shown ?? echoed ?? `Annotator #${id}`;
+    return shown ?? echoed ?? `Аннотатор #${id}`;
 }
 
 // Only administrators read Team Analytics: with an organization selected, organization scope; with none,
 // instance scope.
 function scopeLabel(organization: string | null): string {
-    if (organization) return `Organization ${organization}`;
-    return 'All organizations and personal workspaces';
+    if (organization) return `Организация ${organization}`;
+    return 'Все организации и личные пространства';
 }
 
 // Presentational: renders one page state. Data loading lives in team-analytics-page.tsx.
@@ -119,13 +119,13 @@ export default function TeamAnalyticsView({
 
     if (state.kind === 'denied') {
         return (
-            <div className='cvat-team-analytics-page'>
+            <div className='cvat-team-analytics-page' lang='ru'>
                 <Result
                     className='cvat-team-analytics-denied'
                     status='403'
-                    title='Team analytics is not available'
-                    subTitle={'This page is for administrators of this CVAT instance. The server checks the same ' +
-                        'before it returns any data, so a direct link shows nothing more.'}
+                    title='Страница Team Analytics недоступна'
+                    subTitle={'Эта страница только для администраторов этого экземпляра CVAT. Сервер проверяет то же ' +
+                        'самое, прежде чем вернуть какие-либо данные, поэтому прямая ссылка ничего не покажет.'}
                     extra={(
                         <a
                             className='cvat-team-analytics-back'
@@ -137,7 +137,7 @@ export default function TeamAnalyticsView({
                                 }
                             }}
                         >
-                            Back to tasks
+                            Назад к задачам
                         </a>
                     )}
                 />
@@ -155,8 +155,8 @@ export default function TeamAnalyticsView({
             <Result
                 className='cvat-team-analytics-signed-out'
                 status='info'
-                title='Your session has ended'
-                subTitle='Sign in again to see team analytics.'
+                title='Сеанс завершён'
+                subTitle='Войдите снова, чтобы увидеть Team Analytics.'
             />
         );
     } else if (state.overview.processed === false) {
@@ -165,8 +165,8 @@ export default function TeamAnalyticsView({
     } else if (address?.view && onAddressChange) {
         // one chart alone with every row, in place of the overview
         const { overview } = state;
-        const who = filters.annotator === null ? 'All annotators' : annotatorLabel(filters.annotator, overview);
-        const where = filters.project === null ? 'All projects' : projectName(filters.project, projectNames);
+        const who = filters.annotator === null ? 'Все аннотаторы' : annotatorLabel(filters.annotator, overview);
+        const where = filters.project === null ? 'Все проекты' : projectName(filters.project, projectNames);
         const full = (
             <FullView
                 key={reloadKey}
@@ -261,8 +261,8 @@ export default function TeamAnalyticsView({
                 ) : null}
                 <TrendsGate history={status?.history}>
                     {renderTrends?.([
-                        filters.annotator === null ? 'All annotators' : annotatorLabel(filters.annotator, overview),
-                        filters.project === null ? 'All projects' : projectName(filters.project, projectNames),
+                        filters.annotator === null ? 'Все аннотаторы' : annotatorLabel(filters.annotator, overview),
+                        filters.project === null ? 'Все проекты' : projectName(filters.project, projectNames),
                     ].join(' · '), {
                         onOpenFull: onAddressChange ?
                             (metric) => onAddressChange({ view: viewOfTrend(metric) }) : undefined,
@@ -279,13 +279,13 @@ export default function TeamAnalyticsView({
     const history = state.kind === 'ready' ? status?.history : undefined;
     const shownOverview = state.kind === 'ready' ? state.overview : null;
     return (
-        <div className='cvat-team-analytics-page'>
+        <div className='cvat-team-analytics-page' lang='ru'>
             <div className='cvat-team-analytics-header'>
                 <div className='cvat-team-analytics-heading'>
-                    <Title level={4}>Team analytics</Title>
+                    <Title level={4}>Team Analytics</Title>
                     <Text type='secondary'>
                         {scopeLabel(organization)}
-                        {' · annotation work inside jobs'}
+                        {' · работа в заданиях'}
                     </Text>
                 </div>
                 {showSettings ? (
@@ -294,7 +294,7 @@ export default function TeamAnalyticsView({
                         icon={<SettingOutlined />}
                         onClick={onOpenSettings}
                     >
-                        Settings
+                        Настройки
                     </Button>
                 ) : null}
             </div>

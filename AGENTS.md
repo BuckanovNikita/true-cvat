@@ -53,6 +53,7 @@ tools/gate/node-suite.sh verify/team_analytics_page.cjs
 - Team Analytics is for administrators (`admin` group) only: page, API and settings.
 - Never add a client event type or scope (ADR 0002). Event names live in both `contract.ts` and `sql/` and change together. A new upstream event type, scope, call site or shortcut action needs an explicit decision on whether it is an operation: a rename breaks figures silently.
 - No Team Analytics page or API address may start with `/analytics` (Grafana). A Team Analytics failure must not affect annotation or other CVAT functions.
+- The Team Analytics page is in Russian only (ADR 0010): every user-visible string in `cvat-ui/src/components/team-analytics-page/` is Russian, numbers and dates go through its `format.ts`, a word next to a count through `plural.ts`; no translation library, no language switch. `verify/team-analytics-page/russian.test.cjs` guards it: never allowlist page text there.
 - Team Analytics UI wording follows the domain terms in DOCS.md; changing a term updates `definitions.tsx`, `creation-methods.ts`, `settings-modal.tsx` and their tests together.
 - A new upstream `JobStage`/`JobState` value needs handling in `cvat-ui/src/utils/task-jobs-summary.ts`.
 - Every closed-network build input is a Dockerfile ARG with a public default, read from the environment by the build script and passed only when set. No fork Dockerfile starts `FROM` a `cvat/` image. Never commit corporate hosts, registry paths or credentials: the repository is public.
@@ -63,7 +64,7 @@ tools/gate/node-suite.sh verify/team_analytics_page.cjs
 
 ## Decisions that bind code
 
-ADR 0002 (no new event types), ADR 0003 (Kubernetes only), ADR 0006 (Team Analytics in the backend, reads on a worker), ADR 0007 (public bases, Debian 12 server image), ADR 0008 (downstream compatibility surface), ADR 0009 (three branches). Superseded: 0001, 0004, 0005. Spec ids UI-1, UI-2, IAM-1, IAM-2, BUILD-1, TA-1. One line each in DOCS.md, "Decisions".
+ADR 0002 (no new event types), ADR 0003 (Kubernetes only), ADR 0006 (Team Analytics in the backend, reads on a worker), ADR 0007 (public bases, Debian 12 server image), ADR 0008 (downstream compatibility surface), ADR 0009 (three branches), ADR 0010 (the Team Analytics page is in Russian only). Superseded: 0001, 0004, 0005. Spec ids UI-1, UI-2, IAM-1, IAM-2, BUILD-1, TA-1. One line each in DOCS.md, "Decisions".
 
 ## Release and delivery
 

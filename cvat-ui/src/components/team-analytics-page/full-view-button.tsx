@@ -4,15 +4,17 @@
 
 import React from 'react';
 
+import { formatCount } from './format';
+
 // The Full view button in a chart's header; nothing without a handler (the page shown without an address).
 export function FullViewButton({ onClick }: { onClick?: () => void }): JSX.Element | null {
     if (!onClick) return null;
     return (
-        <button type='button' className='cvat-team-analytics-full-view-button' title='Full view' onClick={onClick}>
+        <button type='button' className='cvat-team-analytics-full-view-button' title='Полный вид' onClick={onClick}>
             <svg aria-hidden width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
                 <path d='M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5' />
             </svg>
-            Full view
+            Полный вид
         </button>
     );
 }
@@ -22,7 +24,7 @@ export function ShowAllButton({ count, onClick }: { count: number; onClick?: () 
     if (!onClick) return null;
     return (
         <button type='button' className='cvat-team-analytics-show-all' onClick={onClick}>
-            {`Show all ${count.toLocaleString('en-US')} in full view`}
+            {`Показать все ${formatCount(count)} в полном виде`}
         </button>
     );
 }

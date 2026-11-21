@@ -17,7 +17,7 @@ interface Props {
     methods?: CreationMethods;
 }
 
-// 'drawn 6.2 s · pasted 1.5 s · propagated 0.8 s'
+// 'нарисовано 6,2 с · вставлено 1,5 с · распространено 0,8 с'
 function perMethod(methods: CreationMethods): string {
     return methods.rows
         .map((row) => `${METHOD_NAMES[row.method].toLowerCase()} ${formatSeconds(row.average_ms)}`)
@@ -30,23 +30,24 @@ function perMethod(methods: CreationMethods): string {
 function CreationHeadlineCards({ figures, methods }: Props): JSX.Element {
     const creation = operationRow(figures, 'creation');
     const objects = creation?.objects ?? 0;
-    const { noun, nouns } = shapeWording(figures);
+    const wording = shapeWording(figures);
     return (
         <>
             <section
                 className='cvat-team-analytics-card cvat-team-analytics-objects-created'
-                title={`${formatCount(objects)} exactly`}
+                title={`Точное значение: ${formatCount(objects)}`}
             >
-                <Text type='secondary'>{`${nouns} created`}</Text>
+                <Text type='secondary'>{wording.created}</Text>
                 <div className='cvat-team-analytics-headline-value'>{shortCount(objects)}</div>
                 <Text type='secondary'>
-                    {methods?.model ? `by annotators · plus ${shortCount(methods.model.objects)} by model` : 'by annotators'}
+                    {methods?.model ?
+                        `аннотаторами · плюс ${shortCount(methods.model.objects)} моделью` : 'аннотаторами'}
                 </Text>
             </section>
             <section className='cvat-team-analytics-card cvat-team-analytics-average-creation'>
-                <Text type='secondary'><Term name='Time per operation'>{`Avg time per ${noun}`}</Term></Text>
+                <Text type='secondary'><Term name='time_per_operation'>{wording.averageShort}</Term></Text>
                 <div className='cvat-team-analytics-headline-value'>{formatSeconds(creation?.average_ms ?? null)}</div>
-                <Text type='secondary'>{methods ? perMethod(methods) : 'to create one'}</Text>
+                <Text type='secondary'>{methods ? perMethod(methods) : 'на создание одного'}</Text>
             </section>
         </>
     );

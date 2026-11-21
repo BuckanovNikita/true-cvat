@@ -18,7 +18,7 @@ interface Props {
     loadOptions?: (kind: FilterKind) => Promise<FilterOptions>;
     // what the options belong to (organization, period, month, data reload): an open dropdown closes when it changes
     optionsKey?: string;
-    // the name of a project option (No project, CVAT's name or its identifier)
+    // the name of a project option (Без проекта, CVAT's name or its identifier)
     projectNameOf?: (id: number) => string;
 }
 
@@ -27,17 +27,17 @@ interface Props {
 export default function FilterChips({
     filters, projectLabel, annotatorLabel, onChange, loadOptions, optionsKey, projectNameOf,
 }: Props): JSX.Element {
-    const annotatorName = (option: FilterOption): string => option.user_name ?? `Annotator #${option.id}`;
+    const annotatorName = (option: FilterOption): string => option.user_name ?? `Аннотатор #${option.id}`;
     const projectName = (option: FilterOption): string => (
-        projectNameOf ? projectNameOf(option.id) : `Project #${option.id}`
+        projectNameOf ? projectNameOf(option.id) : `Проект #${option.id}`
     );
     return (
         <div className='cvat-team-analytics-filter-chips'>
             <FilterSelect
                 kind='project'
-                label='Project'
-                allLabel='All projects'
-                value={filters.project === null ? 'All projects' : projectLabel}
+                label='Проект'
+                allLabel='Все проекты'
+                value={filters.project === null ? 'Все проекты' : projectLabel}
                 selected={filters.project}
                 load={loadOptions ? () => loadOptions('projects') : undefined}
                 optionsKey={optionsKey}
@@ -46,9 +46,9 @@ export default function FilterChips({
             />
             <FilterSelect
                 kind='annotator'
-                label='Annotator'
-                allLabel='All annotators'
-                value={filters.annotator === null ? 'All annotators' : annotatorLabel}
+                label='Аннотатор'
+                allLabel='Все аннотаторы'
+                value={filters.annotator === null ? 'Все аннотаторы' : annotatorLabel}
                 selected={filters.annotator}
                 load={loadOptions ? () => loadOptions('annotators') : undefined}
                 optionsKey={optionsKey}

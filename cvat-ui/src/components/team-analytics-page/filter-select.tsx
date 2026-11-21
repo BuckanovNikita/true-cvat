@@ -12,9 +12,9 @@ import { arrange } from './full-view-list';
 
 export interface FilterSelectProps {
     kind: 'project' | 'annotator';
-    // "Project", "Annotator"
+    // "Проект", "Аннотатор"
     label: string;
-    // "All projects", "All annotators": the first option, which removes the filter
+    // "Все проекты", "Все аннотаторы": the first option, which removes the filter
     allLabel: string;
     // what the button shows: the selected value's name, or `allLabel`
     value: string;
@@ -37,9 +37,9 @@ interface Item {
 }
 
 const STATUS: Record<Exclude<Answer['kind'], 'ready'>, string> = {
-    loading: 'Loading…',
-    withheld: 'This period is not processed yet',
-    failed: 'Could not load the list',
+    loading: 'Загрузка…',
+    withheld: 'Этот период ещё не обработан',
+    failed: 'Не удалось загрузить список',
 };
 
 // Where the popup sits: under the box from its left edge (the default), from its right edge, or shifted to the
@@ -110,7 +110,7 @@ export default function FilterSelect({
 
     let status: string | null = null;
     if (answer.kind !== 'ready') status = STATUS[answer.kind];
-    else if (items.length === 1 && query.trim()) status = 'No match for this search';
+    else if (items.length === 1 && query.trim()) status = 'По этому запросу ничего не найдено';
 
     const close = (returnFocus: boolean): void => {
         opening.current += 1;
@@ -221,7 +221,8 @@ export default function FilterSelect({
         }
     };
 
-    const plural = kind === 'project' ? 'projects' : 'annotators';
+    const showAll = kind === 'project' ? 'Показать все проекты' : 'Показать всех аннотаторов';
+    const searchLabel = kind === 'project' ? 'Поиск проектов' : 'Поиск аннотаторов';
     return (
         <div
             ref={wrapper}
@@ -247,8 +248,8 @@ export default function FilterSelect({
                 <button
                     type='button'
                     className='cvat-team-analytics-filter-clear'
-                    aria-label={`Show all ${plural}`}
-                    title={`Show all ${plural}`}
+                    aria-label={showAll}
+                    title={showAll}
                     onClick={() => {
                         onPick(null);
                         // this button goes away with the filter: the focus stays in the selector
@@ -269,12 +270,12 @@ export default function FilterSelect({
                         className='cvat-team-analytics-filter-search'
                         type='text'
                         role='combobox'
-                        aria-label={`Search ${plural}`}
+                        aria-label={searchLabel}
                         aria-autocomplete='list'
                         aria-expanded
                         aria-controls={listId}
                         aria-activedescendant={activeIndex >= 0 ? `${id}-option-${activeIndex}` : undefined}
-                        placeholder={`Search ${plural}`}
+                        placeholder={searchLabel}
                         autoComplete='off'
                         spellCheck={false}
                         value={query}

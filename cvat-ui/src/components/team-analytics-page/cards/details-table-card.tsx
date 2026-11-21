@@ -8,9 +8,10 @@ import {
     Details, DetailsKind, DetailsRow, ProjectNames,
 } from '../service';
 import {
-    MISSING, exactHours, formatCount, formatHours, formatSeconds, formatShare, projectName,
+    MISSING, NBSP, exactHours, formatCount, formatHours, formatNumber, formatSeconds, formatShare, projectName,
 } from '../format';
-import { Term } from '../definitions';
+import { plural } from '../plural';
+import { Term, TERM_LABELS } from '../definitions';
 
 interface Props {
     // null until the first answer
@@ -29,20 +30,20 @@ interface Props {
 }
 
 const KINDS: { key: DetailsKind; label: string }[] = [
-    { key: 'annotators', label: 'Annotators' },
-    { key: 'projects', label: 'Projects' },
+    { key: 'annotators', label: 'Аннотаторы' },
+    { key: 'projects', label: 'Проекты' },
 ];
 
-const NOT_RECORDED = 'Not recorded';
+const NOT_RECORDED = 'Не записано';
 
 function rowName(row: DetailsRow, by: DetailsKind, names: ProjectNames): string {
     if (by === 'projects') return projectName(row.id, names);
-    return row.user_name || `Annotator #${row.id}`;
+    return row.user_name || `Аннотатор #${row.id}`;
 }
 
 function pagerLabel(details: Details): string {
     const first = (details.page - 1) * details.page_size + 1;
-    return `${first}–${first + details.rows.length - 1} of ${formatCount(details.total)}`;
+    return `${first}–${first + details.rows.length - 1} из ${formatCount(details.total)}`;
 }
 
 // The details table: every figure for every annotator or every project, ten rows a page, searchable by
@@ -57,16 +58,17 @@ function DetailsTableCard({
     const legacy = !!details?.legacy;
     const pages = details ? Math.max(1, Math.ceil(details.total / details.page_size)) : 1;
     const shown = details && details.processed !== false ? details : null;
+    const technical = formatNumber(shown?.technical_accounts ?? 0);
 
     let body: JSX.Element | null = null;
     if (!details) {
-        body = failed ? <p className='cvat-team-analytics-details-note'>Details could not be loaded.</p> : null;
+        body = failed ? <p className='cvat-team-analytics-details-note'>Не удалось загрузить подробности.</p> : null;
     } else if (details.processed === false) {
-        body = <p className='cvat-team-analytics-details-note'>This period is not processed yet.</p>;
+        body = <p className='cvat-team-analytics-details-note'>Этот период ещё не обработан.</p>;
     } else if (details.total === 0) {
         body = (
             <p className='cvat-team-analytics-details-note'>
-                {search.trim() ? 'No match for this search.' : 'No job work in this period'}
+                {search.trim() ? 'По этому запросу ничего не найдено.' : 'В этом периоде нет работы в заданиях'}
             </p>
         );
     }
@@ -77,8 +79,8 @@ function DetailsTableCard({
             aria-busy={pending}
         >
             <div className='cvat-team-analytics-details-header'>
-                <h2 className='cvat-team-analytics-details-title'>Details</h2>
-                <div role='group' aria-label='Table rows' className='cvat-team-analytics-trends-segments'>
+                <h2 className='cvat-team-analytics-details-title'>Подробности</h2>
+                <div role='group' aria-label='Строки таблицы' className='cvat-team-analytics-trends-segments'>
                     {KINDS.map((option) => (
                         <button
                             key={option.key}
@@ -93,34 +95,38 @@ function DetailsTableCard({
                 <input
                     type='search'
                     className='cvat-team-analytics-details-search'
-                    aria-label={finding ? 'Find a project' : 'Find an annotator'}
-                    placeholder={finding ? 'Find a project' : 'Find an annotator'}
+                    aria-label={finding ? 'Найти проект' : 'Найти аннотатора'}
+                    placeholder={finding ? 'Найти проект' : 'Найти аннотатора'}
                     value={search}
                     onChange={(event) => onSearch?.(event.target.value)}
                 />
-                <span className='cvat-team-analytics-details-hint'>Sorted by working time</span>
+                <span className='cvat-team-analytics-details-hint'>Отсортировано по рабочему времени</span>
             </div>
             {failed && details ? (
-                <p className='cvat-team-analytics-details-note'>Details could not be updated; the table shows the previous choice.</p>
+                <p className='cvat-team-analytics-details-note'>
+                    Не удалось обновить подробности; в таблице данные для прежнего выбора.
+                </p>
             ) : null}
             {shown && shown.total > 0 ? (
                 <div className='cvat-team-analytics-table-scroll'>
                     <table className='cvat-team-analytics-table cvat-team-analytics-details-table'>
                         <thead>
                             <tr>
-                                <th className='cvat-team-analytics-details-name'>{projects ? 'Project' : 'Annotator'}</th>
-                                <th>{projects ? 'Annotators' : 'Projects'}</th>
-                                <th><Term name='Session'>Sessions</Term></th>
-                                <th><Term name='Working time'>Working time</Term></th>
-                                <th>Drawn</th>
-                                <th>Pasted</th>
-                                <th>Propagated</th>
-                                <th>{legacy ? 'Boxes saved' : <Term name='Model'>Model</Term>}</th>
-                                <th>Alignments</th>
-                                <th>Class changes</th>
-                                <th>Deletions</th>
-                                <th><Term name='Time per operation'>Avg time to create</Term></th>
-                                <th>Hotkey share</th>
+                                <th className='cvat-team-analytics-details-name'>
+                                    {projects ? 'Проект' : 'Аннотатор'}
+                                </th>
+                                <th>{projects ? 'Аннотаторы' : 'Проекты'}</th>
+                                <th><Term name='session'>Сессии</Term></th>
+                                <th><Term name='working_time'>Рабочее время</Term></th>
+                                <th>Нарисовано</th>
+                                <th>Вставлено</th>
+                                <th>Распространено</th>
+                                <th>{legacy ? 'Сохранённые боксы' : <Term name='model'>{TERM_LABELS.model}</Term>}</th>
+                                <th>Подгонки</th>
+                                <th>Смены класса</th>
+                                <th>Удаления</th>
+                                <th><Term name='time_per_operation'>Ср. время создания</Term></th>
+                                <th>Доля горячих клавиш</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -177,20 +183,24 @@ function DetailsTableCard({
                                 disabled={shown.page <= 1}
                                 onClick={() => onPage?.(shown.page - 1)}
                             >
-                                Previous
+                                Назад
                             </button>
                             <button
                                 type='button'
                                 disabled={shown.page >= pages}
                                 onClick={() => onPage?.(shown.page + 1)}
                             >
-                                Next
+                                Вперёд
                             </button>
                         </>
                     ) : null}
                     {shown.technical_accounts ? (
                         <span className='cvat-team-analytics-details-hint'>
-                            {`${shown.technical_accounts} technical account${shown.technical_accounts === 1 ? ' is' : 's are'} left out of annotator lists`}
+                            {plural(shown.technical_accounts, [
+                                `${technical}${NBSP}техническая учётная запись не входит в списки аннотаторов`,
+                                `${technical}${NBSP}технические учётные записи не входят в списки аннотаторов`,
+                                `${technical}${NBSP}технических учётных записей не входят в списки аннотаторов`,
+                            ])}
                         </span>
                     ) : null}
                 </div>

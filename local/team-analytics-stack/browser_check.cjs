@@ -4,7 +4,7 @@
 //
 //   the administrator, with ta-org-a selected, sees the header link, opens the page and reads the
 //   organization's figures (Team Analytics answers only administrators);
-//   the owner, the maintainer and the worker of ta-org-a see no link, get "not available" on a direct
+//   the owner, the maintainer and the worker of ta-org-a see no link, get the not-available state on a direct
 //   visit while their pages send no request to /api/team-analytics/ at all, and a refusal from the API
 //   when the browser calls it with their session.
 //
@@ -25,9 +25,10 @@ const ORG = 'ta-org-a';
 const ADMIN = 'ta-admin';
 // an owner, a maintainer and a worker of ta-org-a, and an ordinary user of no organization (signed in without one)
 const REFUSED = ['ta-owner', 'ta-maintainer', 'ta-worker', 'ta-outsider'];
-const DENIED_TEXT = 'This page is for administrators of this CVAT instance.';
+const DENIED_TEXT = 'Эта страница только для администраторов этого экземпляра CVAT.';
+const DENIED_TITLE = 'Страница Team Analytics недоступна';
 // stack_api.py WORK for ta-org-a, as the page formats hours
-const EXPECTED_ROWS = [['ta-worker', '1.5 h'], ['ta-supervisor', '0.5 h']];
+const EXPECTED_ROWS = [['ta-worker', '1,5\u00a0ч'], ['ta-supervisor', '0,5\u00a0ч']];
 
 const log = (message) => process.stdout.write(`  ${message}\n`);
 const sleep = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
@@ -211,10 +212,10 @@ async function refused(browser, username, linkDelayMs) {
     check(analyticsRequests.length === 0, `${username}'s pages sent ${JSON.stringify(analyticsRequests)} to /api/team-analytics/, `
         + 'expected no request at all (CVAT\'s start page loaded again after sign-in, then a direct visit to /team-analytics)');
     await page.screenshot(`${username}-team-analytics`);
-    check(denied.includes('Team analytics is not available') && denied.includes(DENIED_TEXT),
-        `${username} sees "${denied}", expected "Team analytics is not available" and "${DENIED_TEXT}"`);
+    check(denied.includes(DENIED_TITLE) && denied.includes(DENIED_TEXT),
+        `${username} sees "${denied}", expected "${DENIED_TITLE}" and "${DENIED_TEXT}"`);
     const extras = await page.evaluate('[".cvat-team-analytics-settings-button", ".cvat-team-analytics-filters"].filter((s) => document.querySelector(s))');
-    check(extras.length === 0, `${username}'s not-available page shows ${JSON.stringify(extras)}, expected neither the Settings button nor the filter row`);
+    check(extras.length === 0, `${username}'s not-available page shows ${JSON.stringify(extras)}, expected neither the settings button nor the filter row`);
     // the browser's own fetch sends Accept */*; CVAT's API answers 406 to a bare application/json
     const status = await page.evaluate(
         `fetch("/api/team-analytics/overview?period=week&tz=UTC&org=${ORG}").then((r) => r.status)`,

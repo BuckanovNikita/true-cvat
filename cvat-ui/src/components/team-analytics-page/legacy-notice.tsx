@@ -4,6 +4,7 @@
 
 import React from 'react';
 
+import { longDayLabel } from './format';
 import { hasNoJobWork } from './operations';
 import { OperationsFigures } from './service';
 
@@ -13,22 +14,23 @@ export default function LegacyNotice(): JSX.Element {
     return (
         <div className='cvat-team-analytics-legacy-notice' role='note'>
             <div className='cvat-team-analytics-legacy-notice-title'>
-                This period was recorded before the new activity logging
+                Этот период записан до перехода на новый учёт действий
             </div>
             <div>
-                Old events do not say which shape was edited, so operations and timing below cover all shapes.
-                Class changes and hotkey use were not recorded and start from the day the new UI is deployed.
-                Projects, sessions, working time and the number of boxes saved are complete.
+                Старые события не указывают, какая фигура была изменена, поэтому операции и время ниже
+                относятся ко всем фигурам. Смены класса и использование горячих клавиш не записывались и
+                учитываются со дня запуска нового учёта действий. Проекты, сессии, рабочее время и число
+                сохранённых боксов учтены полностью.
             </div>
         </div>
     );
 }
 
-// The cutover's calendar day for the viewer, e.g. "2 November 2026".
+// The cutover's calendar day for the viewer, e.g. "2 ноября 2026". The en-CA date is only the YYYY-MM-DD
+// key of the day in the viewer's zone; the words come from longDayLabel.
 export function cutoverDay(cutover: string, timeZone?: string): string {
-    return new Date(cutover).toLocaleDateString('en-GB', {
-        day: 'numeric', month: 'long', year: 'numeric', ...(timeZone ? { timeZone } : {}),
-    });
+    const day = new Date(cutover).toLocaleDateString('en-CA', timeZone ? { timeZone } : undefined);
+    return longDayLabel(day);
 }
 
 // Shown for a partly legacy period: the cutover falls inside it, so some figures cover only the part after it.
@@ -36,12 +38,12 @@ export function PartlyLegacyNotice({ cutover, timeZone }: { cutover: string; tim
     return (
         <div className='cvat-team-analytics-legacy-notice cvat-team-analytics-partly-legacy-notice' role='note'>
             <div className='cvat-team-analytics-legacy-notice-title'>
-                {`The new activity logging started on ${cutoverDay(cutover, timeZone)}`}
+                {`Новый учёт действий начался ${cutoverDay(cutover, timeZone)}`}
             </div>
             <div>
-                Bounding box figures, class changes and hotkey use cover only the days since; under All shapes
-                the operations before it are counted too. Projects, sessions, working time and the number of
-                boxes saved cover the whole period.
+                Показатели по боксам, смены класса и использование горячих клавиш охватывают только дни после
+                этой даты; в режиме «Все фигуры» операции до неё тоже учтены. Проекты, сессии, рабочее время
+                и число сохранённых боксов охватывают весь период.
             </div>
         </div>
     );

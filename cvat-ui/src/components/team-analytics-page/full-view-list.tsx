@@ -86,15 +86,15 @@ function Toolbar({
                 onChange={(event) => onQuery(event.target.value)}
             />
             <Segmented
-                label='Sort'
-                options={[{ key: 'value', label: 'By value' }, { key: 'name', label: 'By name' }] as { key: Sort; label: string }[]}
+                label='Сортировка'
+                options={[{ key: 'value', label: 'По значению' }, { key: 'name', label: 'По имени' }] as { key: Sort; label: string }[]}
                 value={sort}
                 onChange={onSort}
             />
             {rowsKind && onRows ? (
                 <Segmented
-                    label='Rows'
-                    options={[{ key: 'annotators', label: 'Annotators' }, { key: 'projects', label: 'Projects' }] as
+                    label='Строки'
+                    options={[{ key: 'annotators', label: 'Аннотаторы' }, { key: 'projects', label: 'Проекты' }] as
                         { key: RowsKind; label: string }[]}
                     value={rowsKind}
                     onChange={onRows}
@@ -113,7 +113,7 @@ export function arrange<T extends { name: string; searchText?: string }>(rows: T
 }
 
 function NoMatch(): JSX.Element {
-    return <div className='cvat-team-analytics-full-no-match'>No match for this search.</div>;
+    return <div className='cvat-team-analytics-full-no-match'>По этому запросу ничего не найдено.</div>;
 }
 
 interface ListProps extends Omit<ToolbarProps, 'query' | 'onQuery' | 'sort' | 'onSort'> {
@@ -141,12 +141,12 @@ export function FullList({
             <div className='cvat-team-analytics-full-scroll'>
                 <div className={`cvat-team-analytics-full-list${withExtra ? ' cvat-team-analytics-full-list-extra' : ''}`}>
                     <div className='cvat-team-analytics-full-list-header'>
-                        <span className='cvat-team-analytics-full-rank'>#</span>
+                        <span className='cvat-team-analytics-full-rank'>№</span>
                         <span>{nameHeader}</span>
                         {withExtra ? <span>{extraHeader}</span> : null}
                         <span />
                         <span className='cvat-team-analytics-full-value'>{valueHeader}</span>
-                        <span className='cvat-team-analytics-full-share'>Share</span>
+                        <span className='cvat-team-analytics-full-share'>Доля</span>
                     </div>
                     {shown.map((row) => (
                         <button

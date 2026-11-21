@@ -7,7 +7,7 @@ import Text from 'antd/lib/typography/Text';
 
 import { SessionFigures } from '../service';
 import { Term } from '../definitions';
-import { exactHours, formatDuration } from '../format';
+import { exactHours, formatCount, formatDuration } from '../format';
 
 interface Props {
     figures: SessionFigures;
@@ -17,16 +17,16 @@ interface Props {
 function SessionsCard({ figures }: Props): JSX.Element {
     return (
         <section className='cvat-team-analytics-card cvat-team-analytics-sessions'>
-            <Text type='secondary'><Term name='Session'>Sessions</Term></Text>
+            <Text type='secondary'><Term name='session'>Сессии</Term></Text>
             {/* the hover text sits on the value, not the card, so that it never covers the Session definition */}
             <div
                 className='cvat-team-analytics-headline-value'
-                title={`Uninterrupted intervals of work · ${exactHours(figures.total_ms)} in total`}
+                title={`Непрерывные интервалы работы · ${exactHours(figures.total_ms)} всего`}
             >
-                {figures.sessions.toLocaleString('en-US')}
+                {formatCount(figures.sessions)}
             </div>
             <Text type='secondary'>
-                {figures.sessions > 0 ? `average ${formatDuration(figures.average_ms)}` : 'no sessions in this period'}
+                {figures.sessions > 0 ? `в среднем ${formatDuration(figures.average_ms)}` : 'в этом периоде сессий нет'}
             </Text>
         </section>
     );

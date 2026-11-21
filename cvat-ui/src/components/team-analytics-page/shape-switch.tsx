@@ -14,7 +14,7 @@ interface Props {
 // Bounding boxes or All shapes, for every operation figure on the page.
 export default function ShapeSwitch({ shapes, onChange }: Props): JSX.Element {
     return (
-        <div className='cvat-team-analytics-shapes' role='group' aria-label='Shapes'>
+        <div className='cvat-team-analytics-shapes' role='group' aria-label='Фигуры'>
             {SHAPE_OPTIONS.map(({ key, label }) => (
                 <button
                     key={key}

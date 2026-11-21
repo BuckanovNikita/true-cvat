@@ -9,8 +9,9 @@ import Text from 'antd/lib/typography/Text';
 
 import { CreationMethods, SavedBoxes } from '../service';
 import {
-    MISSING, formatCount, formatSeconds, formatShare,
+    MISSING, NBSP, formatCount, formatSeconds, formatShare,
 } from '../format';
+import { plural } from '../plural';
 import { METHOD_NAMES, MODEL_COLOR, MODEL_NAME } from '../creation-methods';
 import { OPERATION_LOOKS } from '../operations';
 import { shapeWording } from '../shapes';
@@ -25,13 +26,18 @@ interface Props {
     onFullView?: () => void;
 }
 
-// What Model is, next to its figure: 'Model: boxes saved by 2 technical accounts or made with the built-in
-// detector. A re-upload by a technical account counts again.'
-function modelNote(nouns: string, technicalAccounts: number): string {
-    if (!technicalAccounts) return `Model: ${nouns} made with the built-in detector.`;
-    const accounts = `${formatCount(technicalAccounts)} technical account${technicalAccounts === 1 ? '' : 's'}`;
-    return `Model: ${nouns} saved by ${accounts} or made with the built-in detector. ` +
-        'A re-upload by a technical account counts again.';
+// What Model is, next to its figure: 'Модель: боксы, сохранённые 2 техническими учётными записями или созданные
+// встроенным детектором. Повторная загрузка технической учётной записью учитывается снова.'
+function modelNote(things: string, technicalAccounts: number): string {
+    if (!technicalAccounts) return `Модель: ${things}, созданные встроенным детектором.`;
+    const n = `${formatCount(technicalAccounts)}${NBSP}`;
+    const tail = 'или созданные встроенным детектором. ' +
+        'Повторная загрузка технической учётной записью учитывается снова.';
+    return plural(technicalAccounts, [
+        `Модель: ${things}, сохранённые ${n}технической учётной записью ${tail}`,
+        `Модель: ${things}, сохранённые ${n}техническими учётными записями ${tail}`,
+        `Модель: ${things}, сохранённые ${n}техническими учётными записями ${tail}`,
+    ]);
 }
 
 // How objects are created: drawn, pasted and propagated, each with a bar, its count, share and average time,
@@ -40,25 +46,26 @@ function modelNote(nouns: string, technicalAccounts: number): string {
 function CreationMethodsCard({
     methods, legacy = false, savedBoxes, onFullView,
 }: Props): JSX.Element {
-    const { nouns } = shapeWording(methods);
+    const wording = shapeWording(methods);
     const { model } = methods;
+    const boxes = savedBoxes ? formatCount(savedBoxes.boxes) : '';
     const largest = Math.max(1, ...methods.rows.map((row) => row.objects), model?.objects ?? 0);
     return (
         <section className='cvat-team-analytics-card cvat-team-analytics-creation-methods'>
             <div className='cvat-team-analytics-card-header'>
-                <Text strong>{`How ${nouns.toLowerCase()} are created`}</Text>
+                <Text strong>{wording.howCreated}</Text>
                 <FullViewButton onClick={onFullView} />
             </div>
-            <Text type='secondary'>Each creation method counted on its own</Text>
+            <Text type='secondary'>Каждый способ создания считается отдельно</Text>
             <div className='cvat-team-analytics-table-scroll'>
                 <table className='cvat-team-analytics-table'>
                     <thead>
                         <tr>
-                            <th>Method</th>
+                            <th>Способ</th>
                             <th aria-hidden='true' />
-                            <th>{nouns}</th>
-                            <th>Share</th>
-                            <th><Term name='Time per operation'>Avg time</Term></th>
+                            <th>{wording.column}</th>
+                            <th>Доля</th>
+                            <th><Term name='time_per_operation'>Ср. время</Term></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -88,7 +95,7 @@ function CreationMethodsCard({
                             // the hover text sits on the count, not the row: it must not cover the Model definition
                             <tr className='cvat-team-analytics-method-row cvat-team-analytics-model-row'>
                                 <td className='cvat-team-analytics-operation-name'>
-                                    <Term name='Model'>{MODEL_NAME}</Term>
+                                    <Term name='model'>{MODEL_NAME}</Term>
                                 </td>
                                 <td className='cvat-team-analytics-method-bar-cell'>
                                     <span
@@ -108,7 +115,7 @@ function CreationMethodsCard({
                             </tr>
                         ) : null}
                         <tr className='cvat-team-analytics-methods-total'>
-                            <td colSpan={2}>All annotator methods</td>
+                            <td colSpan={2}>Все способы аннотаторов</td>
                             <td>{formatCount(methods.total.objects)}</td>
                             <td />
                             <td>{formatSeconds(methods.total.average_ms)}</td>
@@ -118,13 +125,16 @@ function CreationMethodsCard({
             </div>
             {model ? (
                 <Text type='secondary' className='cvat-team-analytics-methods-note'>
-                    {modelNote(nouns.toLowerCase(), methods.technical_accounts ?? 0)}
+                    {modelNote(wording.things, methods.technical_accounts ?? 0)}
                 </Text>
             ) : null}
             {legacy && savedBoxes ? (
                 <Text type='secondary' className='cvat-team-analytics-saved-boxes-note'>
-                    {`${formatCount(savedBoxes.boxes)} single-frame boxes were saved in this period, ` +
-                        'all methods together.'}
+                    {plural(savedBoxes.boxes, [
+                        `В этом периоде сохранён ${boxes}${NBSP}однокадровый бокс, все способы вместе.`,
+                        `В этом периоде сохранено ${boxes}${NBSP}однокадровых бокса, все способы вместе.`,
+                        `В этом периоде сохранено ${boxes}${NBSP}однокадровых боксов, все способы вместе.`,
+                    ])}
                 </Text>
             ) : null}
         </section>

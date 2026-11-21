@@ -99,9 +99,9 @@ test('opening a selector asks one list of its kind for the period, without the f
             { period: 'month', tz: lists(requests)[0].params.tz, month: '2026-10', by: 'projects' },
         ]);
         assert.equal(button(view.container, 'project').getAttribute('aria-expanded'), 'true');
-        // All first, then every project with work, No project included, named through the fork's API
+        // "Все проекты" first, then every project with work, "Без проекта" included, named through the fork's API
         assert.deepEqual(options(view.container, 'project'),
-            ['All projects', 'Retail shelves', 'No project', 'Street scenes']);
+            ['Все проекты', 'Retail shelves', 'Без проекта', 'Street scenes']);
         assert.ok(requests.some((sent) => sent.endpoint === 'project-names' && sent.params.ids === '2'),
             'the unnamed listed project is named');
 
@@ -109,7 +109,7 @@ test('opening a selector asks one list of its kind for the period, without the f
         await view.settle();
         assert.equal(lists(requests).at(-1).params.by, 'annotators');
         assert.equal(Object.hasOwn(lists(requests).at(-1).params, 'project'), false);
-        assert.deepEqual(options(view.container, 'annotator'), ['All annotators', 'bob', 'alice', 'zoe']);
+        assert.deepEqual(options(view.container, 'annotator'), ['Все аннотаторы', 'bob', 'alice', 'zoe']);
     });
 });
 
@@ -121,10 +121,10 @@ test('the search narrows the options by name, ignoring case; All stays first', a
         const input = selector(view.container, 'annotator').querySelector('input[role="combobox"]');
         assert.equal(document.activeElement === input, true, 'the search field takes focus');
         await type(input, 'ZO');
-        assert.deepEqual(options(view.container, 'annotator'), ['All annotators', 'zoe']);
+        assert.deepEqual(options(view.container, 'annotator'), ['Все аннотаторы', 'zoe']);
         await type(input, 'nobody');
-        assert.deepEqual(options(view.container, 'annotator'), ['All annotators']);
-        assert.equal(statusLine(view.container, 'annotator'), 'No match for this search');
+        assert.deepEqual(options(view.container, 'annotator'), ['Все аннотаторы']);
+        assert.equal(statusLine(view.container, 'annotator'), 'По этому запросу ничего не найдено');
     });
 });
 
@@ -174,10 +174,10 @@ test('a period not processed yet offers only All and the current value, and says
     await opened(Page, async (view) => {
         await click(button(view.container, 'annotator'));
         await view.settle();
-        assert.deepEqual(options(view.container, 'annotator'), ['All annotators', 'Annotator #40']);
+        assert.deepEqual(options(view.container, 'annotator'), ['Все аннотаторы', 'Аннотатор #40']);
         assert.equal(selector(view.container, 'annotator').querySelector('[aria-selected="true"]').textContent,
-            'Annotator #40');
-        assert.equal(statusLine(view.container, 'annotator'), 'This period is not processed yet');
+            'Аннотатор #40');
+        assert.equal(statusLine(view.container, 'annotator'), 'Этот период ещё не обработан');
     });
 });
 
@@ -189,15 +189,15 @@ test('a failed list says so and is asked again on the next opening; a list that 
     await opened(Page, async (view) => {
         await click(button(view.container, 'annotator'));
         await view.settle();
-        assert.equal(statusLine(view.container, 'annotator'), 'Could not load the list');
-        assert.deepEqual(options(view.container, 'annotator'), ['All annotators']);
+        assert.equal(statusLine(view.container, 'annotator'), 'Не удалось загрузить список');
+        assert.deepEqual(options(view.container, 'annotator'), ['Все аннотаторы']);
         await click(button(view.container, 'annotator'));
 
         fail = false;
         await click(button(view.container, 'annotator'));
         await view.settle();
         assert.equal(lists(requests).length, 2, 'asked again');
-        assert.deepEqual(options(view.container, 'annotator'), ['All annotators', 'bob', 'alice', 'zoe']);
+        assert.deepEqual(options(view.container, 'annotator'), ['Все аннотаторы', 'bob', 'alice', 'zoe']);
         await click(button(view.container, 'annotator'));
         await click(button(view.container, 'annotator'));
         await view.settle();
@@ -212,7 +212,7 @@ test('while the list loads the dropdown says so', async () => {
     await opened(Page, async (view) => {
         await click(button(view.container, 'annotator'));
         await view.settle();
-        assert.equal(statusLine(view.container, 'annotator'), 'Loading…');
+        assert.equal(statusLine(view.container, 'annotator'), 'Загрузка…');
         answer({ body: ANNOTATORS });
         await view.settle();
         assert.equal(statusLine(view.container, 'annotator'), '');
@@ -226,7 +226,7 @@ test('another period asks its own options', async () => {
         await view.settle();
         await click(button(view.container, 'annotator'));
         const twoWeeks = [...view.container.querySelectorAll('.cvat-team-analytics-period')]
-            .find((element) => element.textContent === 'Two weeks');
+            .find((element) => element.textContent === 'Две недели');
         await click(twoWeeks);
         await view.settle();
         await click(button(view.container, 'annotator'));
@@ -241,8 +241,8 @@ test('a shared link\'s value that is not among the options is still shown as sel
         await click(button(view.container, 'project'));
         await view.settle();
         assert.deepEqual(options(view.container, 'project'),
-            ['All projects', 'Project #77', 'Retail shelves', 'No project', 'Street scenes']);
-        assert.equal(selector(view.container, 'project').querySelector('[aria-selected="true"]').textContent, 'Project #77');
+            ['Все проекты', 'Проект #77', 'Retail shelves', 'Без проекта', 'Street scenes']);
+        assert.equal(selector(view.container, 'project').querySelector('[aria-selected="true"]').textContent, 'Проект #77');
     });
 });
 
@@ -259,7 +259,7 @@ test('keyboard: ArrowDown opens, arrows move the active option, Enter picks, Esc
         assert.equal(input.getAttribute('aria-controls'), listbox.id);
         assert.equal(trigger.getAttribute('aria-controls'), listbox.id);
         const activeName = () => document.getElementById(input.getAttribute('aria-activedescendant')).textContent;
-        assert.equal(activeName(), 'All annotators', 'with no filter All is active');
+        assert.equal(activeName(), 'Все аннотаторы', 'with no filter All is active');
         await press(input, 'ArrowDown');
         await press(input, 'ArrowDown');
         assert.equal(activeName(), 'alice');

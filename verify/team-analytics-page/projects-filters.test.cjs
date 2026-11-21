@@ -49,17 +49,17 @@ function rows(html, kind) {
         .map((match) => text(match[1]));
 }
 
-test('working time by project lists projects by name, No project for work outside projects', () => {
+test('working time by project lists projects by name, "Без проекта" (No project) for work outside projects', () => {
     const html = render(View, ready(OVERVIEW, { projectNames: { 1: 'Street scenes', 2: 'Retail shelves' } }));
     const projects = card(html, 'working-time-by-project');
-    assert.match(text(projects), /^Working time by project/);
-    assert.deepEqual(rows(projects, 'project'), ['Street scenes 3.5 h', 'Retail shelves 2.0 h', 'No project 1.0 h']);
+    assert.match(text(projects), /^Рабочее время по проектам/);
+    assert.deepEqual(rows(projects, 'project'), ['Street scenes 3,5 ч', 'Retail shelves 2,0 ч', 'Без проекта 1,0 ч']);
 });
 
 test('a project CVAT does not return to the viewer stays in the figures, shown by its identifier', () => {
     const html = render(View, ready(OVERVIEW, { projectNames: { 1: 'Street scenes' } }));
     assert.deepEqual(rows(card(html, 'working-time-by-project'), 'project'),
-        ['Street scenes 3.5 h', 'Project #2 2.0 h', 'No project 1.0 h']);
+        ['Street scenes 3,5 ч', 'Проект #2 2,0 ч', 'Без проекта 1,0 ч']);
 });
 
 test('each chart shows its rows and one line with the count and total of the rest', () => {
@@ -69,16 +69,36 @@ test('each chart shows its rows and one line with the count and total of the res
         by_project: { rows: OVERVIEW.by_project.rows, rest: { count: 1, working_time_ms: 0.5 * HOUR } },
     };
     const html = render(View, ready(overview));
-    assert.match(text(card(html, 'working-time-by-annotator')), /92 more, not shown 120\.3 h$/);
-    assert.match(text(card(html, 'working-time-by-project')), /1 more, not shown 0\.5 h$/);
-    assert.doesNotMatch(text(card(render(View, ready()), 'working-time-by-project')), /more, not shown/);
+    assert.match(text(card(html, 'working-time-by-annotator')), /Ещё 92 аннотатора не показаны 120,3 ч$/);
+    assert.match(text(card(html, 'working-time-by-project')), /Ещё 1 проект не показан 0,5 ч$/);
+    assert.doesNotMatch(text(card(render(View, ready()), 'working-time-by-project')), /не показан/);
+    // the Russian plural forms of the rest line: 1 / 2 / 5 / 21 / 11
+    const rest = (count) => text(card(render(View, ready({
+        ...OVERVIEW,
+        by_annotator: { rows: OVERVIEW.by_annotator.rows, rest: { count, working_time_ms: HOUR } },
+        by_project: { rows: OVERVIEW.by_project.rows, rest: { count, working_time_ms: HOUR } },
+    })), 'working-time-by-annotator'));
+    const restProjects = (count) => text(card(render(View, ready({
+        ...OVERVIEW,
+        by_project: { rows: OVERVIEW.by_project.rows, rest: { count, working_time_ms: HOUR } },
+    })), 'working-time-by-project'));
+    for (const [count, annotators, projects] of [
+        [1, 'аннотатор не показан', 'проект не показан'],
+        [2, 'аннотатора не показаны', 'проекта не показаны'],
+        [5, 'аннотаторов не показано', 'проектов не показано'],
+        [21, 'аннотатор не показан', 'проект не показан'],
+        [11, 'аннотаторов не показано', 'проектов не показано'],
+    ]) {
+        assert.match(rest(count), new RegExp(`Ещё ${count} ${annotators} 1,0 ч$`));
+        assert.match(restProjects(count), new RegExp(`Ещё ${count} ${projects} 1,0 ч$`));
+    }
 });
 
 test('each chart carries its legend inside the card', () => {
     const html = render(View, ready());
     for (const name of ['working-time-by-project', 'working-time-by-annotator']) {
         // the split's colours (split-bars.test.cjs)
-        assert.match(card(html, name), /cvat-team-analytics-breakdown-legend[^>]*>.*Creation.*Other/);
+        assert.match(card(html, name), /cvat-team-analytics-breakdown-legend[^>]*>.*Создание.*Прочее/);
     }
 });
 
@@ -90,18 +110,23 @@ test('a long name is shortened by the layout with the full name on hover', () =>
 
 test('the headline shows active annotators and across how many projects', () => {
     const headline = (html) => text(card(html, 'annotators'));
-    assert.equal(headline(render(View, ready())), 'Active annotators 2 across 3 projects');
+    assert.equal(headline(render(View, ready())), 'Активные аннотаторы 2 в 3 проектах');
     assert.equal(headline(render(View, ready({ ...OVERVIEW, headline: { annotators: 1, projects: 1 } }))),
-        'Active annotators 1 across 1 project');
+        'Активные аннотаторы 1 в 1 проекте');
+    // the Russian plural forms of the projects: 2 and 5 are plural, 21 is singular again, 11 is plural
+    for (const [projects, phrase] of [[2, 'в 2 проектах'], [5, 'в 5 проектах'], [21, 'в 21 проекте'], [11, 'в 11 проектах']]) {
+        assert.equal(headline(render(View, ready({ ...OVERVIEW, headline: { annotators: 2, projects } }))),
+            `Активные аннотаторы 2 ${phrase}`);
+    }
     const filtered = {
         ...OVERVIEW,
         headline: { annotators: 1, projects: 2 },
         by_annotator: { ...OVERVIEW.by_annotator, rest: { count: 3, working_time_ms: HOUR } },
     };
     assert.equal(headline(render(View, ready(filtered, { address: address(null, 12) }))),
-        'Active annotators 1 of 5 across 2 projects');
+        'Активные аннотаторы 1 из 5 в 2 проектах');
     assert.equal(headline(render(View, ready(OVERVIEW, { address: address(1, null) }))),
-        'Active annotators 2 worked in the selected project');
+        'Активные аннотаторы 2 работали в выбранном проекте');
 });
 
 function chips(html) {
@@ -116,10 +141,10 @@ test('the filter row names the selected project and annotator, the selected rows
     const html = render(View, ready(overview, {
         address: address(0, 40), onAddressChange() {}, projectNames: {},
     }));
-    assert.equal(chips(html), 'Project No project × Annotator zoe ×');
-    assert.match(card(html, 'working-time-by-project'), /aria-pressed="true"[^>]*title="No project: 1\.00 h"/);
+    assert.equal(chips(html), 'Проект Без проекта × Аннотатор zoe ×');
+    assert.match(card(html, 'working-time-by-project'), /aria-pressed="true"[^>]*title="Без проекта: 1,00\u00a0ч"/);
     assert.equal(chips(render(View, ready(OVERVIEW, { address: address(null, null), onAddressChange() {} }))),
-        'Project All projects Annotator All annotators');
+        'Проект Все проекты Аннотатор Все аннотаторы');
 });
 
 test('project names come from the fork\'s API (GET project-names), one request for the wanted projects', async () => {
@@ -296,7 +321,7 @@ test('a shared address opens with its filters; a filter change keeps the period 
     await opened(Page, async (view) => {
         assert.deepEqual(filterParams(requests[0]), ['0', '40']);
         assert.equal(view.container.querySelector('.cvat-team-analytics-filter-chips').textContent,
-            'ProjectNo project×Annotatorzoe×');
+            'ПроектБез проекта×Аннотаторzoe×');
         await click(view.container.querySelector('.cvat-team-analytics-filter-project .cvat-team-analytics-filter-clear'));
         await view.settle();
         assert.equal(history.location.search, '?period=month&month=2026-10&annotator=40&org=team-org&tab=x');
@@ -311,8 +336,8 @@ test('project names are asked for the shown and selected projects; a failed look
     await opened(Page, async (view) => {
         assert.deepEqual([...lookups.at(-1)].sort(), [1, 2, 7]);
         assert.deepEqual([...view.container.querySelectorAll('.cvat-team-analytics-project-row .cvat-team-analytics-name')]
-            .map((element) => element.textContent), ['Project #1', 'Project #2', 'No project']);
-        assert.match(view.container.querySelector('.cvat-team-analytics-filter-project').textContent, /Project #7/);
+            .map((element) => element.textContent), ['Проект #1', 'Проект #2', 'Без проекта']);
+        assert.match(view.container.querySelector('.cvat-team-analytics-filter-project').textContent, /Проект #7/);
     });
 });
 
@@ -326,8 +351,8 @@ test('filters picked in one organization are not applied in another', async () =
     await opened(Page, async (view) => {
         assert.deepEqual(filterParams(lastOverview(requests)), [null, null]);
         const chips = view.container.querySelector('.cvat-team-analytics-filter-chips').textContent;
-        assert.match(chips, /All projects/);
-        assert.match(chips, /All annotators/);
+        assert.match(chips, /Все проекты/);
+        assert.match(chips, /Все аннотаторы/);
 
         // a filter picked now belongs to the current organization
         await click(rowNamed(view.container, 'annotator', 'bob'));

@@ -21,20 +21,20 @@ async function visit(organization, answer) {
     return { text, html, requests };
 }
 
-const ROLES = /This page is for administrators of this CVAT instance\./;
+const ROLES = /Эта страница только для администраторов этого экземпляра CVAT\./;
 
 test('an ordinary annotator without an organization sees that the page is not available and for whom', async () => {
     const { text, requests } = await visit(null, { status: 403, body: { error: 'forbidden' } });
     assert.equal(new URL(requests[0].url, 'http://localhost').searchParams.get('org'), null);
-    assert.match(text, /Team analytics is not available/);
+    assert.match(text, /Страница Team Analytics недоступна/);
     assert.match(text, ROLES);
-    assert.doesNotMatch(text, /Select an organization/);
-    assert.doesNotMatch(text, /All organizations and personal workspaces/);
+    assert.doesNotMatch(text, /Выберите организацию/);
+    assert.doesNotMatch(text, /Все организации и личные пространства/);
 });
 
 test('anyone but an administrator, an owner or maintainer of the selected organization too, sees the denied state', async () => {
     const { text, html } = await visit('team-org', { status: 403, body: { error: 'forbidden' } });
-    assert.match(text, /Team analytics is not available/);
+    assert.match(text, /Страница Team Analytics недоступна/);
     assert.match(text, ROLES);
     assert.doesNotMatch(html, /cvat-team-analytics-error/);
     assert.doesNotMatch(html, /cvat-team-analytics-annotator-row/);
@@ -46,43 +46,43 @@ test('a 403 is the denied state whatever its body: there is no "select an organi
         const { text, html } = await visit(null, { status: 403, body });
         assert.ok(html.includes('cvat-team-analytics-denied'));
         assert.match(text, ROLES);
-        assert.doesNotMatch(text, /Select an organization|No organization selected/);
-        assert.doesNotMatch(text, /All organizations and personal workspaces/);
+        assert.doesNotMatch(text, /Выберите организацию|Организация не выбрана/);
+        assert.doesNotMatch(text, /Все организации и личные пространства/);
     }
 });
 
 test('an administrator reads organization scope with an organization selected and instance scope with none', async () => {
     const ready = { status: 200, body: { by_annotator: { rows: [] } } };
-    assert.match((await visit('team-org', ready)).text, /Organization team-org · annotation work inside jobs/);
-    assert.match((await visit(null, ready)).text, /All organizations and personal workspaces · annotation work inside jobs/);
+    assert.match((await visit('team-org', ready)).text, /Организация team-org · работа в заданиях/);
+    assert.match((await visit(null, ready)).text, /Все организации и личные пространства · работа в заданиях/);
 });
 
 test('an ended session asks to sign in again instead of naming the roles', async () => {
     const { text, html } = await visit('team-org', { status: 401, body: { error: 'not_authenticated' } });
     assert.ok(html.includes('cvat-team-analytics-signed-out'));
-    assert.match(text, /Sign in again/);
+    assert.match(text, /Войдите снова/);
     assert.doesNotMatch(text, ROLES);
 });
 
 test('when CVAT cannot be reached behind the service the page shows the error panel, no figures', async () => {
     const { text, html } = await visit('team-org', { status: 503, body: { error: 'cvat_unavailable' } });
     assert.ok(html.includes('cvat-team-analytics-error'));
-    assert.match(text, /Team analytics could not be loaded/);
+    assert.match(text, /Не удалось загрузить Team Analytics/);
     assert.doesNotMatch(html, /cvat-team-analytics-annotator-row/);
 });
 
 test('a 404 (analytics switched off, or an unknown organization) shows that the page is not available', async () => {
     const { text, html } = await visit('team-org', { status: 404, body: null });
-    assert.match(text, /Team analytics is not available/);
+    assert.match(text, /Страница Team Analytics недоступна/);
     assert.doesNotMatch(html, /cvat-team-analytics-error/);
-    assert.doesNotMatch(text, /Select an organization/);
+    assert.doesNotMatch(text, /Выберите организацию/);
 });
 
 test('a 429 that outlived cvat-core\'s retries shows the error panel, no refusal', async () => {
     const { text, html } = await visit('team-org', { status: 429, body: null });
     assert.ok(html.includes('cvat-team-analytics-error'));
-    assert.match(text, /Team analytics could not be loaded/);
-    assert.doesNotMatch(text, /not available/);
+    assert.match(text, /Не удалось загрузить Team Analytics/);
+    assert.doesNotMatch(text, /недоступна/);
 });
 
 // A refusal from any request of an open page, not only the overview, replaces the figures with the refusal.
@@ -115,10 +115,10 @@ async function visitOpenPage(answers, search = '') {
 
 test('a refusal of the trends, details, list or status request takes the whole page to that refusal', async (t) => {
     const cases = [
-        ['trends', { status: 403, body: { error: 'forbidden' } }, '', /Team analytics is not available/],
-        ['details', { status: 401, body: { error: 'not_authenticated' } }, '', /Sign in again/],
-        ['status', { status: 401, body: { error: 'not_authenticated' } }, '', /Sign in again/],
-        ['list', { status: 403, body: { error: 'forbidden' } }, '?view=annotators', /Team analytics is not available/],
+        ['trends', { status: 403, body: { error: 'forbidden' } }, '', /Страница Team Analytics недоступна/],
+        ['details', { status: 401, body: { error: 'not_authenticated' } }, '', /Войдите снова/],
+        ['status', { status: 401, body: { error: 'not_authenticated' } }, '', /Войдите снова/],
+        ['list', { status: 403, body: { error: 'forbidden' } }, '?view=annotators', /Страница Team Analytics недоступна/],
     ];
     for (const [endpoint, answer, search, shown] of cases) {
         // eslint-disable-next-line no-await-in-loop
@@ -135,8 +135,8 @@ test('a refusal of the trends, details, list or status request takes the whole p
 test('a trends request that fails without a refusal keeps the figures shown', async () => {
     const page = await visitOpenPage({ trends: { status: 503, body: { error: 'cvat_unavailable' } } });
     assert.match(page.text, /alice/);
-    assert.match(page.text, /Trends could not be loaded/);
-    assert.doesNotMatch(page.text, /not available/);
+    assert.match(page.text, /Не удалось загрузить динамику/);
+    assert.doesNotMatch(page.text, /недоступна/);
 });
 
 // --- the signed-in account: only an administrator's page asks the API anything ---------------------------------
@@ -189,7 +189,7 @@ test('a non-administrator gets the "not available" panel at once and the page as
             'cvat-team-analytics-header', 'ant-spin']) {
             assert.doesNotMatch(page.first, new RegExp(control), `${control} is never shown`);
         }
-        assert.doesNotMatch(page.text, /All organizations and personal workspaces|Organization team-org/);
+        assert.doesNotMatch(page.text, /Все организации и личные пространства|Организация team-org/);
     }
 });
 

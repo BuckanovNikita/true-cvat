@@ -70,9 +70,9 @@ const ALL = ready({ operations: operations('all'), creation_methods: creationMet
 test('the card lists each method with its count, share and average time', () => {
     const rows = methodRows(render(View, BOXES)).map(text);
     assert.deepEqual(rows, [
-        'Drawn 600 50% 6.2 s',
-        'Pasted 400 33% 1.5 s',
-        'Propagated 200 17% 0.8 s',
+        'Нарисовано 600 50% 6,2 с',
+        'Вставлено 400 33% 1,5 с',
+        'Распространено 200 17% 0,8 с',
     ]);
 });
 
@@ -89,15 +89,15 @@ test('one line gives the three methods together, with the average the Creation o
     const html = render(View, BOXES);
     const total = html.match(/<tr[^>]*cvat-team-analytics-methods-total[^>]*>(.*?)<\/tr>/);
     assert.ok(total, 'the total line is shown');
-    assert.equal(text(total[1]), 'All annotator methods 1,200 3.8 s');
-    assert.match(text(card(html, 'cvat-team-analytics-average-creation')), / 3\.8 s /);
+    assert.equal(text(total[1]), 'Все способы аннотаторов 1 200 3,8 с');
+    assert.match(text(card(html, 'cvat-team-analytics-average-creation')), / 3,8 с /);
 });
 
 test('the card is worded after the shapes the figures cover', () => {
     assert.ok(text(card(render(View, BOXES), 'cvat-team-analytics-creation-methods'))
-        .startsWith('How boxes are created Each creation method counted on its own Method Boxes Share Avg time'));
+        .startsWith('Как создаются боксы Каждый способ создания считается отдельно Способ Боксы Доля Ср. время'));
     assert.ok(text(card(render(View, ALL), 'cvat-team-analytics-creation-methods'))
-        .startsWith('How objects are created Each creation method counted on its own Method Objects Share Avg time'));
+        .startsWith('Как создаются объекты Каждый способ создания считается отдельно Способ Объекты Доля Ср. время'));
 });
 
 test('a method without a measured time or without creations shows no average or share', () => {
@@ -111,17 +111,17 @@ test('a method without a measured time or without creations shows no average or 
             },
         },
     }));
-    assert.deepEqual(methodRows(html).map(text), ['Drawn 0 — —', 'Pasted 0 — —', 'Propagated 0 — —']);
+    assert.deepEqual(methodRows(html).map(text), ['Нарисовано 0 — —', 'Вставлено 0 — —', 'Распространено 0 — —']);
 });
 
 test('the headline average time shows the per-method averages beneath it', () => {
     assert.equal(text(card(render(View, BOXES), 'cvat-team-analytics-average-creation')),
-        'Avg time per box 3.8 s drawn 6.2 s · pasted 1.5 s · propagated 0.8 s');
+        'Ср. время на бокс 3,8 с нарисовано 6,2 с · вставлено 1,5 с · распространено 0,8 с');
 });
 
 test('without creation methods the headline keeps its plain line and no methods card is shown', () => {
     const html = render(View, ready({ operations: operations('all') }));
-    assert.equal(text(card(html, 'cvat-team-analytics-average-creation')), 'Avg time per object 3.8 s to create one');
+    assert.equal(text(card(html, 'cvat-team-analytics-average-creation')), 'Ср. время на объект 3,8 с на создание одного');
     assert.doesNotMatch(html, /cvat-team-analytics-creation-methods/);
 });
 

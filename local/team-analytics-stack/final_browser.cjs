@@ -498,10 +498,13 @@ async function pageChecks(contextFile) {
         })()`);
         const want = {
             operations: {
-                Creation: String(did.drawn + did.pasted_objects + did.propagated), Alignment: String(did.alignments),
-                'Class change': String(did.class_changes.reduce((n, c) => n + c.count, 0)), Deletion: String(did.deleted_objects),
+                'Создание': String(did.drawn + did.pasted_objects + did.propagated), 'Подгонка': String(did.alignments),
+                'Смена класса': String(did.class_changes.reduce((n, c) => n + c.count, 0)), 'Удаление': String(did.deleted_objects),
             },
-            methods: { Drawn: String(did.drawn), Pasted: String(did.pasted_objects), Propagated: String(did.propagated), Model: String(model) },
+            methods: {
+                'Нарисовано': String(did.drawn), 'Вставлено': String(did.pasted_objects),
+                'Распространено': String(did.propagated), 'Модель': String(model),
+            },
             created: String(did.drawn + did.pasted_objects + did.propagated),
             sessions: '1',
         };
@@ -509,7 +512,7 @@ async function pageChecks(contextFile) {
         await small.screenshot('final-real-ui-project');
         check(JSON.stringify({ ...shown, hotkeys: undefined }) === JSON.stringify({ ...want, hotkeys: undefined }),
             `the page shows ${JSON.stringify(shown)}, expected ${JSON.stringify(want)}`);
-        check(shown.hotkeys.some((text) => text.includes(`Hotkey actions ${pressed}`)), `keyboard figures ${JSON.stringify(shown.hotkeys)}, ${pressed} hotkeys pressed`);
+        check(shown.hotkeys.some((text) => text.includes(`Действия горячими клавишами ${pressed}`)), `keyboard figures ${JSON.stringify(shown.hotkeys)}, ${pressed} hotkeys pressed`);
         log(`real UI figures on the page (project ${ui.project_id}): ${JSON.stringify(shown.operations)}, methods ${JSON.stringify(shown.methods)}, hotkey actions ${pressed}`);
 
         const page = await signIn(browser, ADMIN, context.volume_org);
@@ -528,23 +531,23 @@ async function pageChecks(contextFile) {
         const projectNames = await page.evaluate('[...document.querySelectorAll(".cvat-team-analytics-working-time-by-project .cvat-team-analytics-breakdown-row .cvat-team-analytics-name")].map((e) => e.textContent.trim())');
         check(projectNames.length === 8 && projectNames.every((name) => name.startsWith('Volume project') && name.length > 80),
             `project names on the page ${JSON.stringify(projectNames)}`);
-        check(restTexts.some((t) => t.startsWith('92 more')) && restTexts.some((t) => t.startsWith('32 more')), `remainder lines ${JSON.stringify(restTexts)}`);
+        check(restTexts.some((t) => /^Ещё 92\s+аннотатора не показаны/.test(t)) && restTexts.some((t) => /^Ещё 32\s+проекта не показаны/.test(t)), `remainder lines ${JSON.stringify(restTexts)}`);
         check(overflow.length === 0, `overflow at 1400 px: ${JSON.stringify(overflow)}`);
         check(result.volume_height <= result.small_height * 1.5,
             `the overview grew from ${result.small_height} px (1 annotator) to ${result.volume_height} px (100 annotators)`);
-        log(`page loads: 100 active annotators, 8 + "92 more" annotators, 8 + "32 more" projects; height ${result.volume_height} px (ta-org-c: ${result.small_height} px); no overflow`);
+        log(`page loads: 100 active annotators, 8 + "Ещё 92 аннотатора не показаны", 8 + "Ещё 32 проекта не показаны"; height ${result.volume_height} px (ta-org-c: ${result.small_height} px); no overflow`);
 
         // period
-        await clickText(page, keys, '.cvat-team-analytics-period', 'Year');
+        await clickText(page, keys, '.cvat-team-analytics-period', 'Год');
         await page.waitFor('location.search.includes("period=year")', 'period=year in the address');
         await overviewReady(page, 'the year');
         const yearRange = await textOf(page, '.cvat-team-analytics-range-label');
         const yearBars = await count(page, '.cvat-team-analytics-time-bar');
         check(yearBars >= 50, `year chart has ${yearBars} bars`);
-        await clickText(page, keys, '.cvat-team-analytics-period', 'Week');
+        await clickText(page, keys, '.cvat-team-analytics-period', 'Неделя');
         await page.waitFor('!location.search.includes("period=year")', 'back to the week');
         await overviewReady(page, 'the week again');
-        log(`period: Year (${yearRange}, ${yearBars} weekly bars) and back to Week`);
+        log(`period: Год (${yearRange}, ${yearBars} weekly bars) and back to Неделя`);
 
         // project filter, then the annotator filter
         await clickSelector(page, keys, '.cvat-team-analytics-working-time-by-project .cvat-team-analytics-breakdown-row');
@@ -556,7 +559,7 @@ async function pageChecks(contextFile) {
         await page.waitFor('location.search.includes("annotator=")', 'annotator= in the address');
         await overviewReady(page, 'the annotator filter');
         const one = await textOf(page, ANNOTATORS_VALUE);
-        check(one === `1 of ${inProject}`, `annotators under both filters: ${one}`);
+        check(one === `1 из ${inProject}`, `annotators under both filters: ${one}`);
         const filtered = await search(page);
         await page.screenshot('final-filters');
         while (await count(page, '.cvat-team-analytics-filter-clear')) {
@@ -580,7 +583,7 @@ async function pageChecks(contextFile) {
         await clickSelector(page, keys, '.cvat-team-analytics-full-back');
         await page.waitFor('!location.search.includes("view=")', 'back to the overview');
         await overviewReady(page, 'the overview after the full view');
-        log(`full view: ${listed} annotators listed, no overflow; "Back to overview" returns`);
+        log(`full view: ${listed} annotators listed, no overflow; "Назад к обзору" returns`);
 
         // trends comparing two annotators
         for (const n of ['001', '002']) {
@@ -647,7 +650,7 @@ async function serviceDown(stateFile) {
         const panel = await admin.waitFor('document.querySelector(".cvat-team-analytics-error")?.textContent.trim()', 'the error panel', 90000);
         const panelAfterS = ((Date.now() - opened) / 1000).toFixed(1);
         await admin.screenshot('final-service-down');
-        check(panel.includes('could not be loaded'), `error panel reads "${panel}"`);
+        check(panel.includes('Не удалось загрузить Team Analytics'), `error panel reads "${panel}"`);
         log(`analytics worker at zero: the page shows "${panel.slice(0, 70)}" ${panelAfterS} s after it was opened`);
 
         const page = await signIn(browser, state.worker, state.org);

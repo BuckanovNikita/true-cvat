@@ -76,27 +76,43 @@ function card(html) {
 test('the card shows hotkey actions, mouse actions and the hotkey share for the scope', () => {
     const html = card(render(View, ready({ input: INPUT })));
     const figures = text(html);
-    assert.match(figures, /Hotkey actions 1\.23M/);
-    assert.match(figures, /Mouse actions 412K/);
-    assert.match(figures, /Hotkey share 75%/);
-    assert.match(html, /title="1,234,567 exactly"/);
-    assert.match(html, /title="1,234,567 hotkey actions of 1,646,089"/);
+    assert.match(figures, /Действия горячими клавишами 1,23 млн/);
+    assert.match(figures, /Действия мышью 412 тыс\./);
+    assert.match(figures, /Доля горячих клавиш 75%/);
+    assert.match(html, /title="Точное значение: 1\u00a0234\u00a0567"/);
+    assert.match(html, /title="1\u00a0234\u00a0567\u00a0действий горячими клавишами из 1\u00a0646\u00a0089"/);
+});
+
+test('the counts of other hotkeys and of hotkey actions take the Russian plural forms', () => {
+    const restOf = (count) => text(card(render(View, ready({ input: { ...INPUT, rest: { count, actions: 10 } } }))));
+    assert.match(restOf(1), /1 другая горячая клавиша не показана 10/);
+    assert.match(restOf(2), /2 другие горячие клавиши не показаны 10/);
+    assert.match(restOf(5), /5 других горячих клавиш не показано 10/);
+    assert.match(restOf(11), /11 других горячих клавиш не показано 10/);
+    assert.match(restOf(21), /21 другая горячая клавиша не показана 10/);
+    const titleOf = (actions) => card(render(View, ready({
+        input: { ...INPUT, hotkey_actions: actions, mouse_actions: 100 },
+    }))).match(/class="cvat-team-analytics-keyboard-share" title="([^"]*)"/)[1];
+    assert.equal(titleOf(1), '1\u00a0действие горячей клавишей из 101');
+    assert.equal(titleOf(2), '2\u00a0действия горячими клавишами из 102');
+    assert.equal(titleOf(5), '5\u00a0действий горячими клавишами из 105');
+    assert.equal(titleOf(21), '21\u00a0действие горячей клавишей из 121');
 });
 
 test('the seven most used hotkeys are named by action with the viewer\'s keys, the rest on one line', () => {
     const html = card(render(View, ready({ input: INPUT })));
     const rows = [...html.matchAll(/<li[^>]*cvat-team-analytics-hotkey-row[^>]*>(.*?)<\/li>/g)].map((m) => text(m[1]));
     assert.deepEqual(rows, [
-        'Next frame F 500,000',
-        'Draw mode N 300,000',
-        'Previous frame D 200,000',
-        'Switch label Ctrl+1 100,000',
-        'Save the job Ctrl+S 60,000',
-        'Delete object Del, Shift+Del 40,000',
+        'Next frame F 500 000',
+        'Draw mode N 300 000',
+        'Previous frame D 200 000',
+        'Switch label Ctrl+1 100 000',
+        'Save the job Ctrl+S 60 000',
+        'Delete object Del, Shift+Del 40 000',
         // an action the viewer's keymap does not know is shown by its name
-        'GONE_IN_A_NEWER_UI — 20,000',
+        'GONE_IN_A_NEWER_UI — 20 000',
     ]);
-    assert.match(text(html), /5 other hotkeys, not shown 14,567/);
+    assert.match(text(html), /5 других горячих клавиш не показано 14 567/);
 });
 
 test('a period without recorded input has no share and no hotkeys yet', () => {
@@ -106,9 +122,9 @@ test('a period without recorded input has no share and no hotkeys yet', () => {
             rest: { count: 0, actions: 0 },
         },
     }))));
-    assert.match(figures, /Hotkey share —/);
-    assert.match(figures, /No hotkey actions in this period/);
-    assert.doesNotMatch(figures, /other hotkeys/);
+    assert.match(figures, /Доля горячих клавиш —/);
+    assert.match(figures, /В этом периоде нет действий горячими клавишами/);
+    assert.doesNotMatch(figures, /других горячих клавиш/);
 });
 
 test('a legacy period says hotkey use was not recorded', () => {
@@ -120,8 +136,8 @@ test('a legacy period says hotkey use was not recorded', () => {
         },
     }));
     const figures = text(card(html));
-    assert.match(figures, /Hotkey use was not recorded in this period/);
-    assert.doesNotMatch(figures, /Hotkey actions 0/);
+    assert.match(figures, /Использование горячих клавиш в этом периоде не записывалось/);
+    assert.doesNotMatch(figures, /Действия горячими клавишами 0/);
 });
 
 test('a scope without shape-tagged operations but with counted input shows its figures', () => {
@@ -129,8 +145,8 @@ test('a scope without shape-tagged operations but with counted input shows its f
         operations: { ...OPERATIONS, legacy: true, shapes: 'all' },
         input: INPUT,
     }))));
-    assert.match(figures, /Hotkey actions 1\.23M/);
-    assert.doesNotMatch(figures, /not recorded/);
+    assert.match(figures, /Действия горячими клавишами 1,23 млн/);
+    assert.doesNotMatch(figures, /не записывалось/);
 });
 
 test('the operations table splits creation, class change and deletion into hotkey and mouse starts', () => {
@@ -138,12 +154,12 @@ test('the operations table splits creation, class change and deletion into hotke
     const table = html.match(/<section[^>]*cvat-team-analytics-operations[^>]*>(.*?)<\/section>/)[1];
     // a row of its own under each operation, the operation named for a screen reader
     assert.match(table, /<tr class="cvat-team-analytics-input-split-row"><td colspan="5"/i);
-    assert.match(table, /Creation started by: /);
+    assert.match(table, /Создание, начато: /);
     const cells = [...table.matchAll(/<td[^>]*cvat-team-analytics-input-split[^>]*>(.*?)<\/td>/g)].map((m) => (
         text(m[1].replace(/<span class="cvat-team-analytics-visually-hidden">.*?<\/span>/, ''))
     ));
-    assert.deepEqual(cells, ['30% hotkey / 70% mouse', 'Mouse only', '90% hotkey / 10% mouse', '—']);
-    assert.match(table, /title="Creation: 30% by hotkey, 70% by mouse"/);
+    assert.deepEqual(cells, ['30% горячей клавишей / 70% мышью', 'Только мышью', '90% горячей клавишей / 10% мышью', '—']);
+    assert.match(table, /title="Создание: 30% горячей клавишей, 70% мышью"/);
 });
 
 test('in a legacy period the split is not recorded, alignment still mouse only', () => {
@@ -152,7 +168,7 @@ test('in a legacy period the split is not recorded, alignment still mouse only',
     const cells = [...table.matchAll(/<td[^>]*cvat-team-analytics-input-split[^>]*>(.*?)<\/td>/g)].map((m) => (
         text(m[1].replace(/<span class="cvat-team-analytics-visually-hidden">.*?<\/span>/, ''))
     ));
-    assert.deepEqual(cells, ['Not recorded', 'Mouse only', 'Not recorded', 'Not recorded']);
+    assert.deepEqual(cells, ['Не записано', 'Только мышью', 'Не записано', 'Не записано']);
 });
 
 test('the mounted page labels hotkeys from the viewer\'s keymap in the store', async () => {
@@ -177,9 +193,10 @@ test('the mounted page labels hotkeys from the viewer\'s keymap in the store', a
     const view = await mount(React.createElement(Page));
     try {
         await view.settle();
-        const rows = text(card(view.container.innerHTML));
-        assert.match(rows, /Next frame G 500,000/);
-        assert.match(rows, /Previous frame D, Shift\+D 200,000/);
+        // innerHTML writes the non-breaking space as an entity
+        const rows = text(card(view.container.innerHTML).replace(/&nbsp;/g, ' '));
+        assert.match(rows, /Next frame G 500 000/);
+        assert.match(rows, /Previous frame D, Shift\+D 200 000/);
     } finally {
         await view.unmount();
     }
