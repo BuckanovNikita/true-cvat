@@ -6,6 +6,11 @@
 
 @import 'base';
 
+// the period beside the card's title stays on one line: where the card is narrow the title wraps, not both
+.cvat-team-analytics-breakdown-period {
+    white-space: nowrap;
+}
+
 .cvat-team-analytics-breakdown-legend {
     display: flex;
     flex-wrap: wrap;

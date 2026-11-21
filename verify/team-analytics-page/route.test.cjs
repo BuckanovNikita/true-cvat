@@ -43,7 +43,7 @@ test('the page module is loaded only when the route renders, then shows the figu
     assert.equal(loads, 1);
     assert.equal(requests.filter((request) => request.url.includes('/overview')).length, 1);
     assert.match(view.container.textContent, /alice/);
-    assert.match(view.container.textContent, /2\.0 h/);
+    assert.match(view.container.textContent, /2,0\u00a0ч/);
     await view.unmount();
 });
 
@@ -59,7 +59,7 @@ test('a page that fails to load shows an error panel on that page and the rest o
         const view = await mount(app(route(boundaries)));
         await view.settle();
         assert.ok(view.container.querySelector('.cvat-team-analytics-error'));
-        assert.match(view.container.textContent, /Team analytics could not be loaded/);
+        assert.match(view.container.textContent, /Не удалось загрузить Team Analytics/);
         assert.ok(view.container.querySelector('#rest-of-cvat'), 'the rest of CVAT must still render');
         await view.unmount();
     } finally {

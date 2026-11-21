@@ -16,11 +16,11 @@ export interface OperationLook {
 }
 
 export const OPERATION_LOOKS: Record<OperationName, OperationLook> = {
-    creation: { name: 'Creation', color: '#2a78d6', ink: '#ffffff' },
-    alignment: { name: 'Alignment', color: '#eb6834', ink: '#ffffff' },
-    class_change: { name: 'Class change', color: '#1baf7a', ink: '#ffffff' },
-    deletion: { name: 'Deletion', color: '#eda100', ink: '#0b0b0b' },
-    other: { name: 'Other', color: '#c9c8c2', ink: '#0b0b0b' },
+    creation: { name: 'Создание', color: '#2a78d6', ink: '#ffffff' },
+    alignment: { name: 'Подгонка', color: '#eb6834', ink: '#ffffff' },
+    class_change: { name: 'Смена класса', color: '#1baf7a', ink: '#ffffff' },
+    deletion: { name: 'Удаление', color: '#eda100', ink: '#0b0b0b' },
+    other: { name: 'Прочее', color: '#c9c8c2', ink: '#0b0b0b' },
 };
 
 // One part of a row's bar

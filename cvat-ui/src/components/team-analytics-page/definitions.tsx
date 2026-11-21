@@ -7,21 +7,28 @@ import './definitions.scss';
 import React, { useEffect, useId, useState } from 'react';
 import Tooltip from 'antd/lib/tooltip';
 
-export type TermName = 'Session' | 'Working time' | 'Time per operation' | 'Model';
+export type TermName = 'session' | 'working_time' | 'time_per_operation' | 'model';
 
-// Worded from DOCS.md, "Domain terms". Session inlines the session gap (five minutes); Time per operation
-// inlines the idle pause (100 seconds).
+// The term as the page writes it when the words that carry the definition are not given.
+export const TERM_LABELS: Record<TermName, string> = {
+    session: 'Сессия',
+    working_time: 'Рабочее время',
+    time_per_operation: 'Время на операцию',
+    model: 'Модель',
+};
+
+// Worded from DOCS.md, "Domain terms", in Russian. Session inlines the session gap (five minutes); Time per
+// operation inlines the idle pause (100 seconds).
 export const DEFINITIONS: Record<TermName, string> = {
-    Session: 'One uninterrupted interval of job work by one person, at most a day long. A pause longer than ' +
-        'five minutes ends it. Seen for a single project, a session counts if it touched that project, and its ' +
-        'length is only the time spent inside it.',
-    'Working time': 'The time the server counts as worked, the same figure Grafana reports. It is the only ' +
-        'total: every breakdown of time adds up to it.',
-    'Time per operation': "The time from a person's previous action to the end of the operation, so that " +
-        'finding, deciding and pointing are part of it. A pause longer than 100 seconds before an action belongs ' +
-        'to no operation.',
-    Model: 'Created without a person drawing it: saved by a technical account or produced by the built-in ' +
-        'detector. Model boxes have counts but no time.',
+    session: 'Один непрерывный интервал работы одного человека в заданиях, не длиннее суток. Пауза дольше ' +
+        'пяти минут завершает сессию. Для отдельного проекта сессия учитывается, если она затронула этот ' +
+        'проект, а её длина — только время, проведённое в нём.',
+    working_time: 'Время, которое сервер считает отработанным, — тот же показатель, что показывает Grafana. ' +
+        'Это единственный итог: любая разбивка времени в сумме даёт его.',
+    time_per_operation: 'Время от предыдущего действия человека до конца операции, поэтому поиск, решение и ' +
+        'наведение входят в него. Пауза дольше 100 секунд перед действием не относится ни к одной операции.',
+    model: 'Создано без рисования человеком: сохранено технической учётной записью или получено встроенным ' +
+        'детектором. У боксов модели есть количество, но нет времени.',
 };
 
 interface Props {
@@ -75,7 +82,7 @@ export function Term({ name, children }: Props): JSX.Element {
                     }
                 }}
             >
-                {children ?? name}
+                {children ?? TERM_LABELS[name]}
             </button>
         </Tooltip>
     );

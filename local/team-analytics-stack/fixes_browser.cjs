@@ -401,7 +401,7 @@ async function look(org, split) {
         await overviewReady(page, 'the overview');
         // the address names no shapes: a period with shape-tagged events opens on Bounding boxes
         const pressed = await page.evaluate('[...document.querySelectorAll(".cvat-team-analytics-shape[aria-pressed=\\"true\\"]")].map((e) => e.textContent.trim())');
-        check(pressed.length === 1 && pressed[0] === 'Bounding boxes', `the shape switch opens on ${JSON.stringify(pressed)}`);
+        check(pressed.length === 1 && pressed[0] === 'Боксы', `the shape switch opens on ${JSON.stringify(pressed)}`);
         log(`opened without a shapes choice: the switch reads ${pressed[0]}`);
         for (const width of [1400, 400]) {
             await page.send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: false });
@@ -463,17 +463,22 @@ const setWidth = (page, width, height = 900) => page.send('Emulation.setDeviceMe
 
 // the glossary's wording, as the terms' tooltips carry it (cvat-ui/src/components/team-analytics-page/definitions.tsx)
 const TERM_TEXTS = {
-    Session: 'One uninterrupted interval of job work by one person, at most a day long. A pause longer than five minutes ends it. Seen for a single project, a session counts if it touched that project, and its length is only the time spent inside it.',
-    'Working time': 'The time the server counts as worked, the same figure Grafana reports. It is the only total: every breakdown of time adds up to it.',
-    'Time per operation': 'The time from a person\'s previous action to the end of the operation, so that finding, deciding and pointing are part of it. A pause longer than 100 seconds before an action belongs to no operation.',
-    Model: 'Created without a person drawing it: saved by a technical account or produced by the built-in detector. Model boxes have counts but no time.',
+    Session: 'Один непрерывный интервал работы одного человека в заданиях, не длиннее суток. Пауза дольше '
+        + 'пяти минут завершает сессию. Для отдельного проекта сессия учитывается, если она затронула этот '
+        + 'проект, а её длина — только время, проведённое в нём.',
+    'Working time': 'Время, которое сервер считает отработанным, — тот же показатель, что показывает Grafana. '
+        + 'Это единственный итог: любая разбивка времени в сумме даёт его.',
+    'Time per operation': 'Время от предыдущего действия человека до конца операции, поэтому поиск, решение и '
+        + 'наведение входят в него. Пауза дольше 100 секунд перед действием не относится ни к одной операции.',
+    Model: 'Создано без рисования человеком: сохранено технической учётной записью или получено встроенным '
+        + 'детектором. У боксов модели есть количество, но нет времени.',
 };
 const termOf = (label) => {
     const l = label.toLowerCase();
-    if (l === 'sessions') return 'Session';
-    if (l === 'working time') return 'Working time';
-    if (l === 'model') return 'Model';
-    if (l.startsWith('avg time')) return 'Time per operation';
+    if (l === 'сессии') return 'Session';
+    if (l === 'рабочее время') return 'Working time';
+    if (l === 'модель') return 'Model';
+    if (l.startsWith('ср. время')) return 'Time per operation';
     return null;
 };
 
@@ -519,8 +524,8 @@ async function filterBar(page, org) {
         if (width === 1920) check(lines.length === 1, `1920 px: the filter bar wraps into ${lines.length} lines: ${JSON.stringify(lines)}`);
         check(!bar.freshness || bar.freshness.height >= 35.5, `${width} px: freshness ${JSON.stringify(bar.freshness)}, expected at least 36 px`);
         const st = bar.settings;
-        check(!!st && Math.abs(st.height - 36) <= 0.5 && Math.abs(st.right - st.header_right) <= 1 && st.gear && st.text === 'Settings',
-            `${width} px: the Settings button ${JSON.stringify(st)}, expected "Settings" with a gear, 36 px, at the header's right end`);
+        check(!!st && Math.abs(st.height - 36) <= 0.5 && Math.abs(st.right - st.header_right) <= 1 && st.gear && st.text === 'Настройки',
+            `${width} px: the settings button ${JSON.stringify(st)}, expected "Настройки" with a gear, 36 px, at the header's right end`);
         check(bar.chips_margin === '0px', `${width} px: the filter chips' margin-bottom is ${bar.chips_margin}, expected 0px`);
         log(`${width} px: ${CONTROLS.length} controls 36 px on ${lines.length} line(s) (centres ${lines.map((l) => l.centre).join(', ')}); `
             + `Settings 36 px at the header's right end; freshness ${bar.freshness ? `${bar.freshness.height} px` : 'not shown'}`);
@@ -606,19 +611,19 @@ async function operationsTable(page) {
     const t = await page.evaluate(OPERATIONS);
     check(!!t, 'no table.cvat-team-analytics-operations-table in the operations card');
     log(`operations table: columns ${JSON.stringify(t.columns)}; ${t.groups.map((g) => `${g.name} (${g.split?.text})`).join(', ')}`);
-    check(t.columns.length === 5 && t.columns[0] === 'Operation' && ['Boxes', 'Objects'].includes(t.columns[1])
-        && t.columns[2].startsWith('Avg time') && t.columns[3] === 'Total time' && t.columns[4] === 'Share',
-    `operations columns ${JSON.stringify(t.columns)}, expected Operation, Boxes or Objects, Avg time, Total time, Share`);
-    check(JSON.stringify(t.groups.map((g) => g.name)) === JSON.stringify(['Creation', 'Alignment', 'Class change', 'Deletion']),
+    check(t.columns.length === 5 && t.columns[0] === 'Операция' && ['Боксы', 'Объекты'].includes(t.columns[1])
+        && t.columns[2].startsWith('Ср. время') && t.columns[3] === 'Общее время' && t.columns[4] === 'Доля',
+    `operations columns ${JSON.stringify(t.columns)}, expected Операция, Боксы or Объекты, Ср. время, Общее время, Доля`);
+    check(JSON.stringify(t.groups.map((g) => g.name)) === JSON.stringify(['Создание', 'Подгонка', 'Смена класса', 'Удаление']),
         `operation rows ${JSON.stringify(t.groups.map((g) => g.name))}`);
     check(t.groups.every((g) => g.cells === 4 && g.split && g.split.colspan === '5' && g.split.headers_ok),
         `each operation: 4 cells and a split row of colspan 5 pointing at its header: ${JSON.stringify(t.groups)}`);
-    // the split cell: its hidden prefix "<Operation> started by: ", then "N% hotkey / M% mouse", or Mouse only (always
-    // for Alignment), Not recorded (a legacy period) or a dash (no recorded starts)
-    const splitText = /started by: (\d+% hotkey \/ \d+% mouse|Mouse only|Not recorded|—)$/;
-    const odd = t.groups.filter((g) => !splitText.test(g.split.text) || (g.name === 'Alignment' && !g.split.text.endsWith('Mouse only')));
-    check(!odd.length, `split rows ${JSON.stringify(odd.map((g) => [g.name, g.split.text]))}, expected "<Operation> started by: `
-        + 'N% hotkey / M% mouse", "Mouse only" (always for Alignment), "Not recorded" or "—"');
+    // the split cell: its hidden prefix "<Operation>, начато: ", then "N% горячей клавишей / M% мышью", or Только мышью (always
+    // for Подгонка), Не записано (a legacy period) or a dash (no recorded starts)
+    const splitText = /начато: (\d+% горячей клавишей \/ \d+% мышью|Только мышью|Не записано|—)$/;
+    const odd = t.groups.filter((g) => !splitText.test(g.split.text) || (g.name === 'Подгонка' && !g.split.text.endsWith('Только мышью')));
+    check(!odd.length, `split rows ${JSON.stringify(odd.map((g) => [g.name, g.split.text]))}, expected "<Operation>, начато: `
+        + 'N% горячей клавишей / M% мышью", "Только мышью" (always for Подгонка), "Не записано" or "—"');
     check(!t.old_table && !t.started_by, 'the operations card still has the old table class or a "Started by hotkey / mouse" header');
 }
 
@@ -628,7 +633,7 @@ const FIGURES = `[...document.querySelectorAll(".cvat-team-analytics-headline-va
 async function openSelector(page, keys, kind) {
     await clickSelectorIn(page, keys, `.cvat-team-analytics-filter-${kind} .cvat-team-analytics-filter-button`);
     await page.waitFor(`(() => { const p = document.querySelector(".cvat-team-analytics-filter-popup"); const s = p?.querySelector(".cvat-team-analytics-filter-status");
-        return !!p && (!s || getComputedStyle(s).display === "none" || !s.textContent.includes("Loading")); })()`, `the ${kind} selector's options`, 60000);
+        return !!p && (!s || getComputedStyle(s).display === "none" || !s.textContent.includes("Загрузка")); })()`, `the ${kind} selector's options`, 60000);
     return page.evaluate(`(() => {
         const button = document.querySelector(".cvat-team-analytics-filter-${kind} .cvat-team-analytics-filter-button");
         const popup = document.querySelector(".cvat-team-analytics-filter-popup");
@@ -701,14 +706,14 @@ async function clickSelectorIn(page, keys, selector, index = 0) {
 async function pick(page, keys, kind) {
     const before = await page.evaluate(FIGURES);
     const opened = await openSelector(page, keys, kind);
-    const all = kind === 'project' ? 'All projects' : 'All annotators';
+    const all = kind === 'project' ? 'Все проекты' : 'Все аннотаторы';
     check(opened.expanded === 'true' && opened.focused && opened.on_top && opened.inside_window && !opened.clipped_by,
         `the ${kind} selector opened: aria-expanded ${opened.expanded}, search focused ${opened.focused}, drawn over the cards `
         + `${opened.on_top}, inside the window ${opened.inside_window}, clipped by ${opened.clipped_by}; expected true, true, true, true, none`);
     check(opened.options[0] === all && opened.options.length >= 3,
         `${kind} options ${JSON.stringify(opened.options)} (status "${opened.status}"), expected "${all}" first and at least two to pick from`);
-    // a named one: "No project" names no project to search for
-    const target = opened.options.slice(1).find((o) => o !== 'No project');
+    // a named one: "Без проекта" names no project to search for
+    const target = opened.options.slice(1).find((o) => o !== 'Без проекта');
     check(!!target, `no ${kind} with a name among ${JSON.stringify(opened.options)}`);
     await page.send('Input.insertText', { text: target });
     await sleep(800);
@@ -890,9 +895,9 @@ async function terms(page, keys, org) {
     await openTA(page, org, `period=week`);
     await overviewReady(page, 'the week');
     // two terms exist only with their data: the Model row of the creation methods when the period has Model objects,
-    // and the details' Model column unless the period is legacy (its column is "Boxes saved" then, with no term)
+    // and the details' Model column unless the period is legacy (its column is "Сохранённые боксы" then, with no term)
     const gates = await page.evaluate(`({ model: !!document.querySelector(".cvat-team-analytics-model-row"),
-        legacy: [...document.querySelectorAll(".cvat-team-analytics-details th")].some((th) => th.textContent.trim() === "Boxes saved") })`);
+        legacy: [...document.querySelectorAll(".cvat-team-analytics-details th")].some((th) => th.textContent.trim() === "Сохранённые боксы") })`);
     const places = PLACES.filter(([section, term]) => (section !== 'cvat-team-analytics-model-row' || gates.model)
         && !(section === 'cvat-team-analytics-details' && term === 'Model' && gates.legacy));
     log(`terms expected: ${places.length} (Model row ${gates.model ? 'shown' : 'not shown: no Model objects'}, details `
@@ -951,11 +956,12 @@ async function gone(page, org) {
         const text = page.textContent;
         return [".cvat-team-analytics-definitions", ".cvat-team-analytics-definition", ".cvat-team-analytics-select-organization"]
             .filter((s) => document.querySelector(s))
-            .concat(["One uninterrupted interval of job work", "Select an organization", "No organization selected", "owners and maintainers",
-                "Started by hotkey"].filter((t) => text.includes(t)));
+            // of the replaced texts only the definitions' has a wording on the Russian page; the organization prompt
+            // and the "Started by hotkey / mouse" header are told by their elements (above, and in the operations step)
+            .concat(["Один непрерывный интервал работы"].filter((t) => text.includes(t)));
     })()`);
     check(!left.length, `still on the page: ${JSON.stringify(left)}`);
-    log('no definitions block, no organization prompt, no "Started by hotkey / mouse" header');
+    log('no definitions block and no organization prompt');
 }
 
 // 6. the settings modal: it opens, lists the seeded Technical accounts by name, the picker finds a user of another
@@ -980,7 +986,7 @@ async function settingsModal(page, keys, api, org, seeded, other) {
         return { title: m.querySelector(".ant-modal-title")?.textContent.trim(), failed: !!m.querySelector(".cvat-team-analytics-settings-load-failed") }; })()`);
     const names = await modalNames(page);
     log(`settings modal "${modal.title}": accounts ${JSON.stringify(names)}; requests ${JSON.stringify(api.slice(from).map((r) => `${r.method} ${r.path}`))}`);
-    check(modal.title === 'Team Analytics settings' && !modal.failed, `the settings modal: ${JSON.stringify(modal)}, expected "Team Analytics settings", loaded`);
+    check(modal.title === 'Настройки Team Analytics' && !modal.failed, `the settings modal: ${JSON.stringify(modal)}, expected "Настройки Team Analytics", loaded`);
     check(api.slice(from).some((r) => r.method === 'GET' && r.path.endsWith('/settings')), 'opening the modal sent no GET settings');
     check(JSON.stringify([...names].sort()) === JSON.stringify([...seeded].sort()),
         `the modal lists ${JSON.stringify(names)}, expected the seeded ${JSON.stringify(seeded)}`);
@@ -995,7 +1001,7 @@ async function settingsModal(page, keys, api, org, seeded, other) {
     await clickSelectorIn(page, keys, '.cvat-team-analytics-settings-picker-dropdown .ant-select-item-option', await page.evaluate(option));
     await page.waitFor(`[...document.querySelectorAll("${MODAL} .cvat-team-analytics-settings-account-name")].some((e) => e.textContent.trim() === ${JSON.stringify(other)})`, `${other} added as a row`, 10000);
     if (SHOTS) await page.screenshot(`page-${org}-settings-picked`);
-    await clickSelectorIn(page, keys, `${MODAL} .cvat-team-analytics-settings-remove[aria-label="Remove ${other}"]`);
+    await clickSelectorIn(page, keys, `${MODAL} .cvat-team-analytics-settings-remove[aria-label="Убрать из списка: ${other}"]`);
     const afterRemove = await modalNames(page);
     check(!afterRemove.includes(other), `${other} still listed after its remove button: ${JSON.stringify(afterRemove)}`);
 
@@ -1010,8 +1016,8 @@ async function settingsModal(page, keys, api, org, seeded, other) {
     const shown = await page.evaluate(`(() => { const o = [...document.querySelectorAll(".cvat-team-analytics-settings-picker-dropdown .ant-select-item-option")][${listedOption}];
         return { text: o.textContent.trim(), disabled: o.classList.contains("ant-select-item-option-disabled") && o.getAttribute("aria-disabled") !== "false",
             marked: !!o.querySelector(".cvat-team-analytics-settings-listed") }; })()`);
-    check(shown.disabled && shown.marked && shown.text.endsWith('already on the list'),
-        `${listed}, on the list, in the picker: ${JSON.stringify(shown)}, expected a disabled option marked "already on the list"`);
+    check(shown.disabled && shown.marked && shown.text.endsWith('уже в списке'),
+        `${listed}, on the list, in the picker: ${JSON.stringify(shown)}, expected a disabled option marked "уже в списке"`);
     await clickSelectorIn(page, keys, '.cvat-team-analytics-settings-picker-dropdown .ant-select-item-option', await page.evaluate(listedOption));
     await sleep(500);
     const afterListed = await modalNames(page);
@@ -1043,7 +1049,7 @@ async function settingsModal(page, keys, api, org, seeded, other) {
 
 // 7. at instance scope (no organization selected) the project selector names projects of several organizations by
 // their names, not "Project #N" (the names come from the fork's project-names lookup)
-// The projects ORG's project selector names for the week (without "All projects" and "No project"), as the page
+// The projects ORG's project selector names for the week (without "Все проекты" and "Без проекта"), as the page
 // itself shows them inside the organization: what instance scope must name too.
 async function orgProjectNames(page, keys, org) {
     try {
@@ -1058,7 +1064,7 @@ async function orgProjectNames(page, keys, org) {
     }
     const options = await page.evaluate('[...document.querySelectorAll(".cvat-team-analytics-filter-popup li.cvat-team-analytics-filter-option[role=option]:not(.cvat-team-analytics-filter-option-all)")].map((o) => o.textContent.trim())');
     await keys.press('Escape');
-    return options.filter((o) => o !== 'No project');
+    return options.filter((o) => o !== 'Без проекта');
 }
 
 async function instanceNames(browser, orgs) {
@@ -1076,15 +1082,15 @@ async function instanceNames(browser, orgs) {
     await openTA(page, '', 'period=week');
     await overviewReady(page, 'instance scope');
     const subtitle = await page.evaluate('document.querySelector(".cvat-team-analytics-heading")?.textContent || ""');
-    check(subtitle.includes('All organizations and personal workspaces'), `the heading reads "${subtitle.trim()}", expected instance scope`);
+    check(subtitle.includes('Все организации и личные пространства'), `the heading reads "${subtitle.trim()}", expected instance scope`);
     await openSelector(page, keys, 'project');
     await page.waitFor(OPTIONS_LOADED, 'instance scope project options loaded', 60000);
     const opened = await page.evaluate('[...document.querySelectorAll(".cvat-team-analytics-filter-popup li.cvat-team-analytics-filter-option[role=option]")].map((o) => o.textContent.trim())');
-    const numbered = opened.filter((o) => /^Project #\d+$/.test(o));
+    const numbered = opened.filter((o) => /^Проект #\d+$/.test(o));
     // every organization's first name, found by its name at instance scope
     const missing = named.map(([org, names]) => [org, names[0]]).filter(([, name]) => !opened.includes(name));
-    log(`instance scope: ${opened.length} project options, ${numbered.length} named "Project #N": ${JSON.stringify(opened.slice(0, 12))}`);
-    check(!numbered.length && !missing.length, `instance scope project options: "Project #N" ${JSON.stringify(numbered)}, missing `
+    log(`instance scope: ${opened.length} project options, ${numbered.length} named "Проект #N": ${JSON.stringify(opened.slice(0, 12))}`);
+    check(!numbered.length && !missing.length, `instance scope project options: "Проект #N" ${JSON.stringify(numbered)}, missing `
         + `${JSON.stringify(missing)} (organization, name its own selector shows); expected every project by name, those of `
         + `${named.map(([o]) => o).join(', ')} among them`);
     if (SHOTS) await page.screenshot('page-instance-project-selector');

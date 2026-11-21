@@ -16,7 +16,7 @@ function row(operation, objects, timeMs, averageMs, share) {
     return { operation, objects, timed_objects: objects, time_ms: timeMs, average_ms: averageMs, share };
 }
 
-// 10 h of working time: creation 4 h, alignment 0.5 h, class change 0, deletion 0.3 h, Other 5.2 h
+// 10 h of working time: creation 4 h, alignment 0,5 h, class change 0, deletion 0,3 h, Other 5,2 h
 const OPERATIONS = {
     legacy: false,
     working_time_ms: 10 * HOUR,
@@ -42,8 +42,8 @@ function section(html, className) {
 
 test('headline figures show objects created and the average time to create one', () => {
     const html = render(View, ready(OPERATIONS));
-    assert.equal(section(html, 'cvat-team-analytics-objects-created'), 'Objects created 3,456 by annotators');
-    assert.equal(section(html, 'cvat-team-analytics-average-creation'), 'Avg time per object 4.2 s to create one');
+    assert.equal(section(html, 'cvat-team-analytics-objects-created'), 'Создано объектов 3 456 аннотаторами');
+    assert.equal(section(html, 'cvat-team-analytics-average-creation'), 'Ср. время на объект 4,2 с на создание одного');
 });
 
 test('the average time reads in seconds, with one decimal under ten', () => {
@@ -51,9 +51,9 @@ test('the average time reads in seconds, with one decimal under ten', () => {
         ...OPERATIONS,
         rows: OPERATIONS.rows.map((r) => (r.operation === 'creation' ? { ...r, average_ms: ms } : r)),
     })), 'cvat-team-analytics-average-creation');
-    assert.equal(average(970), 'Avg time per object 1.0 s to create one');
-    assert.equal(average(12400), 'Avg time per object 12 s to create one');
-    assert.equal(average(null), 'Avg time per object — to create one');
+    assert.equal(average(970), 'Ср. время на объект 1,0 с на создание одного');
+    assert.equal(average(12400), 'Ср. время на объект 12 с на создание одного');
+    assert.equal(average(null), 'Ср. время на объект — на создание одного');
 });
 
 test('large counts are shortened in the tile with the exact value on hover', () => {
@@ -61,8 +61,8 @@ test('large counts are shortened in the tile with the exact value on hover', () 
         ...OPERATIONS,
         rows: OPERATIONS.rows.map((r) => (r.operation === 'creation' ? { ...r, objects: 1234567 } : r)),
     }));
-    assert.equal(section(html, 'cvat-team-analytics-objects-created'), 'Objects created 1.23M by annotators');
-    assert.match(html, /title="1,234,567 exactly"/);
+    assert.equal(section(html, 'cvat-team-analytics-objects-created'), 'Создано объектов 1,23 млн аннотаторами');
+    assert.match(html, /title="Точное значение: 1\u00a0234\u00a0567"/);
 });
 
 test('operations reach the page from the overview response', async () => {
@@ -86,13 +86,13 @@ function legend(html) {
 test('the split shows how working time divides between the operations and Other, legend inside the card', () => {
     const html = render(View, ready(OPERATIONS));
     assert.ok(section(html, 'cvat-team-analytics-split')
-        .startsWith('Where working time goes All shapes · 10.0 h of working time'));
+        .startsWith('Куда уходит рабочее время Все фигуры · 10,0 ч рабочего времени'));
     assert.deepEqual(legend(html), [
-        'Creation 4.0 h 40%',
-        'Alignment 0.5 h 5%',
-        'Class change 0.0 h 0%',
-        'Deletion 0.3 h 3%',
-        'Other 5.2 h 52%',
+        'Создание 4,0 ч 40%',
+        'Подгонка 0,5 ч 5%',
+        'Смена класса 0,0 ч 0%',
+        'Удаление 0,3 ч 3%',
+        'Прочее 5,2 ч 52%',
     ]);
 });
 
@@ -100,9 +100,9 @@ test('each part of the bar is as wide as its time and names itself on hover', ()
     const html = render(View, ready(OPERATIONS));
     const parts = [...html.matchAll(/<div class="cvat-team-analytics-split-part"[^>]*>/g)].map((m) => m[0]);
     assert.equal(parts.length, 5);
-    assert.match(parts[0], /title="Creation: 4\.0 h \(40%\)"/);
+    assert.match(parts[0], /title="Создание: 4,0\u00a0ч \(40%\)"/);
     assert.match(parts[0], /flex:4 1 0/);
-    assert.match(parts[4], /title="Other: 5\.2 h \(52%\)"/);
+    assert.match(parts[4], /title="Прочее: 5,2\u00a0ч \(52%\)"/);
     // a large part carries its share inside; small ones rely on the legend
     assert.match(html, /cvat-team-analytics-split-part"[^>]*>40%<\/div>/);
     assert.doesNotMatch(html, /cvat-team-analytics-split-part"[^>]*>5%<\/div>/);
@@ -126,13 +126,13 @@ function splitRows(html) {
 
 test('a table lists each operation with its count, average time, total time and share of working time', () => {
     assert.deepEqual(tableRows(render(View, ready(OPERATIONS))), [
-        ['Operation', 'Objects', 'Avg time', 'Total time', 'Share'],
-        ['Creation', '3,456', '4.2 s', '4.0 h', '40%'],
-        ['Alignment', '900', '2.0 s', '0.5 h', '5%'],
-        ['Class change', '0', '—', '0.0 h', '0%'],
-        ['Deletion', '120', '9.0 s', '0.3 h', '3%'],
+        ['Операция', 'Объекты', 'Ср. время', 'Общее время', 'Доля'],
+        ['Создание', '3 456', '4,2 с', '4,0 ч', '40%'],
+        ['Подгонка', '900', '2,0 с', '0,5 ч', '5%'],
+        ['Смена класса', '0', '—', '0,0 ч', '0%'],
+        ['Удаление', '120', '9,0 с', '0,3 ч', '3%'],
     ]);
-    assert.deepEqual(splitRows(render(View, ready(OPERATIONS))), ['—', 'Mouse only', '—', '—']);
+    assert.deepEqual(splitRows(render(View, ready(OPERATIONS))), ['—', 'Только мышью', '—', '—']);
 });
 
 test('the table has five columns and no minimum width; each split row spans them under its operation', () => {
@@ -150,7 +150,7 @@ test('the table has five columns and no minimum width; each split row spans them
         // React's static markup writes the attribute as colSpan
         assert.ok(group.includes(`<td colSpan="5" headers="${id}"`), group);
     }
-    assert.match(card, /<span class="cvat-team-analytics-visually-hidden">Creation started by: <\/span>/);
+    assert.match(card, /<span class="cvat-team-analytics-visually-hidden">Создание, начато: <\/span>/);
 });
 
 test('a legacy period shows the notice and marks class change as not recorded', () => {
@@ -158,20 +158,21 @@ test('a legacy period shows the notice and marks class change as not recorded', 
     const notice = html.match(/<div[^>]*cvat-team-analytics-legacy-notice[^>]*>(.*?)<\/div><\/div>/);
     assert.ok(notice, 'the legacy notice is shown');
     assert.equal(text(notice[1]),
-        'This period was recorded before the new activity logging ' +
-        'Old events do not say which shape was edited, so operations and timing below cover all shapes. ' +
-        'Class changes and hotkey use were not recorded and start from the day the new UI is deployed. ' +
-        'Projects, sessions, working time and the number of boxes saved are complete.');
-    assert.deepEqual(tableRows(html)[3], ['Class change', 'Not recorded', '—', '—', '—']);
-    assert.equal(splitRows(html)[2], 'Not recorded');
+        'Этот период записан до перехода на новый учёт действий ' +
+        'Старые события не указывают, какая фигура была изменена, поэтому операции и время ниже ' +
+        'относятся ко всем фигурам. Смены класса и использование горячих клавиш не записывались и ' +
+        'учитываются со дня запуска нового учёта действий. Проекты, сессии, рабочее время и число ' +
+        'сохранённых боксов учтены полностью.');
+    assert.deepEqual(tableRows(html)[3], ['Смена класса', 'Не записано', '—', '—', '—']);
+    assert.equal(splitRows(html)[2], 'Не записано');
     // the split leaves out what was not recorded instead of showing it as zero
-    assert.deepEqual(legend(html).map((item) => item.split(' ')[0]), ['Creation', 'Alignment', 'Deletion', 'Other']);
+    assert.deepEqual(legend(html).map((item) => item.split(' ')[0]), ['Создание', 'Подгонка', 'Удаление', 'Прочее']);
 });
 
 test('a period with shape-tagged events shows no legacy notice and counts class changes', () => {
     const html = render(View, ready(OPERATIONS));
     assert.doesNotMatch(html, /cvat-team-analytics-legacy-notice/);
-    assert.deepEqual(tableRows(html)[3], ['Class change', '0', '—', '0.0 h', '0%']);
+    assert.deepEqual(tableRows(html)[3], ['Смена класса', '0', '—', '0,0 ч', '0%']);
 });
 
 test('operations with no measured time and no working time show no shares', () => {
@@ -184,7 +185,7 @@ test('operations with no measured time and no working time show no shares', () =
         )),
     };
     assert.deepEqual(legend(render(View, ready(untimed))), [
-        'Creation 0.0 h —', 'Alignment 0.0 h —', 'Class change 0.0 h —', 'Deletion 0.0 h —', 'Other 0.0 h —',
+        'Создание 0,0 ч —', 'Подгонка 0,0 ч —', 'Смена класса 0,0 ч —', 'Удаление 0,0 ч —', 'Прочее 0,0 ч —',
     ]);
 });
 
@@ -197,7 +198,7 @@ test('a period with no job work shows the empty state, not the legacy notice', (
     };
     const html = render(View, ready(empty));
     assert.doesNotMatch(html, /cvat-team-analytics-legacy-notice/);
-    assert.equal(section(html, 'cvat-team-analytics-split'), 'Where working time goes No job work in this period');
+    assert.equal(section(html, 'cvat-team-analytics-split'), 'Куда уходит рабочее время В этом периоде нет работы в заданиях');
 });
 
 // --- the mounted page: the operations cards follow the project and annotator filters -------------
@@ -235,9 +236,9 @@ test('the operations cards show the figures read with the chosen project and ann
     const click = async (element) => {
         await act(async () => { element.dispatchEvent(new window.MouseEvent('click', { bubbles: true })); });
     };
-    const created = (container) => text(container.querySelector('.cvat-team-analytics-objects-created').innerHTML);
+    const created = (container) => text(container.querySelector('.cvat-team-analytics-objects-created').innerHTML.replace(/&nbsp;/g, ' '));
     const creationRow = (container) => text(
-        container.querySelector('.cvat-team-analytics-operations tbody tr').innerHTML,
+        container.querySelector('.cvat-team-analytics-operations tbody tr').innerHTML.replace(/&nbsp;/g, ' '),
     );
     const lastOverview = () => {
         const url = requests.filter((request) => !request.url.includes('/status')).at(-1).url;
@@ -248,19 +249,19 @@ test('the operations cards show the figures read with the chosen project and ann
     const view = await mount(React.createElement(Page));
     try {
         await view.settle();
-        assert.equal(created(view.container), 'Objects created 3,456 by annotators');
+        assert.equal(created(view.container), 'Создано объектов 3 456 аннотаторами');
 
         await click(view.container.querySelector('.cvat-team-analytics-project-row'));
         await view.settle();
         assert.deepEqual(lastOverview(), ['2', null]);
-        assert.equal(created(view.container), 'Objects created 40 by annotators');
-        assert.match(creationRow(view.container), /^Creation 40 /);
+        assert.equal(created(view.container), 'Создано объектов 40 аннотаторами');
+        assert.match(creationRow(view.container), /^Создание 40 /);
 
         await click(view.container.querySelector('.cvat-team-analytics-annotator-row'));
         await view.settle();
         assert.deepEqual(lastOverview(), ['2', '12']);
-        assert.equal(created(view.container), 'Objects created 7 by annotators');
-        assert.match(creationRow(view.container), /^Creation 7 /);
+        assert.equal(created(view.container), 'Создано объектов 7 аннотаторами');
+        assert.match(creationRow(view.container), /^Создание 7 /);
     } finally {
         await view.unmount();
     }

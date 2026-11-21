@@ -11,8 +11,8 @@ export default function TeamAnalyticsErrorPanel(): JSX.Element {
         <Result
             className='cvat-team-analytics-error'
             status='warning'
-            title='Team analytics could not be loaded'
-            subTitle='The analytics service did not answer. The rest of CVAT is not affected. Try again later.'
+            title='Не удалось загрузить Team Analytics'
+            subTitle='Сервис аналитики не ответил. Остальные разделы CVAT не затронуты. Повторите попытку позже.'
         />
     );
 }

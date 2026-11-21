@@ -11,7 +11,7 @@ import {
 import { Address } from './address';
 import { FullView as FullViewKey, FullViewRows, trendOfView } from './full-views';
 import {
-    MISSING, dayLabel, exactHours, formatCount, formatHours, formatSeconds, formatShare, projectName,
+    MISSING, counted, dayLabel, exactHours, formatCount, formatHours, formatSeconds, formatShare, projectName,
 } from './format';
 import { OPERATION_LOOKS, operationParts, splitParts } from './operations';
 import { shapeWording } from './shapes';
@@ -23,6 +23,14 @@ import WorkingTimeOverPeriodCard from './cards/working-time-over-period-card';
 
 const HOTKEY_COLOR = '#2a78d6';
 const WORKING_TIME_COLOR = '#2a78d6';
+
+// what the rows of a list are, counted: '3 проекта', '5 аннотаторов'
+const PROJECT_FORMS = ['проект', 'проекта', 'проектов'] as const;
+const ANNOTATOR_FORMS = ['аннотатор', 'аннотатора', 'аннотаторов'] as const;
+
+function annotatorName(row: { id: number; user_name?: string | null }): string {
+    return row.user_name ?? `Аннотатор #${row.id}`;
+}
 
 interface Props {
     view: FullViewKey;
@@ -45,7 +53,7 @@ interface Props {
 function Legend({ children, hint }: { children: React.ReactNode; hint?: string }): JSX.Element {
     return (
         <div className='cvat-team-analytics-full-legend'>
-            <span className='cvat-team-analytics-full-legend-label'>Bar colours</span>
+            <span className='cvat-team-analytics-full-legend-label'>Цвета полос</span>
             {children}
             {hint ? <span className='cvat-team-analytics-full-legend-hint'>{hint}</span> : null}
         </div>
@@ -62,7 +70,7 @@ function Swatch({ color, name }: { color: string; name: string }): JSX.Element {
 }
 
 function WorkingTimeList({
-    list, kind, names, selected, onPick, onRows, summaryNoun,
+    list, kind, names, selected, onPick, onRows,
 }: {
     list: RowsList;
     kind: FullViewKey;
@@ -70,14 +78,13 @@ function WorkingTimeList({
     selected: number | null;
     onPick: (id: number) => void;
     onRows?: (rows: FullViewRows) => void;
-    summaryNoun: string;
 }): JSX.Element {
     const projects = list.by === 'projects';
     // a row with no working time (e.g. a project with only Model boxes) belongs to the tables, not here
     const worked = list.rows.filter((row) => row.working_time_ms > 0);
     const largest = Math.max(0, ...worked.map((row) => row.working_time_ms));
     const rows: FullListRow[] = worked.map((row, index) => {
-        const name = projects ? projectName(row.id, names) : row.user_name ?? `Annotator #${row.id}`;
+        const name = projects ? projectName(row.id, names) : annotatorName(row);
         return {
             key: String(row.id),
             id: row.id,
@@ -92,19 +99,20 @@ function WorkingTimeList({
     });
     return (
         <FullList
-            placeholder={projects ? 'Find a project' : 'Find an annotator'}
+            placeholder={projects ? 'Найти проект' : 'Найти аннотатора'}
             rows={rows}
-            nameHeader={projects ? 'Project' : 'Annotator'}
-            valueHeader='Working time'
+            nameHeader={projects ? 'Проект' : 'Аннотатор'}
+            valueHeader='Рабочее время'
             selected={selected}
             onPick={onPick}
             rowsKind={kind === 'split' ? list.by : undefined}
             onRows={kind === 'split' ? onRows : undefined}
             summary={
-                `${formatCount(worked.length)} ${summaryNoun} · ${formatHours(list.total.working_time_ms)} in total`
+                `${counted(worked.length, projects ? PROJECT_FORMS : ANNOTATOR_FORMS)} · ${
+                    formatHours(list.total.working_time_ms)} всего`
             }
             legend={(
-                <Legend hint='Select a row to filter the whole page.'>
+                <Legend hint='Выберите строку, чтобы отфильтровать всю страницу.'>
                     {splitParts(list.legacy).map((key) => (
                         <Swatch key={key} color={OPERATION_LOOKS[key].color} name={OPERATION_LOOKS[key].name} />
                     ))}
@@ -136,37 +144,40 @@ function HotkeysFullList({ list, labels }: { list: HotkeysList; labels?: HotkeyL
     });
     return (
         <FullList
-            placeholder='Find an action or key'
+            placeholder='Найти действие или клавишу'
             rows={rows}
-            nameHeader='Action'
-            extraHeader='Key'
-            valueHeader='Actions'
-            summary={`${formatCount(list.rows.length)} hotkeys · ${formatCount(list.hotkey_actions)} actions`}
-            legend={<Legend><Swatch color={HOTKEY_COLOR} name='Hotkey actions' /></Legend>}
+            nameHeader='Действие'
+            extraHeader='Клавиша'
+            valueHeader='Действия'
+            summary={[
+                counted(list.rows.length, ['горячая клавиша', 'горячие клавиши', 'горячих клавиш']),
+                counted(list.hotkey_actions, ['действие', 'действия', 'действий']),
+            ].join(' · ')}
+            legend={<Legend><Swatch color={HOTKEY_COLOR} name='Действия горячими клавишами' /></Legend>}
         />
     );
 }
 
 function OperationsTable({
-    list, kind, names, onRows, summaryNoun,
+    list, kind, names, onRows,
 }: {
     list: RowsList;
     kind: 'operations' | 'methods';
     names: ProjectNames;
     onRows: (rows: FullViewRows) => void;
-    summaryNoun: string;
 }): JSX.Element {
     const projects = list.by === 'projects';
     const count = (value: number): string => formatCount(value);
     const columns = kind === 'operations' ?
-        ['Created', 'Avg create', 'Aligned', 'Avg align', 'Class changes', 'Avg change', 'Deleted', 'Avg delete'] :
-        ['Drawn', 'Avg drawn', 'Pasted', 'Avg pasted', 'Propagated', 'Avg propagated', 'Model', 'All annotator methods',
-            'Avg all'];
+        ['Создано', 'Ср. создание', 'Подогнано', 'Ср. подгонка', 'Смены класса', 'Ср. смена', 'Удалено',
+            'Ср. удаление'] :
+        ['Нарисовано', 'Ср. нарисовано', 'Вставлено', 'Ср. вставлено', 'Распространено', 'Ср. распространено',
+            'Модель', 'Все способы аннотаторов', 'Ср. по всем'];
     const rows = list.rows.map((row) => {
         const { operations: ops, methods } = row;
         let cells: string[];
         if (kind === 'operations') {
-            const classChange = list.legacy ? ['Not recorded', MISSING] :
+            const classChange = list.legacy ? ['Не записано', MISSING] :
                 [count(ops.class_change.objects), formatSeconds(ops.class_change.average_ms)];
             cells = [
                 count(ops.creation.objects), formatSeconds(ops.creation.average_ms),
@@ -184,36 +195,36 @@ function OperationsTable({
         }
         return {
             key: String(row.id),
-            name: projects ? projectName(row.id, names) : row.user_name ?? `Annotator #${row.id}`,
+            name: projects ? projectName(row.id, names) : annotatorName(row),
             cells,
         };
     });
     return (
         <FullTable
-            placeholder={projects ? 'Find a project' : 'Find an annotator'}
-            nameHeader={projects ? 'Project' : 'Annotator'}
+            placeholder={projects ? 'Найти проект' : 'Найти аннотатора'}
+            nameHeader={projects ? 'Проект' : 'Аннотатор'}
             columns={columns}
             rows={rows}
             rowsKind={list.by}
             onRows={onRows}
-            summary={`${formatCount(list.total.count)} ${summaryNoun}`}
+            summary={counted(list.total.count, projects ? PROJECT_FORMS : ANNOTATOR_FORMS)}
         />
     );
 }
 
 function TimeFullView({ overview }: { overview: Overview }): JSX.Element {
     const series = overview.time_series;
-    if (!series) return <div className='cvat-team-analytics-full-message'>No working time figures</div>;
+    if (!series) return <div className='cvat-team-analytics-full-message'>Нет данных о рабочем времени</div>;
     const weekly = series.unit === 'week';
     return (
         <>
-            <Legend><Swatch color={WORKING_TIME_COLOR} name='Working time' /></Legend>
+            <Legend><Swatch color={WORKING_TIME_COLOR} name='Рабочее время' /></Legend>
             <WorkingTimeOverPeriodCard series={series} large />
-            <div className='cvat-team-analytics-full-values-title'>All values</div>
+            <div className='cvat-team-analytics-full-values-title'>Все значения</div>
             <ul className='cvat-team-analytics-full-values'>
                 {series.buckets.map((bucket) => (
                     <li key={bucket.start} title={exactHours(bucket.working_time_ms)}>
-                        <span>{`${weekly ? 'Week of ' : ''}${dayLabel(bucket.start)}`}</span>
+                        <span>{`${weekly ? 'Неделя с ' : ''}${dayLabel(bucket.start)}`}</span>
                         <span className='cvat-team-analytics-full-value'>{formatHours(bucket.working_time_ms)}</span>
                     </li>
                 ))}
@@ -296,24 +307,25 @@ export default function FullView({
     let title: string | null;
     let subtitle: string;
     if (view === 'time') {
-        title = overview.time_series?.unit === 'week' ? 'Working time by week' : 'Working time by day';
-        subtitle = `${periodLabel} · hours as the server counts working time · ${who} · ${where}`;
+        title = overview.time_series?.unit === 'week' ? 'Рабочее время по неделям' : 'Рабочее время по дням';
+        subtitle = `${periodLabel} · часы рабочего времени, как их считает сервер · ${who} · ${where}`;
     } else if (trend) {
         // the trend chart names itself from the trends it shows
         title = null;
         subtitle = `${who} · ${where}`;
     } else if (view === 'hotkeys') {
-        title = 'Hotkey usage';
-        subtitle = `${periodLabel} · hotkey actions per action · ${who} · ${where}`;
+        title = 'Использование горячих клавиш';
+        subtitle = `${periodLabel} · число вызовов каждого действия горячей клавишей · ${who} · ${where}`;
     } else if (view === 'operations') {
-        title = `${wording.operations}, by ${dimension}`;
-        subtitle = `${periodLabel} · counts and average time per ${wording.noun} · ${other}`;
+        title = `${wording.operations} ${byProjects ? 'по проектам' : 'по аннотаторам'}`;
+        subtitle = `${periodLabel} · ${wording.countsAndAverage} · ${other}`;
     } else if (view === 'methods') {
-        title = `How ${wording.nouns.toLowerCase()} are created, by ${dimension}`;
-        subtitle = `${periodLabel} · counts and average time per ${wording.noun} · ${other}`;
+        title = `${wording.howCreated} ${byProjects ? 'по проектам' : 'по аннотаторам'}`;
+        subtitle = `${periodLabel} · ${wording.countsAndAverage} · ${other}`;
     } else {
-        title = view === 'split' ? `Where working time goes, by ${dimension}` : `Working time by ${dimension}`;
-        subtitle = `${periodLabel} · hours split by operation · ${other}`;
+        const per = byProjects ? 'по проектам' : 'по аннотаторам';
+        title = view === 'split' ? `Куда уходит рабочее время ${per}` : `Рабочее время ${per}`;
+        subtitle = `${periodLabel} · часы по операциям · ${other}`;
     }
 
     const pick = (key: 'project' | 'annotator') => (id: number): void => {
@@ -329,7 +341,7 @@ export default function FullView({
     } else if (!list) {
         body = (
             <div className='cvat-team-analytics-full-message' role='status'>
-                {failed ? 'The list could not be loaded. It is asked for again when the selection changes.' : 'Loading…'}
+                {failed ? 'Не удалось загрузить список. Запрос повторится при изменении выбора.' : 'Загрузка…'}
             </div>
         );
     } else if (list.processed === false) {
@@ -343,7 +355,6 @@ export default function FullView({
                 kind={view}
                 names={known}
                 onRows={onRows}
-                summaryNoun={byProjects ? 'projects' : 'annotators'}
             />
         );
     } else {
@@ -355,7 +366,6 @@ export default function FullView({
                 selected={address[dimension]}
                 onPick={pick(dimension)}
                 onRows={onRows}
-                summaryNoun={byProjects ? 'projects' : 'annotators'}
             />
         );
     }
@@ -376,7 +386,7 @@ export default function FullView({
                     <svg aria-hidden width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2.2'>
                         <path d='M15 6l-6 6 6 6' />
                     </svg>
-                    Back to overview
+                    Назад к обзору
                 </button>
                 <div className='cvat-team-analytics-full-heading'>
                     {title ? <h2 className='cvat-team-analytics-full-title'>{title}</h2> : null}
@@ -385,7 +395,7 @@ export default function FullView({
             </div>
             {list && failed && by !== null ? (
                 <div className='cvat-team-analytics-full-failed' role='status'>
-                    The list could not be updated; it shows the previous selection.
+                    Не удалось обновить список; показаны данные для прежнего выбора.
                 </div>
             ) : null}
             {body}

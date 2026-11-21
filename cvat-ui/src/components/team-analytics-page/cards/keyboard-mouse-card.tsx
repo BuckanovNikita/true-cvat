@@ -7,7 +7,10 @@ import React from 'react';
 import Text from 'antd/lib/typography/Text';
 
 import { InputFigures } from '../service';
-import { formatCount, formatShare, shortCount } from '../format';
+import {
+    NBSP, formatCount, formatShare, shortCount,
+} from '../format';
+import { plural } from '../plural';
 import { HotkeyLabels, hotkeyLabel } from '../hotkeys';
 import { FullViewButton, ShowAllButton } from '../full-view-button';
 
@@ -44,44 +47,50 @@ function KeyboardMouseCard({
     if (!figures || !recorded) {
         body = (
             <div className='cvat-team-analytics-keyboard-not-recorded'>
-                <Text strong>Hotkey use was not recorded in this period</Text>
+                <Text strong>Использование горячих клавиш в этом периоде не записывалось</Text>
                 <Text type='secondary'>
-                    Hotkey and mouse use is recorded from the day the new UI is deployed. Pick a later period to see it.
+                    Горячие клавиши и действия мышью записываются со дня запуска нового учёта действий.
+                    Чтобы увидеть их, выберите более поздний период.
                 </Text>
             </div>
         );
     } else {
-        const all = figures.hotkey_actions + figures.mouse_actions;
+        const hotkeys = formatCount(figures.hotkey_actions);
+        const total = formatCount(figures.hotkey_actions + figures.mouse_actions);
         const most = Math.max(1, ...figures.top_hotkeys.map((row) => row.actions));
         body = (
             <div className='cvat-team-analytics-keyboard-body'>
                 <div className='cvat-team-analytics-keyboard-totals'>
                     <div className='cvat-team-analytics-keyboard-figures'>
                         <Figure
-                            label='Hotkey actions'
+                            label='Действия горячими клавишами'
                             value={shortCount(figures.hotkey_actions)}
-                            title={`${formatCount(figures.hotkey_actions)} exactly`}
+                            title={`Точное значение: ${formatCount(figures.hotkey_actions)}`}
                         />
                         <Figure
-                            label='Mouse actions'
+                            label='Действия мышью'
                             value={shortCount(figures.mouse_actions)}
-                            title={`${formatCount(figures.mouse_actions)} exactly`}
+                            title={`Точное значение: ${formatCount(figures.mouse_actions)}`}
                         />
-                        <Figure label='Hotkey share' value={formatShare(figures.hotkey_share)} />
+                        <Figure label='Доля горячих клавиш' value={formatShare(figures.hotkey_share)} />
                     </div>
                     <div
                         className='cvat-team-analytics-keyboard-share'
-                        title={`${formatCount(figures.hotkey_actions)} hotkey actions of ${formatCount(all)}`}
+                        title={plural(figures.hotkey_actions, [
+                            `${hotkeys}${NBSP}действие горячей клавишей из ${total}`,
+                            `${hotkeys}${NBSP}действия горячими клавишами из ${total}`,
+                            `${hotkeys}${NBSP}действий горячими клавишами из ${total}`,
+                        ])}
                     >
                         <div style={{ width: `${Math.round((figures.hotkey_share ?? 0) * 1000) / 10}%` }} />
                     </div>
                     <Text type='secondary'>
-                        A mouse action is a click on a button, menu or sidebar control. Clicks on the canvas itself
-                        are drawing and editing, so they are not compared with hotkeys.
+                        Действие мышью — это щелчок по кнопке, меню или элементу боковой панели. Щелчки по
+                        самому холсту — это рисование и правка, поэтому с горячими клавишами они не сравниваются.
                     </Text>
                 </div>
                 <div className='cvat-team-analytics-keyboard-top'>
-                    <Text strong>Most used hotkeys</Text>
+                    <Text strong>Самые частые горячие клавиши</Text>
                     {figures.top_hotkeys.length ? (
                         <ul className='cvat-team-analytics-hotkeys'>
                             {figures.top_hotkeys.map((row) => {
@@ -111,12 +120,18 @@ function KeyboardMouseCard({
                         </ul>
                     ) : (
                         <Text type='secondary' className='cvat-team-analytics-hotkeys-none'>
-                            No hotkey actions in this period
+                            В этом периоде нет действий горячими клавишами
                         </Text>
                     )}
                     {figures.rest.count > 0 ? (
                         <div className='cvat-team-analytics-hotkeys-rest'>
-                            <span>{`${formatCount(figures.rest.count)} other hotkeys, not shown`}</span>
+                            <span>
+                                {plural(figures.rest.count, [
+                                    `${formatCount(figures.rest.count)}${NBSP}другая горячая клавиша не показана`,
+                                    `${formatCount(figures.rest.count)}${NBSP}другие горячие клавиши не показаны`,
+                                    `${formatCount(figures.rest.count)}${NBSP}других горячих клавиш не показано`,
+                                ])}
+                            </span>
                             {' '}
                             <span>{formatCount(figures.rest.actions)}</span>
                         </div>
@@ -131,10 +146,12 @@ function KeyboardMouseCard({
     return (
         <section className='cvat-team-analytics-card cvat-team-analytics-keyboard'>
             <div className='cvat-team-analytics-card-header'>
-                <Text strong>Keyboard and mouse</Text>
+                <Text strong>Клавиатура и мышь</Text>
                 {recorded ? <FullViewButton onClick={onFullView} /> : null}
             </div>
-            <Text type='secondary'>Hotkey actions against mouse actions on controls</Text>
+            <Text type='secondary'>
+                Действия горячими клавишами в сравнении с действиями мышью по элементам управления
+            </Text>
             {body}
         </section>
     );

@@ -32,33 +32,44 @@ function page(status, timeZone = 'Europe/Berlin', state = READY) {
 }
 
 test('shows the time of the last successful refresh in the viewer time zone', () => {
-    assert.match(page({ refresh: refresh() }), /Data as of 16:20 · refreshed every 10 min/);
-    assert.match(page({ refresh: refresh() }, 'America/New_York'), /Data as of 10:20/);
-    assert.doesNotMatch(page({ refresh: refresh() }), /more than 30 minutes ago/);
+    assert.match(page({ refresh: refresh() }), /Данные на 16:20 · обновление каждые 10 мин/);
+    // one minute is said without the number
+    assert.match(page({ refresh: refresh({ interval_s: 60 }) }), /Данные на 16:20 · обновление каждую минуту/);
+    assert.match(page({ refresh: refresh() }, 'America/New_York'), /Данные на 10:20/);
+    assert.doesNotMatch(page({ refresh: refresh() }), /более 30 минут назад/);
 });
 
 test('warns once the last refresh is more than thirty minutes old', () => {
     const shown = page({ refresh: refresh({ now: '2026-11-13T15:51:00+00:00', stale: true }) });
-    assert.match(shown, /Data as of 16:20/);
-    assert.match(shown, /The figures were last refreshed at 16:20, more than 30 minutes ago\./);
+    assert.match(shown, /Данные на 16:20/);
+    assert.match(shown, /Последнее обновление показателей: 16:20, более 30 минут назад\. Недавняя работа может быть не учтена\./);
 });
 
 test('a refresh on an earlier day names the day', () => {
     const shown = page({
         refresh: refresh({ last_success_at: '2026-11-12T09:05:00+00:00', stale: true }),
     }, 'UTC');
-    assert.match(shown, /Data as of Nov 12, 09:05/);
-    assert.match(shown, /last refreshed at Nov 12, 09:05/);
+    assert.match(shown, /Данные на 12 нояб\., 09:05/);
+    assert.match(shown, /Последнее обновление показателей: 12 нояб\., 09:05/);
+});
+
+test('the warning declines the number of minutes: 1, 2, 5, 11 and 21', () => {
+    const cases = [[60, 'более 1 минуты назад'], [120, 'более 2 минут назад'], [300, 'более 5 минут назад'],
+        [660, 'более 11 минут назад'], [1260, 'более 21 минуты назад']];
+    for (const [seconds, phrase] of cases) {
+        const shown = page({ refresh: refresh({ stale: true, stale_after_s: seconds }) });
+        assert.ok(shown.includes(`16:20, ${phrase}.`), `${seconds}: ${shown}`);
+    }
 });
 
 test('before the first refresh the page says so and warns', () => {
     const shown = page({ refresh: refresh({ last_success_at: null, stale: true }) });
-    assert.match(shown, /Not refreshed yet/);
-    assert.match(shown, /The figures have not been refreshed yet\./);
+    assert.match(shown, /Ещё не обновлялось/);
+    assert.match(shown, /Показатели ещё не обновлялись\. Недавняя работа может быть не учтена\./);
 });
 
 test('without a status answer no time is claimed', () => {
-    assert.doesNotMatch(page(null), /Data as of|refreshed/);
+    assert.doesNotMatch(page(null), /Данные на|обновлени|обновлял|Ещё не/);
 });
 
 test('the page reads the status of the selected organization once the figures are shown', async () => {
@@ -125,7 +136,7 @@ test('an open page starts warning when the status read every minute says the fig
         await page.minutes(1);
         assert.equal(page.reads(), 2);
         assert.equal(page.warned(), true);
-        assert.match(page.shown(), /last refreshed at 15:20, more than 30 minutes ago/);
+        assert.match(page.shown(), /Последнее обновление показателей: 15:20, более 30\u00a0минут назад/);
     } finally {
         await page.view.unmount();
     }
@@ -136,10 +147,10 @@ test('when the status cannot be read the last time stays and the warning comes o
     const page = await openWithClock(t, [refresh(), new Error('network down')]);
     try {
         await page.minutes(1);
-        assert.match(page.shown(), /Data as of 15:20/);
+        assert.match(page.shown(), /Данные на 15:20/);
         assert.equal(page.warned(), false);
         await page.minutes(20); // 15:51: the refresh is now 31 minutes old by the page's own clock
-        assert.match(page.shown(), /Data as of 15:20/);
+        assert.match(page.shown(), /Данные на 15:20/);
         assert.equal(page.warned(), true);
     } finally {
         await page.view.unmount();

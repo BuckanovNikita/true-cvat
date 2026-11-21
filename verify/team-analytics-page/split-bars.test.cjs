@@ -59,6 +59,11 @@ function bars(section, kind) {
         ])));
 }
 
+// text() leaves the non-breaking space of the markup as an entity; read it as the plain space it looks like
+function plain(html) {
+    return text(html).replace(/&nbsp;/g, ' ');
+}
+
 function legend(section) {
     return [...section.querySelectorAll('.cvat-team-analytics-breakdown-legend-item')]
         .map((item) => text(item.outerHTML));
@@ -75,20 +80,20 @@ test('each annotator bar is drawn as its operations and Other, with a legend and
     const section = card(render(View, { organization: 'team-org', state: { kind: 'ready', overview: overview() } }),
         'annotator');
 
-    assert.deepEqual(legend(section), ['Creation', 'Alignment', 'Class change', 'Deletion', 'Other']);
+    assert.deepEqual(legend(section), ['Создание', 'Подгонка', 'Смена класса', 'Удаление', 'Прочее']);
     const [alice, bob] = bars(section, 'annotator');
     assert.deepEqual(alice, [
-        [CREATION, 60 * MINUTE, 'alice · Creation: 1.0 h'],
-        [ALIGNMENT, 30 * MINUTE, 'alice · Alignment: 0.5 h'],
-        [CLASS_CHANGE, 10 * MINUTE, 'alice · Class change: 0.2 h'],
-        [DELETION, 5 * MINUTE, 'alice · Deletion: 0.1 h'],
-        [OTHER, 15 * MINUTE, 'alice · Other: 0.3 h'],
+        [CREATION, 60 * MINUTE, 'alice · Создание: 1,0\u00a0ч'],
+        [ALIGNMENT, 30 * MINUTE, 'alice · Подгонка: 0,5\u00a0ч'],
+        [CLASS_CHANGE, 10 * MINUTE, 'alice · Смена класса: 0,2\u00a0ч'],
+        [DELETION, 5 * MINUTE, 'alice · Удаление: 0,1\u00a0ч'],
+        [OTHER, 15 * MINUTE, 'alice · Прочее: 0,3\u00a0ч'],
     ]);
     assert.deepEqual(bob.map(([colour, size]) => [colour, size]),
         [[CREATION, HOUR], [ALIGNMENT, 0], [CLASS_CHANGE, 0], [DELETION, 0], [OTHER, 0]]);
     // the row still reads as its working time, and the longest bar is the full width
-    const rows = [...section.querySelectorAll('.cvat-team-analytics-annotator-row')].map((row) => text(row.outerHTML));
-    assert.deepEqual(rows, ['alice 2.0 h', 'bob 1.0 h']);
+    const rows = [...section.querySelectorAll('.cvat-team-analytics-annotator-row')].map((row) => plain(row.outerHTML));
+    assert.deepEqual(rows, ['alice 2,0 ч', 'bob 1,0 ч']);
     const widths = [...section.querySelectorAll('.cvat-team-analytics-bar-fill')].map((fill) => fill.style.width);
     assert.deepEqual(widths, ['100%', '50%']);
 });
@@ -97,17 +102,17 @@ test('each project bar is split the same way', () => {
     const section = card(render(View, { organization: 'team-org', state: { kind: 'ready', overview: overview() } }),
         'project');
 
-    assert.deepEqual(legend(section), ['Creation', 'Alignment', 'Class change', 'Deletion', 'Other']);
+    assert.deepEqual(legend(section), ['Создание', 'Подгонка', 'Смена класса', 'Удаление', 'Прочее']);
     assert.deepEqual(bars(section, 'project')[0].map(([colour, size]) => [colour, size]),
         [[CREATION, HOUR], [ALIGNMENT, 0], [CLASS_CHANGE, 0], [DELETION, 0], [OTHER, HOUR]]);
-    assert.match(text(section.outerHTML), /Project #1 2\.0 h/);
+    assert.match(plain(section.outerHTML), /Проект #1 2,0 ч/);
 });
 
 test('in a legacy period class change is neither a part nor in the legend, as in the full view', () => {
     const html = render(View, { organization: 'team-org', state: { kind: 'ready', overview: overview(true) } });
     for (const kind of ['annotator', 'project']) {
         const section = card(html, kind);
-        assert.deepEqual(legend(section), ['Creation', 'Alignment', 'Deletion', 'Other']);
+        assert.deepEqual(legend(section), ['Создание', 'Подгонка', 'Удаление', 'Прочее']);
         assert.deepEqual(bars(section, kind)[0].map(([colour]) => colour), [CREATION, ALIGNMENT, DELETION, OTHER]);
     }
 });
@@ -139,24 +144,24 @@ function assertUnsplit(bar, hover) {
 test('a row without operation parts is drawn in no colour of the legend', () => {
     const html = render(View, { organization: 'team-org', state: { kind: 'ready', overview: withoutParts(overview()) } });
     const [alice, bob] = bars(card(html, 'annotator'), 'annotator');
-    assertUnsplit(alice, 'alice: 2.0 h, not split by operation');
-    assertUnsplit(bob, 'bob: 1.0 h, not split by operation');
-    assertUnsplit(bars(card(html, 'project'), 'project')[0], 'Project #1: 2.0 h, not split by operation');
+    assertUnsplit(alice, 'alice: 2,0\u00a0ч, без разбивки по операциям');
+    assertUnsplit(bob, 'bob: 1,0\u00a0ч, без разбивки по операциям');
+    assertUnsplit(bars(card(html, 'project'), 'project')[0], 'Проект #1: 2,0\u00a0ч, без разбивки по операциям');
 });
 
 test('beside rows with parts, a row without them is still drawn in no colour of the legend', () => {
     const answer = withoutParts(overview(), (row) => row.user_name === 'alice');
     const section = card(render(View, { organization: 'team-org', state: { kind: 'ready', overview: answer } }),
         'annotator');
-    assert.deepEqual(legend(section), ['Creation', 'Alignment', 'Class change', 'Deletion', 'Other']);
+    assert.deepEqual(legend(section), ['Создание', 'Подгонка', 'Смена класса', 'Удаление', 'Прочее']);
     const [alice, bob] = bars(section, 'annotator');
     assert.deepEqual(alice.map(([colour]) => colour), LEGEND_COLOURS);
-    assertUnsplit(bob, 'bob: 1.0 h, not split by operation');
+    assertUnsplit(bob, 'bob: 1,0\u00a0ч, без разбивки по операциям');
 });
 
 test('in a legacy period a row without operation parts is drawn the same way', () => {
     const html = render(View, {
         organization: 'team-org', state: { kind: 'ready', overview: withoutParts(overview(true)) },
     });
-    assertUnsplit(bars(card(html, 'annotator'), 'annotator')[0], 'alice: 2.0 h, not split by operation');
+    assertUnsplit(bars(card(html, 'annotator'), 'annotator')[0], 'alice: 2,0\u00a0ч, без разбивки по операциям');
 });

@@ -6,7 +6,9 @@ import React from 'react';
 import Text from 'antd/lib/typography/Text';
 
 import { TimeSeries } from '../service';
-import { dayLabel, exactHours } from '../format';
+import {
+    NBSP, dayLabel, exactHours, formatNumber,
+} from '../format';
 import { FullViewButton } from '../full-view-button';
 import { Term } from '../definitions';
 
@@ -53,17 +55,17 @@ function WorkingTimeOverPeriodCard({ series, onFullView, large = false }: Props)
                 <div className='cvat-team-analytics-card-header'>
                     <Text strong>
                         {/* the full view shows the chart without the definitions */}
-                        {large ? 'Working time' : <Term name='Working time'>Working time</Term>}
-                        {weekly ? ' by week' : ' by day'}
+                        {large ? 'Рабочее время' : <Term name='working_time'>Рабочее время</Term>}
+                        {weekly ? ' по неделям' : ' по дням'}
                     </Text>
-                    <Text type='secondary'>Hours as the server counts working time</Text>
+                    <Text type='secondary'>Часы рабочего времени, как их считает сервер</Text>
                     <FullViewButton onClick={onFullView} />
                 </div>
             )}
             <div className='cvat-team-analytics-time-plot'>
                 <div className='cvat-team-analytics-time-scale' aria-hidden>
                     {[top, top / 2, 0].map((tick) => (
-                        <span key={tick}>{`${tick.toLocaleString('en-US')} h`}</span>
+                        <span key={tick}>{`${formatNumber(tick)}${NBSP}ч`}</span>
                     ))}
                 </div>
                 <div className='cvat-team-analytics-time-bars'>
@@ -71,10 +73,11 @@ function WorkingTimeOverPeriodCard({ series, onFullView, large = false }: Props)
                         <div
                             key={bucket.start}
                             className='cvat-team-analytics-time-bar'
-                            title={`${weekly ? 'Week of ' : ''}${dayLabel(bucket.start)}: ${exactHours(bucket.working_time_ms)}`}
+                            title={`${weekly ? 'Неделя с ' : ''}${dayLabel(bucket.start)}: ${
+                                exactHours(bucket.working_time_ms)}`}
                         >
                             <span className='cvat-team-analytics-time-value'>
-                                {captioned ? hours[index].toFixed(1) : ''}
+                                {captioned ? formatNumber(hours[index], 1) : ''}
                             </span>
                             <div className='cvat-team-analytics-time-track'>
                                 <div

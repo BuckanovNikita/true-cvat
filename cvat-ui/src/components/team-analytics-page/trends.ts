@@ -6,7 +6,9 @@
 // slot each keeps until it is removed.
 
 import { Trends, TrendPoint } from './service';
-import { formatCount, formatSeconds, shortCount } from './format';
+import {
+    NBSP, formatCount, formatNumber, formatSeconds, shortCount,
+} from './format';
 import { shapeWording } from './shapes';
 
 export const MAX_COMPARED = 5;
@@ -30,8 +32,8 @@ export function removeCompared(compared: Compared[], id: number): Compared[] {
     return compared.filter((item) => item.id !== id);
 }
 
-export const NOT_RECORDED = 'Not recorded';
-export const NOT_PROCESSED = 'Not processed yet';
+export const NOT_RECORDED = 'Не записано';
+export const NOT_PROCESSED = 'Ещё не обработано';
 
 // A point as one chart reads it: a value, nothing to show, or a reason it is withheld.
 export type Cell =
@@ -56,7 +58,7 @@ export interface TrendMetric {
 const HOUR_MS = 3600000;
 
 function hours(value: number): string {
-    return `${value.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} h`;
+    return `${formatNumber(value, 1)}${NBSP}ч`;
 }
 
 export function trendMetrics(trends: Pick<Trends, 'shapes' | 'step'>): TrendMetric[] {
@@ -65,35 +67,35 @@ export function trendMetrics(trends: Pick<Trends, 'shapes' | 'step'>): TrendMetr
     return [
         {
             key: 'working_time',
-            title: 'Working time',
-            unit: monthly ? 'hours per month' : 'hours per week',
+            title: 'Рабочее время',
+            unit: monthly ? 'часов в месяц' : 'часов в неделю',
             read: (point) => ({ kind: 'value', value: point.working_time_ms / HOUR_MS }),
             show: hours,
-            tick: (value) => `${value.toLocaleString('en-US')} h`,
+            tick: (value) => `${formatNumber(value)}${NBSP}ч`,
         },
         {
             key: 'boxes',
-            title: `${wording.nouns} created`,
-            unit: 'drawn, pasted and propagated',
+            title: wording.created,
+            unit: 'нарисовано, вставлено и распространено',
             read: (point) => (point.boxes === null ? { kind: 'not-recorded' } : { kind: 'value', value: point.boxes }),
             show: formatCount,
             tick: shortCount,
         },
         {
             key: 'average',
-            title: `Average time per ${wording.noun}`,
-            unit: 'seconds, all annotator methods',
+            title: wording.average,
+            unit: 'секунды, все способы аннотаторов',
             read: (point) => {
                 if (point.boxes === null) return { kind: 'not-recorded' };
                 return point.average_ms === null ? { kind: 'none' } : { kind: 'value', value: point.average_ms / 1000 };
             },
             show: (value) => formatSeconds(value * 1000),
-            tick: (value) => `${value.toLocaleString('en-US')} s`,
+            tick: (value) => `${formatNumber(value)}${NBSP}с`,
         },
         {
             key: 'hotkey_share',
-            title: 'Hotkey share',
-            unit: 'percent of hotkey and mouse actions',
+            title: 'Доля горячих клавиш',
+            unit: 'процент от действий клавишами и мышью',
             read: (point) => {
                 if (!point.hotkey_recorded) return { kind: 'not-recorded' };
                 return point.hotkey_share === null ? { kind: 'none' } : { kind: 'value', value: point.hotkey_share * 100 };
