@@ -76,7 +76,6 @@ ADR 0002 (no new event types), ADR 0003 (Kubernetes only), ADR 0006 (Team Analyt
 
 ## Pitfalls
 
-- `local/team-analytics-stack/run.sh render|preflight|up` currently stop because `helm-chart/Chart.lock` and `charts/` are committed (SIP-154).
 - Each concurrent stack needs its own `TA_RUN_ID` and reserved `TA_HOST_PORT` on every command, or `up`/`down` from another checkout hits the default stack. Clean up only what a run created.
 - Never run upstream's Kubernetes test mode against a shared cluster: it flushes databases in the current kube context's namespace.
 - The local Kubernetes test infrastructure is shared; its operating guide is the AGENTS.md and DOCS.md of the k8s-infra repository. Never reuse foreign namespaces; keep the stack in its own namespace with quota and teardown.

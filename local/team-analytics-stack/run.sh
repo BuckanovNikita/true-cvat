@@ -95,9 +95,9 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
-# The chart of the tree, and the analytics component its analytics link points to.
+# The chart of the tree. Its analytics dashboards are real files in it since ADR 0008, no longer a link out of it.
 IMPORT_DIR="$ROOT"
-CHART_PATHS=(helm-chart components/analytics)
+CHART_PATHS=(helm-chart)
 # shellcheck source=stack.env
 . "$HERE/stack.env"
 
@@ -164,22 +164,21 @@ esac
 
 # ---------------------------------------------------------------- chart
 
-# A hash of the import's chart files as they are in the working tree, and of the pinned lock.
-# The build directory is named by it, so a change to either builds the chart afresh.
+# A hash of the import's chart files as they are in the working tree: the templates, the values, the
+# chart's Chart.lock and the dependency archives it locks. The build directory is named by it, so a
+# change to any of them builds the chart afresh.
 chart_source_sum() {
-    {
-        tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner -cf - -C "$IMPORT_DIR" "${CHART_PATHS[@]}"
-        cat "$HERE/Chart.lock"
-    } | sha256sum | cut -c1-16
+    tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner -cf - -C "$IMPORT_DIR" "${CHART_PATHS[@]}" \
+        | sha256sum | cut -c1-16
 }
 
-# Sets CHART_DIR to the build of the import's chart, building it first when needed: a copy of
-# the chart and of the analytics component it links to (helm dependency build writes into the
-# chart directory; the import stays untouched), the pinned Chart.lock, and exactly the locked
-# dependency versions (helm dependency build refuses a lock that does not match Chart.yaml),
-# checked against chart-deps.sha256.
+# Sets CHART_DIR to the build of the import's chart, building it first when needed: a copy of the chart
+# (the import stays untouched). The chart carries its own Chart.lock and, in charts/, the dependency
+# archives it locks, committed so that a render needs no network (ADR 0008): the copy is used as it is and
+# nothing is fetched. The archives must be exactly the locked set, one per locked dependency by name and
+# version and no other, and each must satisfy Chart.yaml, which helm itself judges.
 build_chart() {
-    local sum build tmp p
+    local sum build tmp p locked present listed
     [ -f "$IMPORT_DIR/helm-chart/Chart.yaml" ] || die "no chart in the import at $(show_path "$IMPORT_DIR/helm-chart")"
     sum="$(chart_source_sum)"
     build="$TA_CACHE_DIR/chart-$sum"
@@ -191,26 +190,18 @@ build_chart() {
         mkdir -p "$tmp/$(dirname "$p")"
         cp -a "$IMPORT_DIR/$p" "$tmp/$p"
     done
-    [ -z "$(find "$tmp/helm-chart" -maxdepth 1 \( -name Chart.lock -o -name charts \))" ] \
-        || die "the import's chart directory holds a Chart.lock or charts/; the lock is the stack's own"
-    cp "$HERE/Chart.lock" "$tmp/helm-chart/Chart.lock"
-    log "building chart dependencies from the pinned Chart.lock"
-    # A private repository list, so the user's own helm repositories stay untouched.
-    (
-        export HELM_REPOSITORY_CONFIG="$tmp/repositories.yaml" HELM_REPOSITORY_CACHE="$TA_CACHE_DIR/helm-repository-cache"
-        i=0
-        for url in $(awk '/repository:/{print $2}' "$HERE/Chart.lock" | sort -u); do
-            i=$((i + 1))
-            helm_run repo add "ta-dep-$i" "$url" --force-update >&2
-        done
-        helm_run dependency build "$tmp/helm-chart" >&2
-    ) || die "chart dependency build failed"
-    rm -f "$tmp/repositories.yaml" "$tmp/repositories.lock"
-    # Every locked dependency must be exactly the archive recorded in the dated evidence.
-    (cd "$tmp/helm-chart" && sha256sum --quiet -c "$HERE/chart-deps.sha256") \
-        || die "chart dependency archives differ from chart-deps.sha256"
-    [ "$(find "$tmp/helm-chart/charts" -name '*.tgz' | wc -l)" = "$(wc -l <"$HERE/chart-deps.sha256")" ] \
-        || die "unexpected chart dependency archives"
+    [ -f "$tmp/helm-chart/Chart.lock" ] || die "the import's chart has no Chart.lock"
+    log "checking the chart's dependency archives against its Chart.lock"
+    locked="$(awk '$1 == "-" && $2 == "name:" { name = $3 } $1 == "version:" { print "charts/" name "-" $2 ".tgz" }' \
+        "$tmp/helm-chart/Chart.lock" | sort)"
+    [ -n "$locked" ] || die "the chart's Chart.lock names no dependency"
+    present="$(cd "$tmp/helm-chart" && find charts -maxdepth 1 -name '*.tgz' 2>/dev/null | sort)"
+    [ "$locked" = "$present" ] \
+        || die "the chart's dependency archives are not the set its Chart.lock names: locked $(echo $locked), present $(echo $present)"
+    # an archive of another version than Chart.yaml allows, or a dependency without one, is not "ok" to helm
+    listed="$(helm_run dependency list "$tmp/helm-chart")" || die "helm could not list the chart's dependencies"
+    [ -z "$(printf '%s\n' "$listed" | awk 'NR > 1 && NF && $NF != "ok"')" ] \
+        || die "the chart's dependency archives do not satisfy Chart.yaml: $(printf '%s\n' "$listed" | awk 'NR > 1 && NF && $NF != "ok" { print $1 ": " $NF }' | tr '\n' ' ')"
     [ "$(chart_source_sum)" = "$sum" ] || die "the import's chart changed during the build"
     # another checkout's stack may have built the same chart meanwhile (the build directory is shared by
     # every stack of this user and named by the chart's content): that build is used, this one dropped
