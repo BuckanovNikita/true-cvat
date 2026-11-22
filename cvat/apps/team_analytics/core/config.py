@@ -25,7 +25,8 @@ class Config:
     # Limits of the cutover search (cutover.py), enforced by ClickHouse on the statement. The search of the
     # first job, before the first answer, gets the shorter one; in the daily check it runs under the lock
     # and gets a tenth of the refresh interval. Fixed with the measurement of
-    # e107249f:local/evidence/2026-11-14-cutover-search-cost.md (docs/maintainers/history.md). Not settings.
+    # e107249f:local/evidence/2026-11-14-cutover-search-cost.md (docs/maintainers/history.md). Not
+    # settings.
     cutover_search_at_start_s: float = 23
     cutover_search_in_check_s: float = 60
     cutover_search_memory_bytes: int = 512 * 1024 * 1024
