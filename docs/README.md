@@ -49,6 +49,10 @@ These pages cover what the fork adds or changes for an installer: building the i
 - [Enabling Team Analytics](scenarios/enable-team-analytics.md): turning it on for a running install.
 - [Adding nuclio](scenarios/nuclio.md): adding nuclio as a second release.
 
+## For the people who use CVAT
+
+- [User documentation](users/README.md), in Russian: what the fork changes for an annotation team and its administrators: the Team Analytics page and how its figures are counted, organization creation, issue and comment rights, task progress, and the Team Analytics HTTP API.
+
 ## Reference
 
 - [Glossary](../GLOSSARY.md): the terms these pages use.
