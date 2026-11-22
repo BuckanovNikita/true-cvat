@@ -14,7 +14,7 @@ An installed fork keeps its state in the stores below. For each one this page sa
 | kvrocks | the chart (`<release>-kvrocks` StatefulSet) | yes, on demand | not required |
 | [Grafana](../GLOSSARY.md#grafana), Vector | the subcharts | nothing to rebuild | no |
 
-`helm uninstall` removes none of the volumes: the backend data claim is kept by its annotation, and the claims of the Postgres, ClickHouse and kvrocks StatefulSets come from volume claim templates, which Helm does not delete. Remove them yourself when you really remove an install.
+`helm uninstall` removes none of the volumes: the backend data claim is kept by its annotation, and the claims of the Postgres, Redis, ClickHouse and kvrocks StatefulSets come from volume claim templates, which Helm does not delete. Remove them yourself when you really remove an install.
 
 ## Backend data volume
 
