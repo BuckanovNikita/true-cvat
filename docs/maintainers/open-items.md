@@ -1,0 +1,3 @@
+# Known open items
+
+`/team-analytics` overflows a 1024 px window (the header's user menu goes off-screen); the Russian page's term tooltips and settings dropdown render outside the `lang='ru'` element, and `russian.test.cjs` opens only the settings dialog by interaction; SIP-98: a task with all 12 buckets wraps its legend to 5 lines and hides the bar; rq is upstream's 1.16.0 (a failed-job-registry bug fixed in 1.16.2 may apply); no real nuclio model function or multi-node cluster was ever tested; open owner choices: whether trend comparison candidates list work from unprocessed buckets, and how to show rows whose operation time exceeds working time.
