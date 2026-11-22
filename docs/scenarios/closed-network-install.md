@@ -4,7 +4,7 @@ Follow this page for the first production install of the fork in a closed networ
 
 ## Before you start
 
-- Tools, endpoints and the contents of `<fork-root>`: [Requirements](../requirements.md). The build host needs Docker with BuildKit and `<fork-root>` inside a git work tree whose files are tracked ([What the fork tree must contain](../requirements.md#what-the-fork-tree-must-contain)); the installing host needs `helm` 3 and `kubectl` with rights to the namespace.
+- Tools, endpoints and the contents of `<fork-root>`: [Requirements](../requirements.md). The build host needs Docker with BuildKit and `<fork-root>` inside a git work tree whose files are tracked ([What the fork tree must contain](../requirements.md#what-the-fork-tree-must-contain)); the installing host needs `helm` 3 and `kubectl` with rights to the namespace. With [analytics](../../GLOSSARY.md#analytics) on, keep `grafana.rbac.namespaced: true` from the example values, or the account also needs rights to create a ClusterRole and a ClusterRoleBinding ([Images](../charts/cvat.md#images)).
 - The [perimeter inputs](../../GLOSSARY.md#perimeter-input) your mirrors replace: [build-server.sh](../commands/build-server.md#syntax-and-inputs) and [build-ui.sh](../commands/build-ui.md#syntax-and-inputs).
 - Every stock image the chart pulls, copied to the internal registry: [Images a cluster pulls](../requirements.md#images-a-cluster-pulls).
 - A storage class that supports `ReadWriteMany` for the [backend data volume](../../GLOSSARY.md#backend-data-volume), and a default storage class (or `cvat.kvrocks.defaultStorage.storageClassName` and `global.storageClass`) for the other volumes ([Storage](../charts/cvat.md#storage)); an ingress controller; and a certificate and key for `cvat.example.com`.

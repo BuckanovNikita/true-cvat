@@ -39,6 +39,7 @@ It also sets `CVAT_ANALYTICS=1` and the ClickHouse and Vector variables on every
    | `clickhouse.image.registry`, `vector.image.repository`, `grafana.image.repository`, `grafana.image.tag` | Your registry paths and the Grafana tag. |
    | `grafana.plugins` | The download URL of the plugin on your mirror. |
    | `grafana.testFramework.enabled` | `false` unless you mirror the test image. |
+   | `grafana.rbac.namespaced` | `true`, unless the account that runs `helm` may create a ClusterRole and a ClusterRoleBinding. |
    | `grafana.grafana.ini.server.root_url` | `https://cvat.example.com/analytics` |
    | `vector.image.pullSecrets` | `- name: <pull-secret>` (`global.imagePullSecrets` already serves ClickHouse and Grafana). |
 

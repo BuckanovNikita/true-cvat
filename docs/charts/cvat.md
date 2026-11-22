@@ -214,6 +214,7 @@ These are stock values. They are listed here because a production install, and a
 | `vector.image.repository` | `timberio/vector` (subchart) | Tag `0.26.0-alpine` from `vector.image.tag`. |
 | `grafana.image.repository` | `docker.io/grafana/grafana` (subchart) | The tag defaults to the subchart's app version (`10.1.5`). |
 | `grafana.plugins` | `["grafana-clickhouse-datasource 4.8.2"]` | Grafana downloads each plugin when its pod starts (`GF_INSTALL_PLUGINS`). In a closed network give a download URL instead: `https://mirror.example.com/grafana/grafana-clickhouse-datasource-4.8.2.zip;grafana-clickhouse-datasource`. |
+| `grafana.rbac.namespaced` | `false` (subchart) | With the default, the Grafana subchart renders a ClusterRole and a ClusterRoleBinding, `<release>-grafana-clusterrole` and `<release>-grafana-clusterrolebinding`. These are the chart's only cluster-scoped objects: the account that runs `helm` needs rights to create them, and two releases of the same name in different namespaces collide on them. Set `true` to get a Role and a RoleBinding in the release namespace instead. |
 | `grafana.testFramework.enabled` | `true` (subchart) | Renders a `helm test` pod with `docker.io/bats/bats:v1.4.1`. Set `false` if you do not mirror it. |
 
 ### Pull secrets
@@ -402,6 +403,8 @@ grafana:
     tag: 10.1.5
   plugins:
     - https://mirror.example.com/grafana/grafana-clickhouse-datasource-4.8.2.zip;grafana-clickhouse-datasource
+  rbac:
+    namespaced: true
   testFramework:
     enabled: false
   grafana.ini:
