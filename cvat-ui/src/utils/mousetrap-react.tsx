@@ -5,6 +5,7 @@
 
 import React, { useEffect } from 'react';
 import Mousetrap from 'mousetrap';
+import { shortcutPressed } from 'utils/shortcut-hints';
 import { hotkeyUsed } from 'utils/team-analytics-logging';
 import { ShortcutScope } from './enums';
 
@@ -50,6 +51,7 @@ export default function GlobalHotKeys(props: Props): JSX.Element {
 
             Mousetrap.bind(sequences, (event, combo) => {
                 hotkeyUsed(key, event);
+                shortcutPressed(key); // shortcut hints: the person knows this shortcut (utils/shortcut-hints)
                 if (handler(event, combo) !== true) {
                     event.preventDefault();
                     event.stopPropagation();

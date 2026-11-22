@@ -1,0 +1,90 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base';
+
+// The shortcut hint: in the bottom right corner of the 2D canvas, left of the layer stack button
+// (.cvat-canvas-layer-stack-trigger: 10px from both edges, 5 grid units wide). It looks like the canvas tips
+// (.cvat-canvas-hints-container, top right corner) and, like them, is never a click target.
+.cvat-shortcut-hint {
+    position: absolute;
+    right: $grid-unit-size * 5 + 10px + $grid-unit-size;
+    bottom: 10px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: $grid-unit-size * 1.5;
+    max-width: $grid-unit-size * 45;
+    padding: $grid-unit-size $grid-unit-size * 1.5;
+    border-radius: $border-radius-base;
+    background: rgba(0, 0, 0, 70%);
+    color: white;
+    pointer-events: none;
+    animation-name: cvat-shortcut-hint-shown;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+
+    .cvat-shortcut-hint-keys {
+        display: flex;
+        flex: none;
+        align-items: center;
+        gap: $grid-unit-size * 0.5;
+    }
+
+    kbd {
+        padding: $grid-unit-size * 0.5 $grid-unit-size;
+        border-radius: $grid-unit-size * 0.5;
+        background: white;
+        color: $text-color;
+        font-family: $monospaced-fonts-stack;
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    .cvat-shortcut-hint-text {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .cvat-shortcut-hint-name {
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.3;
+    }
+
+    .cvat-shortcut-hint-label,
+    .cvat-shortcut-hint-then {
+        color: rgba(255, 255, 255, 75%);
+        font-size: 11px;
+        line-height: 1.3;
+    }
+}
+
+// The animation lasts as long as the hint is shown (the component sets its duration).
+@keyframes cvat-shortcut-hint-shown {
+    0% {
+        opacity: 0;
+    }
+
+    5% {
+        opacity: 1;
+    }
+
+    90% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cvat-shortcut-hint {
+        animation-name: none;
+    }
+}

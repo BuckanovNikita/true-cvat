@@ -12,10 +12,12 @@ true-cvat — форк CVAT v2.82.0, веб-приложения для разм
 | Страница Team Analytics для администраторов, на русском языке. | [Team Analytics](features/team-analytics.md) |
 | Список «Технические учётные записи» ([Technical accounts list](../../GLOSSARY.md#technical-accounts-list)) в диалоге «Настройки Team Analytics» ([Team Analytics settings](../../GLOSSARY.md#team-analytics-settings)). | [Настройки Team Analytics](features/team-analytics-settings.md) |
 | Ссылка шапки (header) «Analytics» называется «Grafana» ([Grafana](../../GLOSSARY.md#grafana)); администратору рядом видна ссылка «Team Analytics». | [Ссылки «Grafana» и «Team Analytics»](features/grafana-link.md) |
+| Подсказка о горячей клавише ([shortcut hint](../../GLOSSARY.md#shortcut-hint)) в углу холста (canvas) после действия мышью, для которого есть горячая клавиша (hotkey). | [Подсказки о горячих клавишах](features/shortcut-hints.md) |
 | Настройки (setting) сервера, от которых зависит, что видят пользователи. | [Настройки сервера](features/server-settings.md) |
 
 ## Кому что читать
 
+- Размечаете: [Подсказки о горячих клавишах](features/shortcut-hints.md).
 - Читаете Team Analytics: [Team Analytics](features/team-analytics.md), [Как считаются показатели](features/team-analytics-figures.md), [Настройки Team Analytics](features/team-analytics-settings.md).
 - Администрируете организации и права: [Создание организаций](features/organization-creation.md), [Права на issue и комментарии](features/issue-permissions.md), [Прогресс задачи](features/task-progress.md), [Ссылки в шапке](features/grafana-link.md), [Настройки сервера](features/server-settings.md).
 - Пишете скрипты к серверу через `curl`: [HTTP API Team Analytics](reference/team-analytics-api.md).
@@ -33,6 +35,7 @@ true-cvat — форк CVAT v2.82.0, веб-приложения для разм
 - [Team Analytics](features/team-analytics.md) — как пользоваться страницей: период, фильтры, карточки, динамика, подробности.
 - [Как считаются показатели Team Analytics](features/team-analytics-figures.md) — откуда каждое число и его ограничения.
 - [Настройки Team Analytics](features/team-analytics-settings.md) — список технических учётных записей.
+- [Подсказки о горячих клавишах](features/shortcut-hints.md) — когда в углу холста появляется клавиша действия и для каких действий.
 - [Настройки сервера](features/server-settings.md) — настройки сервера, которые меняют интерфейс.
 - [HTTP API Team Analytics](reference/team-analytics-api.md) — адреса `/api/team-analytics/*` для `curl` и скриптов.
 - [Глоссарий](../../GLOSSARY.md) — термины форка и их русские названия.

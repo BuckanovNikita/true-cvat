@@ -217,6 +217,12 @@ _Russian_: Действие мышью
 Hotkey actions divided by the sum of hotkey and mouse actions. Hotkey and mouse actions are recorded only in 2D jobs.
 _Russian_: Доля горячих клавиш
 
+<a id="shortcut-hint"></a>
+**Shortcut hint**:
+The box in the 2D annotation view that names an action and its hotkey to a person who keeps doing that action by mouse. It is shown rarely and stops once the person uses the hotkey.
+_Russian_: Горячая клавиша (the line under the action's Russian name in the hint)
+_Avoid_: tooltip, tip, popup
+
 <a id="bounding-box"></a>
 **Bounding box**:
 A rectangle object, the default shape type of the figures. The interface never abbreviates it.
