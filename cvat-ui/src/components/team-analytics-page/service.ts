@@ -655,7 +655,8 @@ export async function loadDetails(
     }
 }
 
-// --- Team Analytics settings (GET and PUT settings, GET settings/users): the Technical accounts list -----------
+// --- Team Analytics settings (GET and PUT settings, GET settings/users): the Technical accounts list and the
+// switch of the shortcut hints -------------------------------------------------------------------------------
 
 // One technical account: its user, by id, with the live user's name, or the last known name of a user that no
 // longer exists (`deleted`).
@@ -667,6 +668,9 @@ export interface TechnicalAccount {
 
 export interface TeamAnalyticsSettings {
     technical_accounts: TechnicalAccount[];
+    // whether shortcut hints are shown to everyone in the annotation view (UI-3); absent in the answer of a
+    // server from before the hints
+    shortcut_hints?: boolean;
 }
 
 // A user the settings screen offers to add: any user of the instance.
@@ -701,7 +705,7 @@ export const requestSettings: RequestSettings = async (method, body) => {
 function readableSettings(body: any): body is TeamAnalyticsSettings {
     return !!body && Array.isArray(body.technical_accounts) && body.technical_accounts.every(
         (account: TechnicalAccount) => typeof account?.user_id === 'number' && typeof account.user_name === 'string',
-    );
+    ) && (body.shortcut_hints === undefined || typeof body.shortcut_hints === 'boolean');
 }
 
 // The settings, or null when they cannot be read (the settings screen says so). A refusal takes the page to it.
@@ -722,14 +726,18 @@ export const SAVE_UNFINISHED = 'Сохранение не завершилось
 
 export type SaveResult = { kind: 'saved'; settings: TeamAnalyticsSettings } | { kind: 'failed'; error: string };
 
-// Replaces the Technical accounts list with `ids` (the whole list). A failure is said in a sentence the screen
-// shows: a refused list (400) in the server's words.
+// Replaces the Technical accounts list with `ids` (the whole list) and, when `shortcutHints` is given, sets the
+// switch of the shortcut hints (without it the switch stays as it is). A failure is said in a sentence the
+// screen shows: a refused list (400) in the server's words.
 export async function saveSettings(
-    ids: number[], request: RequestSettings = requestSettings,
+    ids: number[], request: RequestSettings = requestSettings, shortcutHints?: boolean,
 ): Promise<SaveResult> {
     let answer: ServiceAnswer;
     try {
-        answer = await request('PUT', { technical_accounts: ids });
+        answer = await request('PUT', {
+            technical_accounts: ids,
+            ...(shortcutHints === undefined ? {} : { shortcut_hints: shortcutHints }),
+        });
     } catch {
         return { kind: 'failed', error: SAVE_UNFINISHED };
     }

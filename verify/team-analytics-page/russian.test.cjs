@@ -183,6 +183,7 @@ const OVERVIEW = {
         hotkey_share: 0.75,
         top_hotkeys: [{ action: 'NEXT_FRAME', actions: 200 }, { action: 'SAVE_JOB', actions: 60 }],
         rest: { count: 2, actions: 100 },
+        hints_shown: 23,
     },
     processed: true,
 };
@@ -221,11 +222,14 @@ function listAnswer(url, overview) {
             body: {
                 ...base,
                 hotkey_actions: 300,
+                hints_shown: 23,
                 rows: [
-                    { action: 'NEXT_FRAME', actions: 200, share: 2 / 3 },
-                    { action: 'SAVE_JOB', actions: 60, share: 0.2 },
-                    { action: UNKNOWN_ACTION, actions: 40, share: 40 / 300 },
+                    { action: 'NEXT_FRAME', actions: 200, share: 2 / 3, hints: 0 },
+                    { action: 'SAVE_JOB', actions: 60, share: 0.2, hints: 21 },
+                    { action: UNKNOWN_ACTION, actions: 40, share: 40 / 300, hints: 0 },
                 ],
+                // a hinted action the viewer's keymap names (its name is the keymap's own English)
+                hinted_unused: [{ action: 'NEXT_FRAME', hints: 2 }],
             },
         };
     }
@@ -343,6 +347,8 @@ const SETTINGS = {
         { user_id: 12, user_name: 'ta-bot', deleted: false },
         { user_id: 40, user_name: 'old-importer', deleted: true },
     ],
+    // the switch of the shortcut hints (UI-3): its section of the settings is checked too
+    shortcut_hints: true,
 };
 const USERS = [
     { id: 12, username: 'ta-bot', first_name: '', last_name: '' },

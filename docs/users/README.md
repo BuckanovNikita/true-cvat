@@ -34,7 +34,7 @@ true-cvat — форк CVAT v2.82.0, веб-приложения для разм
 - [Ссылки «Grafana» и «Team Analytics»](features/grafana-link.md) — что открывает каждая ссылка шапки и кто её видит.
 - [Team Analytics](features/team-analytics.md) — как пользоваться страницей: период, фильтры, карточки, динамика, подробности.
 - [Как считаются показатели Team Analytics](features/team-analytics-figures.md) — откуда каждое число и его ограничения.
-- [Настройки Team Analytics](features/team-analytics-settings.md) — список технических учётных записей.
+- [Настройки Team Analytics](features/team-analytics-settings.md) — список технических учётных записей и переключатель подсказок о горячих клавишах.
 - [Подсказки о горячих клавишах](features/shortcut-hints.md) — когда в углу холста появляется клавиша действия и для каких действий.
 - [Настройки сервера](features/server-settings.md) — настройки сервера, которые меняют интерфейс.
 - [HTTP API Team Analytics](reference/team-analytics-api.md) — адреса `/api/team-analytics/*` для `curl` и скриптов.

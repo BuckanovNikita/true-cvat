@@ -7,6 +7,7 @@ import './settings.scss';
 import React, {
     useEffect, useId, useRef, useState,
 } from 'react';
+import Checkbox from 'antd/lib/checkbox';
 import Modal from 'antd/lib/modal';
 import Select from 'antd/lib/select';
 import Button from 'antd/lib/button';
@@ -41,6 +42,12 @@ const TECHNICAL_ACCOUNT = 'Техническая учётная запись �
     'автоматизированный процесс, а не человека. В списки людей она не попадает, а каждый сохранённый ею бокс ' +
     'учитывается как бокс модели.';
 
+// Worded from GLOSSARY.md (Shortcut hint), in Russian
+const SHORTCUT_HINT = 'Когда аннотатор в третий раз за час делает мышью то, для чего есть горячая клавиша, ' +
+    'в углу холста на несколько секунд появляется подсказка с этой клавишей: не чаще раза в час для одного ' +
+    'действия. Когда аннотатор делает действие в основном горячей клавишей (за последний час нажатий клавиши ' +
+    'больше половины), подсказка для него не появляется три дня.';
+
 export function accountLabel(account: TechnicalAccount): string {
     return account.deleted ? `удалённая учётная запись, ID ${account.user_id}` : account.user_name;
 }
@@ -54,13 +61,16 @@ function userLabel(user: SettingsUser): string {
 export const SEARCH_MAX_LENGTH = 150;
 
 // "Настройки Team Analytics": the Technical accounts list of the instance, edited here by an administrator and
-// saved as a whole. A change applies to every past period the next time the page is loaded.
+// saved as a whole. A change applies to every past period the next time the page is loaded. Below it, the
+// switch of the shortcut hints (UI-3), saved with the list.
 export default function SettingsModal({
     open, onClose, onSaved, searchDelayMs = 400, saveTimeLimitMs = SAVE_TIME_LIMIT_MS,
 }: Props): JSX.Element {
     const id = useId();
     const [loaded, setLoaded] = useState<Loaded>({ kind: 'loading' });
     const [accounts, setAccounts] = useState<TechnicalAccount[]>([]);
+    // whether shortcut hints are shown; null when the server holds no such switch (one from before the hints)
+    const [hints, setHints] = useState<boolean | null>(null);
     const [users, setUsers] = useState<SettingsUser[]>([]);
     const [query, setQuery] = useState('');
     const [searching, setSearching] = useState(false);
@@ -91,6 +101,7 @@ export default function SettingsModal({
                 return;
             }
             setAccounts(settings.technical_accounts);
+            setHints(settings.shortcut_hints ?? null);
             setLoaded({ kind: 'ready' });
         });
     };
@@ -165,7 +176,9 @@ export default function SettingsModal({
             stopWaiting();
             setError(SAVE_UNFINISHED);
         }, saveTimeLimitMs);
-        saveSettings(accounts.map((account) => account.user_id), requestSettings).then((result) => {
+        saveSettings(
+            accounts.map((account) => account.user_id), requestSettings, hints ?? undefined,
+        ).then((result) => {
             // an answer for a save no longer waited for (its time was up, or the modal was closed by a refusal
             // meanwhile, and maybe opened again) changes nothing here
             if (saves.current !== current) return;
@@ -318,10 +331,27 @@ export default function SettingsModal({
                 <p className='cvat-team-analytics-settings-text cvat-team-analytics-settings-applies'>
                     Изменение применяется ко всем прошлым периодам при следующей загрузке страницы.
                 </p>
-                {error ? (
-                    <div className='cvat-team-analytics-settings-error' role='alert'>{error}</div>
-                ) : null}
             </section>
+            {loaded.kind === 'ready' && hints !== null ? (
+                <section
+                    className='cvat-team-analytics-settings-section cvat-team-analytics-settings-hints'
+                    aria-labelledby={`${id}-hints-title`}
+                >
+                    <h3 id={`${id}-hints-title`} className='cvat-team-analytics-settings-title'>
+                        Подсказки о горячих клавишах
+                    </h3>
+                    <p className='cvat-team-analytics-settings-text'>{SHORTCUT_HINT}</p>
+                    <Checkbox checked={hints} disabled={saving} onChange={(event) => setHints(event.target.checked)}>
+                        Показывать подсказки аннотаторам
+                    </Checkbox>
+                    <p className='cvat-team-analytics-settings-text cvat-team-analytics-settings-applies'>
+                        Изменение действует для каждого пользователя после следующей загрузки страницы CVAT.
+                    </p>
+                </section>
+            ) : null}
+            {error ? (
+                <div className='cvat-team-analytics-settings-error' role='alert'>{error}</div>
+            ) : null}
         </Modal>
     );
 }
