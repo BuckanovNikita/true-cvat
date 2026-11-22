@@ -1,16 +1,17 @@
-"""No figures for what is not fully processed (DOCS.md, "Domain terms": Processed history).
+"""No figures for what is not fully processed (GLOSSARY.md: Processed history).
 
 A read of a period that is not fully processed keeps its envelope (`processed`, the legacy flags and what
 each endpoint names besides: the overview its period and filter echo, the list its period and kind, the
 details table its kind, page size and technical-account count) and carries no figures: every figure-bearing
 field is null, not partial. A trend bucket that is not fully processed has null values the same way. The
 legacy flags of such an answer describe only what is processed and can change once it all is
-(DOCS.md, "Known limit of unprocessed periods"). Every endpoint that answers with figures nulls them
-here, through `withhold`, after building its answer; a field added to an answer is withheld unless it is named
-as envelope. A read whose answer is withheld whole is skipped (the overview's sections outside the envelope, the
-list's hotkeys, the details table's rows); a read that also gives the legacy flags still runs, and so do the
-trends' reads, whose points carry flags of their own. The overview withholds whole sections, so a field added to a section's rows (operation
-parts on an overview row, say) is null with its section.
+(docs/maintainers/team-analytics.md, "Known limit of unprocessed periods"). Every endpoint that answers
+with figures nulls them here, through `withhold`, after building its answer; a field added to an answer
+is withheld unless it is named as envelope. A read whose answer is withheld whole is skipped (the
+overview's sections outside the envelope, the list's hotkeys, the details table's rows); a read that
+also gives the legacy flags still runs, and so do the trends' reads, whose points carry flags of their
+own. The overview withholds whole sections, so a field added to a section's rows (operation parts on an
+overview row, say) is null with its section.
 """
 
 from __future__ import annotations

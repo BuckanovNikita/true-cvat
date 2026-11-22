@@ -2,12 +2,13 @@
 
 ## Purpose and layout
 
-`BuckanovNikita/true-cvat` is a GitHub fork of `cvat-ai/cvat` (upstream v2.82.0). It adds per-stage/state task progress (UI-1, UI-2), wider organization issue/comment permissions (IAM-1), admin-only organization creation (IAM-2), the Team Analytics page inside the backend (TA-1), and its own server and UI images and two Helm charts (BUILD-1). Details, decisions and procedures: [DOCS.md](DOCS.md). Russian overview: [README.fork.md](README.fork.md).
+`BuckanovNikita/true-cvat` is a GitHub fork of `cvat-ai/cvat` (upstream v2.82.0). It adds per-stage/state task progress (UI-1, UI-2), wider organization issue/comment permissions (IAM-1), admin-only organization creation (IAM-2), the Team Analytics page inside the backend (TA-1), and its own server and UI images and two Helm charts (BUILD-1). Architecture, decisions, Team Analytics internals, the upgrade and release procedures: [docs/maintainers/](docs/maintainers/README.md). Domain terms: [GLOSSARY.md](GLOSSARY.md). Install and operation, for devops: [docs/](docs/README.md). Russian overview: [README.fork.md](README.fork.md).
 
 - Branches: `main` = the upstream release, nothing else (fast-forward only); `develop` = default branch, base of every task branch, linear fork commits rebased onto `main`, no merge commits; `release` = `develop` without `local/`.
 - Fork code: `cvat/apps/team_analytics/` (backend app), `cvat-ui/src/components/team-analytics-page/`, `cvat-ui/src/utils/team-analytics-logging/`, `cvat-ui/src/utils/task-jobs-summary.ts`, `cvat-ui/src/components/tasks-page/task-jobs-progress.tsx`; policies `cvat/apps/engine/rules/{issues,comments}.rego`.
 - Build surface: `Dockerfile.server`, `build-server.sh`, `build-ui.sh`, `Dockerfile.ui.dockerignore`, `helm-chart/`, `helm-chart-nuclio/`.
 - Checks: `verify/` (policy tests, bundle check, frontend suites, backend calculation tests in `verify/team-analytics-backend/`), `tools/gate/` (UI lint wrapper, node-suite runner, uv project pinning ruff/black/isort), `ruff.toml`.
+- Docs: `docs/` = the devops docs, English, the single home of every build input, chart value, backend setting and operating procedure: a change to one updates its page in the same change, proven from the code, with placeholder hosts only and no reference to `local/`. `docs/maintainers/` = the maintainer reference. `GLOSSARY.md` owns the domain terms.
 - `local/`: machine-specific material, on `develop` only: the Kubernetes test stack `local/team-analytics-stack/`. Code and shipped docs must not depend on `local/`.
 - Everything else is upstream's.
 
@@ -54,17 +55,17 @@ tools/gate/node-suite.sh verify/team_analytics_page.cjs
 - Never add a client event type or scope (ADR 0002). Event names live in both `contract.ts` and `sql/` and change together. A new upstream event type, scope, call site or shortcut action needs an explicit decision on whether it is an operation: a rename breaks figures silently.
 - No Team Analytics page or API address may start with `/analytics` (Grafana). A Team Analytics failure must not affect annotation or other CVAT functions.
 - The Team Analytics page is in Russian only (ADR 0010): every user-visible string in `cvat-ui/src/components/team-analytics-page/` is Russian, numbers and dates go through its `format.ts`, a word next to a count through `plural.ts`; no translation library, no language switch. `verify/team-analytics-page/russian.test.cjs` guards it: never allowlist page text there.
-- Team Analytics UI wording follows the domain terms in DOCS.md; changing a term updates `definitions.tsx`, `creation-methods.ts`, `settings-modal.tsx` and their tests together.
+- Team Analytics UI wording follows the domain terms in GLOSSARY.md; changing a term updates `definitions.tsx`, `creation-methods.ts`, `settings-modal.tsx` and their tests together.
 - A new upstream `JobStage`/`JobState` value needs handling in `cvat-ui/src/utils/task-jobs-summary.ts`.
 - Every closed-network build input is a Dockerfile ARG with a public default, read from the environment by the build script and passed only when set. No fork Dockerfile starts `FROM` a `cvat/` image. Never commit corporate hosts, registry paths or credentials: the repository is public.
-- Renaming a value in either chart's `values.yaml`, a downstream-vendored file or a build arg is a breaking change; coordinate it with the downstream repository (list in DOCS.md).
-- `build-server.sh` refuses an unported upstream `Dockerfile`: port the change into `Dockerfile.server`, then update `PORTED_FROM_SHA256` (DOCS.md, Upstream upgrade step 3).
+- Renaming a value in either chart's `values.yaml`, a downstream-vendored file or a build arg is a breaking change; coordinate it with the downstream repository (list in docs/maintainers/architecture.md).
+- `build-server.sh` refuses an unported upstream `Dockerfile`: port the change into `Dockerfile.server`, then update `PORTED_FROM_SHA256` (docs/maintainers/upstream-upgrade.md, step 3).
 - Rebuild the server image whenever a policy or the Team Analytics app changes and on every upgrade; restart the backend on it (a running server caches its OPA bundle).
 - Kubernetes is the only target (ADR 0003); Compose is unsupported and upstream's Compose files stay untouched.
 
 ## Decisions that bind code
 
-ADR 0002 (no new event types), ADR 0003 (Kubernetes only), ADR 0006 (Team Analytics in the backend, reads on a worker), ADR 0007 (public bases, Debian 12 server image), ADR 0008 (downstream compatibility surface), ADR 0009 (three branches), ADR 0010 (the Team Analytics page is in Russian only). Superseded: 0001, 0004, 0005. Spec ids UI-1, UI-2, IAM-1, IAM-2, BUILD-1, TA-1. One line each in DOCS.md, "Decisions".
+ADR 0002 (no new event types), ADR 0003 (Kubernetes only), ADR 0006 (Team Analytics in the backend, reads on a worker), ADR 0007 (public bases, Debian 12 server image), ADR 0008 (downstream compatibility surface), ADR 0009 (three branches), ADR 0010 (the Team Analytics page is in Russian only). Superseded: 0001, 0004, 0005. Spec ids UI-1, UI-2, IAM-1, IAM-2, BUILD-1, TA-1. One line each in docs/maintainers/decisions.md.
 
 ## Release and delivery
 
@@ -82,7 +83,7 @@ ADR 0002 (no new event types), ADR 0003 (Kubernetes only), ADR 0006 (Team Analyt
   `ready-for-human` is the only role with a label; remove it when the issue leaves the role. An issue with no role yet goes to `Triage`. `In Progress`, `In Review`, `Done` and `Duplicate` are past triage. Category roles are labels: `bug` = `Bug`, `enhancement` = `Feature`.
 - A feature is a parent issue with sub-issues; blocked-by relations override readiness. In Review when implementation and its checks are ready; Done after the merged PR reaches `develop`.
 - Work on a task branch from `develop`; push only the task branch; open the PR with `gh pr create -R BuckanovNikita/true-cvat --base develop` and check that the PR URL names true-cvat (a fork PR defaults to `cvat-ai/cvat`). Humans merge by squash or rebase.
-- Never push `main`, `develop`, `release` or a tag, never merge locally to deliver, never use GitHub's "Sync fork". Upstream upgrades and release cuts follow DOCS.md and need the owner's word for each push. Publishing an image and deploying each need their own authorization.
+- Never push `main`, `develop`, `release` or a tag, never merge locally to deliver, never use GitHub's "Sync fork". Upstream upgrades and release cuts follow docs/maintainers/upstream-upgrade.md and docs/maintainers/release.md and need the owner's word for each push. Publishing an image and deploying each need their own authorization.
 - Stacked PRs: record grouping in Linear; each descendant targets its parent branch; `--force-with-lease` only on task-owned branches.
 - PR texts, commit messages and the repository are public; Linear is private. Check output is not redacted (a failure prints absolute local paths): summarise it, never paste it raw into PRs or commits.
 
@@ -94,7 +95,7 @@ ADR 0002 (no new event types), ADR 0003 (Kubernetes only), ADR 0006 (Team Analyt
 - Upstream's chart Grafana with analytics enabled grants Admin to every visitor without sign-in.
 - Two UI orderings no suite sees: `groupMoved` is called before the first await of the `canvas.groupmoved` handler; frames change only through `changeFrameAsync`.
 - `CLAM_AV=yes` and `CVAT_DEBUG_ENABLED=yes` server builds have never been built.
-- A bare "ticket NN" in comments names the retired local tracker (DOCS.md, History), not Linear.
+- A bare "ticket NN" in comments names the retired local tracker (docs/maintainers/history.md), not Linear.
 
 ## Language standards
 
@@ -113,5 +114,5 @@ ADR 0002 (no new event types), ADR 0003 (Kubernetes only), ADR 0006 (Team Analyt
 - Changes to behavior, interfaces, dependencies, security or operational policy need a fresh independent review after integration and verification. Small wording edits may be self-reviewed.
 - Split large work into independent delegated tasks with explicit write ownership and acceptance evidence; delegated agents do not delegate further.
 - Use Conventional Commits. Commit automatic formatting separately from logic. Local commits within the task scope need no approval.
-- README.md is Russian; AGENTS.md and DOCS.md are English. Keep observed counts, timings and deployment status out of both files.
+- README.md is Russian (here `README.fork.md`: the root `README.md` is upstream's); AGENTS.md, GLOSSARY.md and everything under `docs/`, its `README.md` index pages included, are English by the owner's decision. Keep observed counts, timings and deployment status out of them.
 - Keep machine-specific paths, endpoints and settings in local configuration, not in these files.

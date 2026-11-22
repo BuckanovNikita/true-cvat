@@ -1,4 +1,4 @@
-// Definitions: the terms the overview's figures use carry their definition, worded from DOCS.md "Domain terms", as a tooltip
+// Definitions: the terms the overview's figures use carry their definition, worded from GLOSSARY.md, as a tooltip
 // on the words themselves (hover and keyboard focus), once per card or table header; there is no block of
 // definitions at the end of the overview, and full views are unchanged.
 const assert = require('node:assert/strict');

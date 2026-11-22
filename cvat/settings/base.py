@@ -885,7 +885,7 @@ HEALTH_CHECK = {"DISK_USAGE_MAX": int(os.getenv("CVAT_HEALTH_DISK_USAGE_MAX", 90
 ORGANIZATIONS_MIN_ROLE_TO_CREATE = os.getenv("CVAT_ORGANIZATIONS_MIN_ROLE_TO_CREATE", "admin")
 
 # Team Analytics (fork): the app and the periodic refresh of its stored totals, only where analytics
-# is enabled. See docs/adr/0006-team-analytics-inside-the-backend-with-reads-on-a-worker.md
+# is enabled. See docs/maintainers/decisions.md, "ADR 0006".
 # Its queue is defined everywhere: syncperiodicjobs looks only at configured queues, so this is what
 # lets it remove the stored refresh schedule on an instance where analytics was switched off.
 RQ_QUEUES["team_analytics"] = {

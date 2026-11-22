@@ -1,7 +1,7 @@
 # CVAT fork
 
 Форк — полный исходный код CVAT: репозиторий `BuckanovNikita/true-cvat`,
-GitHub-форк `cvat-ai/cvat`, с тремя ветками ([ADR 0009](DOCS.md#adr-0009)).
+GitHub-форк `cvat-ai/cvat`, с тремя ветками ([ADR 0009](docs/maintainers/decisions.md#adr-0009)).
 `main` — релиз upstream, на котором стоит форк, без единого изменения.
 `develop` — изменения форка: линейная цепочка коммитов поверх `main`.
 `release` — то, что форк распространяет: `develop` без каталога `local/`.
@@ -19,7 +19,7 @@ GitHub-форк `cvat-ai/cvat`, с тремя ветками ([ADR 0009](DOCS.md
 (`build-ui.sh`) собирается по `Dockerfile.ui` upstream. Образ сервера форка
 собирается с нуля из дерева форка по `Dockerfile.server` — переносу
 `Dockerfile` upstream на Debian 12 с Python 3.12 из официального образа Python
-([ADR 0007](DOCS.md#adr-0007));
+([ADR 0007](docs/maintainers/decisions.md#adr-0007));
 сам `Dockerfile` upstream форк не меняет и не использует.
 
 Сборка по умолчанию — без переменных: скрипты берут публичные базовые образы,
@@ -32,7 +32,7 @@ IMAGE=cvat/ui:v2.82.0-fork ./build-ui.sh
 
 Всё, что нужно сети контура, — аргумент Dockerfile с публичным значением по
 умолчанию; те же имена скрипты читают из окружения и передают в сборку только
-заданные переменные ([ADR 0008](DOCS.md#adr-0008)).
+заданные переменные ([ADR 0008](docs/maintainers/decisions.md#adr-0008)).
 
 | Параметр | Что задаёт | По умолчанию |
 | --- | --- | --- |
@@ -70,7 +70,7 @@ IMAGE=cvat/ui:v2.82.0-fork ./build-ui.sh
 
 Чарты форка лежат в самом репозитории: `helm-chart/` разворачивает CVAT,
 `helm-chart-nuclio/` — nuclio, отдельным релизом
-([ADR 0008](DOCS.md#adr-0008)).
+([ADR 0008](docs/maintainers/decisions.md#adr-0008)).
 Зависимости `helm-chart/` лежат тарболлами в `helm-chart/charts/` и зафиксированы
 в `helm-chart/Chart.lock`, поэтому `helm template` и `helm install` не
 обращаются к helm-репозиториям и работают без сети; у `helm-chart-nuclio/`
@@ -95,33 +95,35 @@ accounts list) один на экземпляр; его ведут админи�
 `TEAM_ANALYTICS_TECHNICAL_ACCOUNTS` больше не задаёт список: если она осталась,
 при запуске выводится одно предупреждение, что она не действует. После обновления
 список пуст, и администратор заполняет его заново
-([шаг обновления](DOCS.md#migration-from-team_analytics_technical_accounts)).
+([шаг обновления](docs/team-analytics.md#migrating-from-team_analytics_technical_accounts)).
 
 Перед обновлением CVAT используйте:
 
-- [Справочник форка](DOCS.md): поведение, которое
+- [Документация для DevOps](docs/README.md) (на английском): сборка образов,
+  установка чартов, настройки, обновление и откат, эксплуатация Team Analytics.
+- [Справочник сопровождающих](docs/maintainers/README.md): поведение, которое
   нужно сохранить, список изменённых файлов upstream, точки интеграции и
-  решения.
-- [Порядок обновления upstream](DOCS.md#upstream-upgrade): получение тега
+  решения. Термины — в [GLOSSARY.md](GLOSSARY.md).
+- [Порядок обновления upstream](docs/maintainers/upstream-upgrade.md): получение тега
   релиза, перебазирование `develop`, выпуск `release`, перенос изменений `Dockerfile` upstream в
   `Dockerfile.server`, сборка образов и проверка результата.
-- [Права на issues и комментарии и сборка и доставка политик](DOCS.md#fork-specification-ids)
+- [Права на issues и комментарии и сборка и доставка политик](docs/maintainers/decisions.md#fork-specification-ids)
   (IAM-1, BUILD-1): что меняет патч, как политики попадают на сервер и как это проверяется.
 - [Проверки](AGENTS.md#checks): команды проверок форка.
 
 Team Analytics:
 
-- [Раздел TA-1](DOCS.md#team-analytics-ta-1):
+- [Раздел TA-1](docs/maintainers/team-analytics.md):
   поведение, доступ, настройки и карта затронутых файлов upstream.
 - [Тестовый стенд](local/team-analytics-stack/README.md).
-- Решения: [ADR 0009](DOCS.md#adr-0009)
+- Решения: [ADR 0009](docs/maintainers/decisions.md#adr-0009)
   (три ветки в GitHub-форке; заменяет соединение историй из
-  [ADR 0005](DOCS.md#adr-0005)),
-  [ADR 0006](DOCS.md#adr-0006)
+  [ADR 0005](docs/maintainers/decisions.md#adr-0005)),
+  [ADR 0006](docs/maintainers/decisions.md#adr-0006)
   (Team Analytics внутри бэкенда),
-  [ADR 0007](DOCS.md#adr-0007)
+  [ADR 0007](docs/maintainers/decisions.md#adr-0007)
   (образы из базовых образов, публичных по умолчанию, сервер на Debian 12) и
-  [ADR 0008](DOCS.md#adr-0008)
+  [ADR 0008](docs/maintainers/decisions.md#adr-0008)
   (форк — оригинал для двух репозиториев: два чарта и параметры сборки).
 
 `README.md` в корне — файл upstream, и форк его не меняет: любой релиз, который

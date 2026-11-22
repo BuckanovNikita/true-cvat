@@ -17,7 +17,7 @@ export const TERM_LABELS: Record<TermName, string> = {
     model: 'Модель',
 };
 
-// Worded from DOCS.md, "Domain terms", in Russian. Session inlines the session gap (five minutes); Time per
+// Worded from GLOSSARY.md, in Russian. Session inlines the session gap (five minutes); Time per
 // operation inlines the idle pause (100 seconds).
 export const DEFINITIONS: Record<TermName, string> = {
     session: 'Один непрерывный интервал работы одного человека в заданиях, не длиннее суток. Пауза дольше ' +

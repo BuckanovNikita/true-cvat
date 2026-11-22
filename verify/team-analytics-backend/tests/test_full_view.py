@@ -226,9 +226,9 @@ class ProcessedTest(FullViewCase):
         self.assertEqual(body["processed"], self.overview(period="year")["processed"])
         # no figures, only the envelope: the period, the kind of list and the legacy flags
         self.assertEqual(body["period"]["first_day"], "2025-11-14")
-        # `legacy: False` pins a recorded limit (DOCS.md, "Known limit of unprocessed
-        # periods"): the legacy flags of an unprocessed period describe only what is processed of it, and this
-        # Year would read as legacy once processed
+        # `legacy: False` pins a recorded limit (docs/maintainers/team-analytics.md, "Known limit of
+        # unprocessed periods"): the legacy flags of an unprocessed period describe only what is
+        # processed of it, and this Year would read as legacy once processed
         self.assertEqual({key: body[key] for key in ("by", "legacy", "partly_legacy", "cutover", "shapes")},
                          {"by": "annotators", "legacy": False, "partly_legacy": False, "cutover": None,
                           "shapes": "all"})

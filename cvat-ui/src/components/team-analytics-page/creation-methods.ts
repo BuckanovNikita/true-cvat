@@ -4,7 +4,7 @@
 
 import { CreationMethodName } from './service';
 
-// Each creation method has one name everywhere on the page (DOCS.md, "Domain terms").
+// Each creation method has one name everywhere on the page (GLOSSARY.md).
 export const METHOD_NAMES: Record<CreationMethodName, string> = {
     drawn: 'Нарисовано',
     pasted: 'Вставлено',
