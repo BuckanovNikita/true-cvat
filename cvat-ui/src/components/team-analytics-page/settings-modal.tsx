@@ -36,7 +36,7 @@ export const SAVE_TIME_LIMIT_MS = 30000;
 
 type Loaded = { kind: 'loading' } | { kind: 'failed' } | { kind: 'ready' };
 
-// Worded from DOCS.md, "Domain terms" (Technical accounts list), in Russian
+// Worded from GLOSSARY.md (Technical accounts list), in Russian
 const TECHNICAL_ACCOUNT = 'Техническая учётная запись — это учётная запись пользователя, которая представляет ' +
     'автоматизированный процесс, а не человека. В списки людей она не попадает, а каждый сохранённый ею бокс ' +
     'учитывается как бокс модели.';

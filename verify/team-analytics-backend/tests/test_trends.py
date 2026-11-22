@@ -253,7 +253,7 @@ class ProcessedTest(TrendsCase):
         withheld = {"working_time_ms": None, "legacy": False, "boxes": None, "timed_boxes": None,
                     "box_time_ms": None, "average_ms": None, "hotkey_recorded": True, "hotkey_actions": None,
                     "mouse_actions": None, "hotkey_share": None}
-        # `legacy: False, hotkey_recorded: True` pin a recorded limit (DOCS.md, "Known limit
+        # `legacy: False, hotkey_recorded: True` pin a recorded limit (docs/maintainers/team-analytics.md, "Known limit
         # of unprocessed periods"): the flags of an unprocessed bucket describe only what is processed of it and
         # can change, even to the opposite, once it is processed
         self.assertEqual(line["points"][:11], [withheld] * 11)

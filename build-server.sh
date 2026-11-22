@@ -25,7 +25,7 @@
 # the working tree. The script refuses to build when
 # - upstream's Dockerfile differs from the one Dockerfile.server was ported from
 #   (PORTED_FROM_SHA256): a release changed it, and the port must be reviewed first
-#   (docs/upstream-upgrade.md, section 3);
+#   (docs/maintainers/upstream-upgrade.md, step 3);
 # - a file under the copied paths is not tracked (the image would lack it while the working
 #   tree has it), or a tracked file there is missing from the working tree.
 #
@@ -90,7 +90,7 @@ if [ "$upstream_sha256" != "$PORTED_FROM_SHA256" ]; then
     echo "upstream's Dockerfile changed since Dockerfile.server was ported from it" >&2
     echo "  ported from sha256 $PORTED_FROM_SHA256, the tree has $upstream_sha256" >&2
     echo "port the change into Dockerfile.server, then record the new hash in this script" >&2
-    echo "(docs/upstream-upgrade.md, section 3)" >&2
+    echo "(docs/maintainers/upstream-upgrade.md, step 3)" >&2
     exit 1
 fi
 

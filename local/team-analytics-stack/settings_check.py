@@ -392,7 +392,7 @@ def generation_steps(admin: Session, base: list[int]) -> str:
     need(isinstance(g0, int), f"no answer generation in the cache ({g0})")
     need(g1 == g0 + 1, f"adding an account moved the generation {g0} -> {g1}, expected exactly one step")
     need(g3 == g2 + 1, f"removing it moved the generation {g2} -> {g3}, expected exactly one step")
-    # a save advances the generation whether or not the list changed (DOCS.md, "Team Analytics (TA-1)", views.py)
+    # a save advances the generation whether or not the list changed (docs/maintainers/team-analytics.md, views.py)
     need(g2 == g1 + 1, f"saving the same list again moved the generation {g1} -> {g2}, expected exactly one step")
     need(ids_of(same) == sorted([*base, extra]), f"the same list saved again answered {ids_of(same)}")
     return (f"every save advanced the generation by one: adding {g0}->{g1}, the same list again {g1}->{g2} (answered "

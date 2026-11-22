@@ -89,7 +89,7 @@ PROBE_DAYS_BEFORE = 3
 ADMIN_ONLY_HISTORY = {"ready_from", "ready_from_day", "first_day", "days_ready", "days_total"}
 SHARED_HISTORY = {"complete", "percent", "periods", "earliest_month", "complete_weeks", "trends_ready"}
 LEGACY_FLAGS = {"legacy", "partly_legacy", "cutover", "shapes"}
-# what an answer for a period not fully processed keeps (DOCS.md, "Known limit of unprocessed periods")
+# what an answer for a period not fully processed keeps (docs/maintainers/team-analytics.md, "Known limit of unprocessed periods")
 ENVELOPES = {
     "overview": {"period", "filters", "processed", "operations"},
     "list": {"period", "processed", "by"} | LEGACY_FLAGS,

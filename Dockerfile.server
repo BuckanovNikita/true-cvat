@@ -33,7 +33,7 @@
 # Built by build-server.sh, which gives it a context of the tracked files it copies, passes these
 # arguments through from the environment, pulls the three bases and logs the digest each resolved
 # to, and refuses to build when upstream's Dockerfile changed since this port
-# (docs/upstream-upgrade.md, section 3). The server and every worker run this one image.
+# (docs/maintainers/upstream-upgrade.md, step 3). The server and every worker run this one image.
 
 # The perimeter inputs. Empty means the public default named above: an empty value is never
 # written into a config file below, so nothing here changes a public build.

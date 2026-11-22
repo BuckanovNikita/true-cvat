@@ -6,7 +6,7 @@
 // The seeding account signs in through CVAT's login form into its personal workspace and opens
 // the tasks list filtered to the seeded tasks. On each task card the summary widget must show,
 // for every stage/state that holds jobs, the legend entry with its count, a segment whose
-// computed colour is the specified one (DOCS.md, UI-2), whose flex weight is
+// computed colour is the specified one (docs/maintainers/decisions.md, UI-2), whose flex weight is
 // the count and whose tooltip names it, the task's total, and no "not available" bucket or other
 // bucket; the upstream fallback labels must be absent. Every legend entry must be readable on the
 // card (contrast at least 4.5:1 after compositing its colour onto the card's background); for the

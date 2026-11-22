@@ -141,7 +141,7 @@ Upstream's `Dockerfile` is missing from `<fork-root>` (exit `1`). Restore it: th
 upstream's Dockerfile changed since Dockerfile.server was ported from it
   ported from sha256 <recorded>, the tree has <actual>
 port the change into Dockerfile.server, then record the new hash in this script
-(docs/upstream-upgrade.md, section 3)
+(docs/maintainers/upstream-upgrade.md, step 3)
 ```
 
 The `Dockerfile` in `<fork-root>` is not the one `Dockerfile.server` was ported from. The vendored tree is incomplete, mixed with another release, or the file was edited. Restore the `Dockerfile` of the [fork tree](../../GLOSSARY.md#fork-tree) you build. The fix the message names is for whoever maintains the fork tree, not for an install.
