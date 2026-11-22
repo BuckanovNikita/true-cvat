@@ -209,7 +209,7 @@ _Russian_: Действие горячей клавишей (plural: Дейст�
 
 <a id="mouse-action"></a>
 **Mouse action**:
-A click on a button, a menu or a sidebar control; clicks on the canvas are not counted.
+A click on a control outside the canvas: a button, a menu item, a sidebar control, a field or a tab; clicks on the canvas are not counted.
 _Russian_: Действие мышью
 
 <a id="hotkey-share"></a>
@@ -290,7 +290,7 @@ _Russian_: Обработанная история
 
 <a id="task-progress-bar"></a>
 **Task progress bar**:
-The bar on a task's card in the task list that the fork splits into one segment per pair of job stage and job state, each sized by its number of jobs, with a legend above it.
+The bar on a task's card in the task list that the fork splits into one segment per pair of job stage and job state that has jobs, each sized by its number of jobs, with a legend above it.
 _Russian_: полоса прогресса задачи
 _Avoid_: progress widget
 
