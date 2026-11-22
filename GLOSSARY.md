@@ -1,6 +1,6 @@
 # Glossary
 
-The terms of the true-cvat fork of CVAT: what the fork delivers, who may use it, and what the Team Analytics page measures. Where the Team Analytics page shows a term, the `_Russian_` line gives the wording on screen.
+The terms of the true-cvat fork of CVAT: what the fork delivers, who may use it, what the Team Analytics page measures, and what the task list shows. Where the Team Analytics page shows a term, the `_Russian_` line gives the wording on screen.
 
 ## Fork and delivery
 
@@ -57,6 +57,13 @@ _Avoid_: superuser, admin user
 <a id="role-floor"></a>
 **Role floor**:
 The fork's addition to the issue and comment permissions: a member of the organization that owns an issue or comment, whose global role is at least worker, may act on it and list all of them in the organization, whether or not they staff the job, task or project. Below that global role the stock rules decide alone.
+_Russian_: порог роли
+
+<a id="global-role"></a>
+**Global role**:
+The role an account has on the whole instance through its CVAT group: `admin`, `user` or `worker`; an account may have none. It is not a role in an organization.
+_Russian_: глобальная роль
+_Avoid_: privilege, global group
 
 <a id="organization-scope"></a>
 **Organization scope**:
@@ -122,6 +129,12 @@ The one instance-wide list of technical accounts, kept by user id and edited by 
 _Russian_: Технические учётные записи (the list's heading in the settings window «Настройки Team Analytics»)
 _Avoid_: bot list, service accounts
 
+<a id="team-analytics-settings"></a>
+**Team Analytics settings**:
+The window an administrator opens with the «Настройки» button of the Team Analytics page. It holds the [technical accounts list](#technical-accounts-list) and nothing else.
+_Russian_: Настройки Team Analytics
+_Avoid_: using it for the backend's environment settings
+
 <a id="no-project"></a>
 **No project**:
 The group of tasks that belong to no project. A deleted project stays under its id.
@@ -137,6 +150,7 @@ _Russian_: Сессия (the sign-in session is «сеанс»)
 <a id="idle-pause"></a>
 **Idle pause**:
 A pause of more than 100 seconds before an action. It belongs to no operation.
+_Russian_: пауза бездействия
 
 <a id="working-time"></a>
 **Working time**:
@@ -195,7 +209,7 @@ _Russian_: Действие горячей клавишей (plural: Дейст�
 
 <a id="mouse-action"></a>
 **Mouse action**:
-A click on a button, a menu or a sidebar control; clicks on the canvas are not counted.
+A click on a control outside the canvas: a button, a menu item, a sidebar control, a field or a tab; clicks on the canvas are not counted.
 _Russian_: Действие мышью
 
 <a id="hotkey-share"></a>
@@ -252,15 +266,35 @@ _Russian_: Обзор (shown only in the back link «Назад к обзору�
 The hour of the first operation event of a user in a job that carries a shape type, which is when the new activity logging began. It is stored and only ever moves earlier.
 _Russian_: переход на новый учёт действий (the new activity logging itself is «новый учёт действий»)
 
+<a id="new-activity-logging"></a>
+**New activity logging**:
+What the fork's interface records on top of stock CVAT's events from the [cutover](#cutover) on: the shape type of an operation, class changes, and hotkey and mouse actions.
+_Russian_: новый учёт действий
+
 <a id="legacy-period"></a>
 **Legacy period**:
 A period that ends at or before the cutover, or any period when there is no cutover. Its operations cover all shapes, class changes and hotkey use were not recorded, and saved boxes stand in for Model.
+_Russian_: период до перехода
 
 <a id="partly-legacy-period"></a>
 **Partly legacy period**:
 A period that begins before the cutover and ends after it. Operations before the cutover count only under All shapes.
+_Russian_: период, частично записанный до перехода
 
 <a id="processed-history"></a>
 **Processed history**:
 The part of the past that the worker has processed. A period is offered only when fully processed; history fills newest first, and a warning shows when the data is over 30 minutes old.
 _Russian_: Обработанная история
+
+## Task list
+
+<a id="task-progress-bar"></a>
+**Task progress bar**:
+The bar on a task's card in the task list that the fork splits into one segment per pair of job stage and job state that has jobs, each sized by its number of jobs, with a legend above it.
+_Russian_: полоса прогресса задачи
+_Avoid_: progress widget
+
+<a id="not-available-segment"></a>
+**Not available segment**:
+The last segment of the [task progress bar](#task-progress-bar): the jobs of the task that the viewer could not fetch, the task's total minus the jobs received. It is shown only when that number is above zero.
+_Russian_: сегмент «not available»
