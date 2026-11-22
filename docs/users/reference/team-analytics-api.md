@@ -32,8 +32,8 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
 
 Организацию выбирают так же, как в остальном API CVAT, одним из способов:
 
-- параметр `org` с коротким именем: `org=vision-team`;
-- заголовок `X-Organization: vision-team`;
+- параметр `org` с коротким именем: `org=visionteam`;
+- заголовок `X-Organization: visionteam`;
 - параметр `org_id` с id организации.
 
 С организацией цифры относятся к ней («Организация», [Organization scope](../../../GLOSSARY.md)). Без организации, или с пустым `org=`, цифры охватывают весь сервер: «Все организации и личные пространства» ([Instance scope](../../../GLOSSARY.md)). Это отличие от остального CVAT, где запрос без организации означает личное пространство (personal workspace) того, кто спрашивает: у Team Analytics нет цифр одного личного пространства. Администратору не нужно быть участником (member) организации.
@@ -96,7 +96,7 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
 Цикл повторов, который можно скопировать:
 
 ```bash
-url="https://cvat.example.com/api/team-analytics/overview?org=vision-team&period=month&month=2026-10&tz=Europe/Moscow"
+url="https://cvat.example.com/api/team-analytics/overview?org=visionteam&period=month&month=2026-10&tz=Europe/Moscow"
 for attempt in 1 2 3 4 5 6 7 8 9 10; do
   code=$(curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" -D headers.txt -o answer.json -w '%{http_code}' "$url")
   if [ "$code" != 429 ]; then break; fi
@@ -164,7 +164,7 @@ echo "HTTP $code"; cat answer.json
 
 ```bash
 curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
-  "https://cvat.example.com/api/team-analytics/status?org=vision-team&tz=Europe/Moscow"
+  "https://cvat.example.com/api/team-analytics/status?org=visionteam&tz=Europe/Moscow"
 ```
 
 ## GET /api/team-analytics/overview
@@ -229,7 +229,7 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
 
 ```bash
 curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
-  "https://cvat.example.com/api/team-analytics/overview?org=vision-team&period=month&month=2026-10&tz=Europe/Moscow&project=12&shapes=bounding_boxes"
+  "https://cvat.example.com/api/team-analytics/overview?org=visionteam&period=month&month=2026-10&tz=Europe/Moscow&project=12&shapes=bounding_boxes"
 ```
 
 ## GET /api/team-analytics/trends
@@ -284,7 +284,7 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
 
 ```bash
 curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
-  "https://cvat.example.com/api/team-analytics/trends?org=vision-team&step=month&compare=annotators&ids=7,8&tz=Europe/Moscow"
+  "https://cvat.example.com/api/team-analytics/trends?org=visionteam&step=month&compare=annotators&ids=7,8&tz=Europe/Moscow"
 ```
 
 ## GET /api/team-analytics/list
@@ -335,7 +335,7 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
 
 ```bash
 curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
-  "https://cvat.example.com/api/team-analytics/list?org=vision-team&by=projects&period=two_weeks&tz=Europe/Moscow"
+  "https://cvat.example.com/api/team-analytics/list?org=visionteam&by=projects&period=two_weeks&tz=Europe/Moscow"
 ```
 
 ## GET /api/team-analytics/details
@@ -382,7 +382,7 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
 
 ```bash
 curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
-  "https://cvat.example.com/api/team-analytics/details?org=vision-team&by=annotators&page=2&search=annotator&tz=Europe/Moscow"
+  "https://cvat.example.com/api/team-analytics/details?org=visionteam&by=annotators&page=2&search=annotator&tz=Europe/Moscow"
 ```
 
 ## GET /api/team-analytics/settings

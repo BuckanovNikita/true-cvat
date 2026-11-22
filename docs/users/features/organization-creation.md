@@ -23,16 +23,18 @@
 ## Где находится
 
 1. Откройте меню учётной записи в правом углу шапки (header).
-2. Наведите курсор на пункт «Organization».
+2. Щёлкните пункт «Organization»: меню и этот пункт открываются по щелчку, а не по наведению.
 3. Выберите «Create». Откроется страница `/organizations/create` с заголовком «Create a new organization».
 
-<!-- SCREENSHOT: header user menu with «Organization» expanded and «Create» visible -->
+![Меню учётной записи с раскрытым пунктом «Organization»: «Settings», «Invitations», «Create», «Personal workspace» и организация участника](../img/organization-menu.png)
+
+*На снимке тестовые данные: имена учётной записи и организации вымышлены. Пункт «Settings» есть, только когда организация выбрана; если организаций больше пяти, вместо их списка стоит «Switch organization».*
 
 ## Как это работает
 
 Администратор создаёт организацию так:
 
-1. На странице «Create a new organization» заполните «Short name» — обязательное поле, не длиннее 16 символов, например `vision-team`.
+1. На странице «Create a new organization» заполните «Short name» — обязательное поле: только латинские буквы и цифры, без дефисов и пробелов, не длиннее 16 символов, например `visionteam`.
 2. При желании заполните «Full name» (не длиннее 64 символов, например «Vision Team»), «Description», «Email», «Phone number» и «Location».
 3. Нажмите «Submit». После создания новая организация становится выбранной и открывается её страница `/organization`.
 
@@ -49,6 +51,7 @@
 | Уведомление «Could not create organization `<short name>`» с текстом ответа сервера | Ваша учётная запись не в группе `admin`, сервер ответил HTTP 403. | Попросите администратора создать организацию и пригласить вас в неё. |
 | «Short name is a required field» | Поле «Short name» пустое. | Заполните его. |
 | «Short name must not exceed 16 characters» | Короткое имя длиннее 16 символов. | Сократите его. |
+| «Only Latin characters and numbers are allowed» | В коротком имени есть дефис, пробел или другой символ, кроме латинских букв и цифр. Форма не отправляется. | Оставьте только латинские буквы и цифры. |
 | «Full name must not exceed 64 characters» | Полное имя длиннее 64 символов. | Сократите его. |
 | «The input is not a valid E-mail» | В поле «Email» не адрес электронной почты. | Исправьте адрес или очистите поле. |
 | «Input phone number is not correct» | В поле «Phone number» есть символы, кроме цифр, пробелов, `-` и `+` в начале. | Исправьте номер или очистите поле. |
