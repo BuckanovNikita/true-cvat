@@ -73,6 +73,9 @@ export interface InputFigures {
     // the most used hotkeys (most first) and the rest
     top_hotkeys: { action: string; actions: number }[];
     rest: { count: number; actions: number };
+    // shortcut hints shown to the annotators of the scope (UI-3); no part of the actions above. Absent in an
+    // answer computed before the hints were counted.
+    hints_shown?: number;
 }
 
 export interface OperationsFigures {
@@ -468,10 +471,18 @@ export interface HotkeyListRow {
     action: string;
     actions: number;
     share: number; // of all hotkey actions
+    // shortcut hints shown for this action; absent in an answer computed before the hints were counted
+    hints?: number;
+}
+
+// An action a shortcut hint was shown for and whose hotkey was never pressed in the scope.
+export interface HintedUnusedRow {
+    action: string;
+    hints: number;
 }
 
 // In a period not wholly processed (`processed: false`) a list keeps its envelope (period, kind, legacy flags)
-// and its figures (`total`, `rows`, `hotkey_actions`) are null.
+// and its figures (`total`, `rows`, `hotkey_actions`, `hints_shown`, `hinted_unused`) are null.
 export interface RowsList {
     by: 'annotators' | 'projects';
     period?: Period;
@@ -492,6 +503,10 @@ export interface HotkeysList {
     processed?: boolean;
     hotkey_actions: number | null;
     rows: HotkeyListRow[] | null;
+    // every hint shown in the scope, and the hinted actions never done by hotkey, most hinted first; both
+    // absent in an answer computed before the hints were counted
+    hints_shown?: number | null;
+    hinted_unused?: HintedUnusedRow[] | null;
 }
 
 export type FullList = RowsList | HotkeysList;

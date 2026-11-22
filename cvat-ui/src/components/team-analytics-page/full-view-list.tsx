@@ -23,6 +23,8 @@ export interface FullListRow {
     parts: BarPart[];
     value: string;
     share: string;
+    // a last column (the shortcut hints shown for a hotkey)
+    note?: string;
     title: string;
 }
 
@@ -121,6 +123,7 @@ interface ListProps extends Omit<ToolbarProps, 'query' | 'onQuery' | 'sort' | 'o
     nameHeader: string;
     extraHeader?: string;
     valueHeader: string;
+    noteHeader?: string;
     rows: FullListRow[];
     selected?: number | null;
     // clicking a row sets the page's filter, as on the overview
@@ -128,18 +131,21 @@ interface ListProps extends Omit<ToolbarProps, 'query' | 'onQuery' | 'sort' | 'o
 }
 
 export function FullList({
-    legend, nameHeader, extraHeader, valueHeader, rows, selected = null, onPick, ...toolbar
+    legend, nameHeader, extraHeader, valueHeader, noteHeader, rows, selected = null, onPick, ...toolbar
 }: ListProps): JSX.Element {
     const [query, setQuery] = useState('');
     const [sort, setSort] = useState<Sort>('value');
     const shown = arrange(rows, query, sort);
     const withExtra = extraHeader !== undefined;
+    const withNote = noteHeader !== undefined;
+    const columns = `${withExtra ? ' cvat-team-analytics-full-list-extra' : ''}${
+        withNote ? ' cvat-team-analytics-full-list-note' : ''}`;
     return (
         <>
             <Toolbar {...toolbar} query={query} onQuery={setQuery} sort={sort} onSort={setSort} />
             {legend}
             <div className='cvat-team-analytics-full-scroll'>
-                <div className={`cvat-team-analytics-full-list${withExtra ? ' cvat-team-analytics-full-list-extra' : ''}`}>
+                <div className={`cvat-team-analytics-full-list${columns}`}>
                     <div className='cvat-team-analytics-full-list-header'>
                         <span className='cvat-team-analytics-full-rank'>№</span>
                         <span>{nameHeader}</span>
@@ -147,6 +153,7 @@ export function FullList({
                         <span />
                         <span className='cvat-team-analytics-full-value'>{valueHeader}</span>
                         <span className='cvat-team-analytics-full-share'>Доля</span>
+                        {withNote ? <span className='cvat-team-analytics-full-note'>{noteHeader}</span> : null}
                     </div>
                     {shown.map((row) => (
                         <button
@@ -175,6 +182,7 @@ export function FullList({
                             </span>
                             <span className='cvat-team-analytics-full-value'>{row.value}</span>
                             <span className='cvat-team-analytics-full-share'>{row.share}</span>
+                            {withNote ? <span className='cvat-team-analytics-full-note'>{row.note ?? ''}</span> : null}
                         </button>
                     ))}
                 </div>

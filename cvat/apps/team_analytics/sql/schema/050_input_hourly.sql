@@ -1,8 +1,10 @@
 -- Keyboard and mouse use per hour (UTC), organization, project, task and annotator, from the UI's input
 -- summary records. Tall: one row per (kind, name) used.
 --   kind: 'hotkey' (name = the shortcut's action name, e.g. NEXT_FRAME) |
---         'mouse'  (name = the interface zone clicked; zone 'canvas' is drawing and editing, not a mouse action)
---   actions: number of hotkey actions or clicks
+--         'mouse'  (name = the interface zone clicked; zone 'canvas' is drawing and editing, not a mouse action) |
+--         'hint'   (name = the action name of the shortcut a hint was shown for; no action of the person)
+--   actions: number of hotkey actions, clicks or hints shown
+-- A read names the kinds it adds up: a kind it does not name never enters its figures.
 -- org_id 0 = personal workspace (no organization); project_id 0 = No project.
 CREATE TABLE IF NOT EXISTS $totals_db.input_hourly
 (

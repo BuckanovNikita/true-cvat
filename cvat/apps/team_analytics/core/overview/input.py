@@ -1,4 +1,5 @@
-"""Keyboard and mouse for the period: hotkey actions, mouse actions, hotkey share and the most used hotkeys.
+"""Keyboard and mouse for the period: hotkey actions, mouse actions, hotkey share, the most used hotkeys
+and the shortcut hints shown.
 
 Hotkeys are named by action (what the shortcut does), never by key: the page labels them with the viewer's
 own keymap. Both filters apply; the shape switch does not (hotkey use is not per shape).
@@ -25,6 +26,8 @@ def build(request: Request) -> dict:
         # clicks on the canvas: drawing and editing, not mouse actions
         "canvas_clicks": int(first["canvas_clicks"]),
         "hotkey_share": hotkeys / (hotkeys + mouse) if hotkeys + mouse > 0 else None,
+        # shortcut hints shown: what the interface did, so no part of the actions above
+        "hints_shown": int(first["hints_shown"]),
         "top_hotkeys": [
             {"action": row["action"], "actions": int(row["used"])} for row in rows if row["action"]
         ],

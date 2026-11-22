@@ -6,7 +6,8 @@ import './full-view.scss';
 import React, { useEffect, useState } from 'react';
 
 import {
-    FullList as ListResponse, HotkeysList, ListKind, Overview, ProjectNames, RowsList, requestService, loadList,
+    FullList as ListResponse, HintedUnusedRow, HotkeysList, ListKind, Overview, ProjectNames, RowsList,
+    requestService, loadList,
 } from './service';
 import { Address } from './address';
 import { FullView as FullViewKey, FullViewRows, trendOfView } from './full-views';
@@ -27,6 +28,9 @@ const WORKING_TIME_COLOR = '#2a78d6';
 // what the rows of a list are, counted: '3 проекта', '5 аннотаторов'
 const PROJECT_FORMS = ['проект', 'проекта', 'проектов'] as const;
 const ANNOTATOR_FORMS = ['аннотатор', 'аннотатора', 'аннотаторов'] as const;
+// shortcut hints (UI-3), counted: '2 подсказки', and with what happened to them: '2 подсказки показаны'
+const HINT_FORMS = ['подсказка', 'подсказки', 'подсказок'] as const;
+const HINTS_SHOWN_FORMS = ['подсказка показана', 'подсказки показаны', 'подсказок показано'] as const;
 
 function annotatorName(row: { id: number; user_name?: string | null }): string {
     return row.user_name ?? `Аннотатор #${row.id}`;
@@ -122,8 +126,32 @@ function WorkingTimeList({
     );
 }
 
+// What the shortcut hints did not teach yet: actions hinted in the scope whose hotkey nobody pressed.
+function HintedUnused({ rows, labels }: { rows: HintedUnusedRow[]; labels?: HotkeyLabels }): JSX.Element {
+    return (
+        <div className='cvat-team-analytics-hinted-unused'>
+            <h3>Подсказка показана, горячая клавиша не использовалась</h3>
+            <ul>
+                {rows.map((row) => {
+                    const label = hotkeyLabel(row.action, labels);
+                    return (
+                        <li key={row.action}>
+                            <span className='cvat-team-analytics-hinted-name'>{label.name}</span>
+                            <kbd className='cvat-team-analytics-hinted-keys'>{label.keys}</kbd>
+                            <span className='cvat-team-analytics-hinted-count'>{counted(row.hints, HINT_FORMS)}</span>
+                        </li>
+                    );
+                })}
+            </ul>
+        </div>
+    );
+}
+
 function HotkeysFullList({ list, labels }: { list: HotkeysList; labels?: HotkeyLabels }): JSX.Element {
     const largest = Math.max(0, ...list.rows.map((row) => row.actions));
+    // an answer computed before the hints were counted carries none of their figures
+    const hintsCounted = typeof list.hints_shown === 'number';
+    const unused = list.hinted_unused ?? [];
     const rows: FullListRow[] = list.rows.map((row, index) => {
         const label = hotkeyLabel(row.action, labels);
         return {
@@ -139,22 +167,28 @@ function HotkeysFullList({ list, labels }: { list: HotkeysList; labels?: HotkeyL
             }],
             value: formatCount(row.actions),
             share: formatShare(row.share),
+            note: hintsCounted ? formatCount(row.hints ?? 0) : undefined,
             title: `${label.name} (${label.keys}): ${formatCount(row.actions)}`,
         };
     });
     return (
-        <FullList
-            placeholder='Найти действие или клавишу'
-            rows={rows}
-            nameHeader='Действие'
-            extraHeader='Клавиша'
-            valueHeader='Действия'
-            summary={[
-                counted(list.rows.length, ['горячая клавиша', 'горячие клавиши', 'горячих клавиш']),
-                counted(list.hotkey_actions, ['действие', 'действия', 'действий']),
-            ].join(' · ')}
-            legend={<Legend><Swatch color={HOTKEY_COLOR} name='Действия горячими клавишами' /></Legend>}
-        />
+        <>
+            <FullList
+                placeholder='Найти действие или клавишу'
+                rows={rows}
+                nameHeader='Действие'
+                extraHeader='Клавиша'
+                valueHeader='Действия'
+                noteHeader={hintsCounted ? 'Подсказки' : undefined}
+                summary={[
+                    counted(list.rows.length, ['горячая клавиша', 'горячие клавиши', 'горячих клавиш']),
+                    counted(list.hotkey_actions, ['действие', 'действия', 'действий']),
+                    ...(hintsCounted ? [counted(list.hints_shown, HINTS_SHOWN_FORMS)] : []),
+                ].join(' · ')}
+                legend={<Legend><Swatch color={HOTKEY_COLOR} name='Действия горячими клавишами' /></Legend>}
+            />
+            {unused.length ? <HintedUnused rows={unused} labels={labels} /> : null}
+        </>
     );
 }
 

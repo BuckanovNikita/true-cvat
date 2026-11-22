@@ -18,6 +18,7 @@ import { getApplicationKeyMap } from 'utils/mousetrap-react';
 import {
     Hint, Shortcuts, controlOf, countPressesWhile, guarded, hintOf, mouseUsed, switchOff,
 } from 'utils/shortcut-hints';
+import { hintShown } from 'utils/team-analytics-logging';
 
 // How long a hint stays on the screen.
 export const SHOWN_MS = 5000;
@@ -102,8 +103,10 @@ function ShortcutHintHost({ shownMs = SHOWN_MS }: Props): JSX.Element {
                 const control = controlOf(event.target);
                 if (!control) return;
                 const next = hintOf(control, view.current.shortcuts, getApplicationKeyMap());
+                if (!next || !mouseUsed(next.action)) return;
                 // a new object every time: a hint shown again starts its time on the screen anew
-                if (next && mouseUsed(next.action)) setHint({ ...next });
+                setHint({ ...next });
+                hintShown(next.action); // Team Analytics counts the hints shown (input-summary.ts)
             });
         };
         // capture: a control that stops the click from bubbling is still seen

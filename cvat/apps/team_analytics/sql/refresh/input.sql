@@ -1,6 +1,7 @@
 -- Keyboard and mouse use: the counts in the UI's input summary records (debug:info named
 -- team_analytics:input_summary, logged through the job logger), credited to the hour, organization,
--- project and task of the record. Payload `hotkeys` = action name -> count, `mouse` = zone -> count.
+-- project and task of the record. Payload `hotkeys` = action name -> count, `mouse` = zone -> count,
+-- `hints` = action name -> shortcut hints shown for it (absent in records written before the hints).
 -- Only job-bound records with a user count; only the window is counted (no look-back needed).
 INSERT INTO $totals_db.input_hourly
     (hour, org_id, project_id, task_id, user_id, user_name, kind, name, actions, version)
@@ -23,7 +24,8 @@ FROM
         ifNull(user_name, '') AS row_user_name,
         arrayConcat(
             arrayMap(pair -> ('hotkey', pair.1, pair.2), JSONExtractKeysAndValues(ifNull(payload, ''), 'hotkeys', 'UInt64')),
-            arrayMap(pair -> ('mouse', pair.1, pair.2), JSONExtractKeysAndValues(ifNull(payload, ''), 'mouse', 'UInt64'))
+            arrayMap(pair -> ('mouse', pair.1, pair.2), JSONExtractKeysAndValues(ifNull(payload, ''), 'mouse', 'UInt64')),
+            arrayMap(pair -> ('hint', pair.1, pair.2), JSONExtractKeysAndValues(ifNull(payload, ''), 'hints', 'UInt64'))
         ) AS entries
     FROM $events_db.events
     WHERE timestamp >= {window_from:DateTime64(3, 'Etc/UTC')} AND timestamp < {window_to:DateTime64(3, 'Etc/UTC')}
