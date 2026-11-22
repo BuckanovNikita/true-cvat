@@ -139,7 +139,15 @@ The cutover is the hour of the earliest recorded operation event of a user insid
 
 - It is looked for in the recorded events by the first job after a start with an empty cache, by a refresh that stores the first shape-tagged hour while none is stored yet, and by the daily check.
 - Every hour found is stored as a row in table `cutover` of the totals database; the earliest row is the cutover. So it only ever moves earlier, never later.
-- No setting changes it, and no statement under the app's `sql/` removes a row from table `cutover`. A procedure for correcting a cutover that is too early is not described here.
+- No setting changes it, and nothing in the app removes a row from table `cutover`.
+
+### Correcting a cutover that is too early
+
+One shape-tagged event recorded too early (a test, or an account that sent it on purpose: any account that works in a job can) moves the cutover earlier for the whole instance, and periods before the real start then show bounding box figures they do not have. The app has no command for this. The steps below follow from how the search works; they were not exercised on a running install, so try them on a copy of the data first.
+
+1. In ClickHouse, find the offending rows in table `events` of the events database (`analytics.clickhouseDb`): client events of a user inside a job, of the scopes `draw:object`, `paste:object`, `propagate:object`, `drag:object`, `resize:object`, `delete:object` or the `debug:info` record `team_analytics:class_change`, with `shape_type` in the payload, earlier than the real start. Delete them. While one remains, every search finds it again.
+2. Delete every row of table `cutover` in the totals database (`TEAM_ANALYTICS_DB`).
+3. Wait for the next search: the daily check, or a refresh that stores a shape-tagged hour while no cutover is stored. The `status` answer then shows the new `cutover.at`.
 
 ## Failure modes
 

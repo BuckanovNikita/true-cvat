@@ -48,7 +48,7 @@ The server, the workers, the frontend and the policy engine Deployments use the 
    diff current.yaml new.yaml
    ```
 
-   Expect the image lines of the backend Deployments, the frontend and the initializer Job to differ, and the Job name: `helm template` always renders revision 1, the deployed Job carries the revision of its release. Everything else that differs comes from the new chart, so read it. A render error names the value ([Render failures](../charts/cvat.md#render-failures)). A renamed value in the new chart is a break you fix here, before the cluster changes.
+   Expect the image lines of the backend Deployments, the frontend and the initializer Job to differ, and the Job name: `helm template` always renders revision 1, the deployed Job carries the revision of its release. With analytics on, the `admin-password` of the Grafana Secret and the `checksum/secret` annotation of the Grafana Deployment differ on every render, because the Grafana subchart generates that password anew unless you set one ([Grafana when analytics is enabled](../access.md#grafana-when-analytics-is-enabled)); so the Grafana pod restarts on every upgrade. Everything else that differs comes from the new chart, so read it. A render error names the value ([Render failures](../charts/cvat.md#render-failures)). A renamed value in the new chart is a break you fix here, before the cluster changes.
 
 6. **Upgrade.**
 
@@ -127,7 +127,7 @@ Use this when the new release does not start or misbehaves. It needs the previou
    kubectl rollout status deployment/cvat-backend-server --namespace cvat
    ```
 
-   Expect `Rollback was a success!` and the pods back on the previous tags. The values file on disk is still the new one: restore the saved `values.prod-v2.82.0.M.yaml` before you upgrade again.
+   Expect `Rollback was a success!`, a new revision in `helm history` described as `Rollback to <revision>`, and the pods back on the previous tags. The values file on disk is still the new one: restore the saved `values.prod-v2.82.0.M.yaml` before you upgrade again.
 3. Check the bundle from the previous tree (`<fork-root>` of `v2.82.0.M`), whose policies the server should serve again:
 
    ```bash

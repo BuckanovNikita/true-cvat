@@ -98,7 +98,7 @@ Every problem found is printed; then the script exits with `1`.
 
 ### Checking a running server
 
-The server serves its bundle at `GET /api/auth/rules` as `application/x-tar`. The endpoint needs no authentication. It is the bundle the server built when its process started; the server caches it, so after you deploy a new image, restart the backend before you check.
+The server serves its bundle at `GET /api/auth/rules` as `application/x-tar`. The endpoint needs no authentication. Each server process builds the bundle on first use and keeps it in memory, so after you deploy a new image, restart the backend before you check.
 
 ```bash
 curl -s https://cvat.example.com/api/auth/rules | verify/policy_bundle.sh check

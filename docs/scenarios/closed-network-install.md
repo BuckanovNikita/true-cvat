@@ -155,11 +155,11 @@ Follow this page for the first production install of the fork in a closed networ
       -c cvat-backend -- python manage.py createsuperuser
     ```
 
-    Expect prompts for a user name, an e-mail address and a password, then `Superuser created successfully.`
+    Expect prompts for a user name, an e-mail address and a password, then `Superuser created successfully.` Without a terminal, give the password in the container's environment and the rest as arguments: `env DJANGO_SUPERUSER_PASSWORD=<password> python manage.py createsuperuser --noinput --username <admin> --email <e-mail>` in place of the last line.
 
 ## Check the result
 
-Run these from `<fork-root>` and from a host that reaches `https://cvat.example.com`.
+Run these from `<fork-root>` and from a host that reaches `https://cvat.example.com`. Right after a rollout the ingress controller can answer `503` for a few seconds, until it sees the new server pod: ask again.
 
 1. **The site and the account.** Open `https://cvat.example.com` and sign in as the administrator of step 12.
 2. **The [policy bundle](../../GLOSSARY.md#policy-bundle) the server serves** equals the policies of the fork tree. Use `check-analytics` when analytics is on, `check` otherwise ([verify/policy_bundle.sh](../commands/policy-bundle.md#checking-a-running-server)):
@@ -186,7 +186,7 @@ Run these from `<fork-root>` and from a host that reaches `https://cvat.example.
    ```
 
    Expect `403` ([Organization creation](../access.md#organization-creation)). A `201` means an organization was created: delete it, and check `CVAT_ORGANIZATIONS_MIN_ROLE_TO_CREATE` in [Configuration](../configuration.md#organization-creation-cvat_organizations_min_role_to_create).
-5. **Grafana is closed**, with analytics on: request `https://cvat.example.com/analytics/` without signing in and confirm you do not get Grafana ([Access](../access.md#grafana-when-analytics-is-enabled)).
+5. **Grafana is closed**, with analytics on: request `https://cvat.example.com/analytics/` without signing in and confirm you do not get Grafana ([Access](../access.md#grafana-when-analytics-is-enabled)). A Grafana page, its `404` page included, means the request reached Grafana without a check.
 
 ## Public network
 

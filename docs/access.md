@@ -26,7 +26,7 @@ Nobody else gains anything:
 
 ## Organization creation
 
-Only [administrators](../GLOSSARY.md#administrator) can create organizations by default. Upstream lets every account with the `user` global role do it. The variable `CVAT_ORGANIZATIONS_MIN_ROLE_TO_CREATE` changes this; its values are on the [configuration page](configuration.md#organization-creation-cvat_organizations_min_role_to_create). Administrators can always create organizations, whatever the value.
+Only [administrators](../GLOSSARY.md#administrator) can create organizations by default. Upstream lets every account with the `user` global role do it. The variable `CVAT_ORGANIZATIONS_MIN_ROLE_TO_CREATE` changes this; its values are on the [configuration page](configuration.md#organization-creation-cvat_organizations_min_role_to_create). Administrators can always create organizations, whatever the value. A refused account gets `403` from `POST /api/organizations` with the detail `You do not have permission to perform this action.`
 
 ## Team Analytics
 
@@ -55,7 +55,7 @@ Who can reach Grafana depends on how it is exposed:
 | Install | Who can open Grafana, as Grafana `Admin` |
 | --- | --- |
 | `ingress.enabled: true` and `traefik.enabled: true` | Only users whose CVAT profile has analytics access. The chart's Traefik `forwardauth` middleware sends each request to CVAT's `/analytics` endpoint with the request's `Cookie` and `Authorization` headers; CVAT allows it only when the user has analytics access. Administrators and superusers get analytics access automatically when their account is saved or added to the `admin` group; others only if it is set for them in the Django admin. The flag is never cleared automatically: an account removed from the `admin` group keeps it until you clear it in the Django admin. This applies only while Traefik serves the ingress: the middleware annotations are Traefik's, so if you set `ingress.className` to another controller they have no effect. |
-| `ingress.enabled: true` and `traefik.enabled: false` (the chart's default for Traefik) | Anyone who can reach the CVAT host name. The chart creates the `/analytics` ingress without any authentication unless you add it through `analytics.ingress.annotations` or `ingress.annotations`: the `forwardauth` and `stripprefix` middlewares exist only when `traefik.enabled` is true. |
+| `ingress.enabled: true` and `traefik.enabled: false` (the chart's default for Traefik) | Anyone who can reach the CVAT host name. The chart creates the `/analytics` ingress without any authentication unless you add it through `analytics.ingress.annotations` or `ingress.annotations`: the `forwardauth` and `stripprefix` middlewares exist only when `traefik.enabled` is true. Without `stripprefix` the `/analytics` prefix reaches Grafana unchanged: behind the ingress-nginx controller Grafana answers its own `404` page for every `/analytics/...` address, so it is reachable but not usable until you add a rewrite, and with a rewrite it is open to everyone. |
 | any | Anyone who can reach the Grafana Service (`<release>-grafana`, `ClusterIP`, port 80) from inside the cluster, for example any pod in the cluster that no network policy of yours blocks. The chart ships no network policy. |
 
 CVAT's header also shows a «Grafana» link, opening `/analytics` in a new tab, to users whose profile has analytics access, where analytics is enabled. The link only follows the same check as the forward authentication above.

@@ -50,7 +50,7 @@ All of these come from `verify/policy_bundle.sh`. Details: [policy bundle check,
 | Message | Cause | Fix |
 | --- | --- | --- |
 | `the backend image tag "v2.82.0" is not immutable (expected <pattern>); ...` | `imageTagsGuard.enabled: true` with a tag that does not match `imageTagsGuard.tagPattern`. | Pass the tag the build published, such as `v2.82.0-fork-0a1b2c3d`. |
-| `the grafana image tag "" is not immutable ...` | The guard checks [`grafana`](../GLOSSARY.md#grafana) by default, and the chart sets no Grafana tag (the message is the same with analytics on or off). | Remove `grafana` from `imageTagsGuard.components`, or set `grafana.image.tag` to a tag that matches the pattern ([image tags guard](charts/cvat.md#image-tags-guard)). |
+| `the grafana image tag "" is not immutable ...` | The guard checks [`grafana`](../GLOSSARY.md#grafana) by default, and the chart sets no Grafana tag. With analytics off the message is `the grafana image reference is not set, and imageTagsGuard.enabled requires it` instead. | Remove `grafana` from `imageTagsGuard.components`, or, with analytics on, set `grafana.image.tag` to a tag that matches the pattern ([image tags guard](charts/cvat.md#image-tags-guard)). |
 | `the <component> image reference is not set, and imageTagsGuard.enabled requires it` | A guarded component has an empty image value. | Set the image, or remove the component from the list. |
 | `imageTagsGuard.components names an unknown component "<name>"; ...` | A name outside `backend`, `frontend`, `grafana`, `opa`, `kvrocks`. | Use only those. |
 | `imageTagsGuard.tagPattern must be set when the guard is on` | Empty pattern. | Set it or keep the default. |
@@ -92,7 +92,7 @@ Details: [Access](access.md).
 | Symptom | Cause | Fix |
 | --- | --- | --- |
 | A user who is not an [administrator](../GLOSSARY.md#administrator) sees «Страница Team Analytics недоступна» ("The Team Analytics page is unavailable"); the API answers `403` | Team Analytics is for [administrators](../GLOSSARY.md#administrator) only; no organization role allows it. | Add the user to the `admin` group if they need it ([Team Analytics access](access.md#team-analytics)). |
-| Ordinary users cannot create organizations | The fork's default of `CVAT_ORGANIZATIONS_MIN_ROLE_TO_CREATE` is `admin`. | Set it to `user` to restore upstream's behaviour ([organization creation](configuration.md#organization-creation-cvat_organizations_min_role_to_create)). |
+| Ordinary users cannot create organizations: the API answers `403` with `You do not have permission to perform this action.` | The fork's default of `CVAT_ORGANIZATIONS_MIN_ROLE_TO_CREATE` is `admin`. | Set it to `user` to restore upstream's behaviour ([organization creation](configuration.md#organization-creation-cvat_organizations_min_role_to_create)). |
 | Organization members with a global role `worker` or higher see, edit and delete every issue and comment of the organization, assigned or not | The fork's [role floor](../GLOSSARY.md#role-floor). | Expected behaviour ([issues and comments](access.md#issues-and-comments-inside-an-organization)). |
 | Anyone who reaches the CVAT host opens `/analytics` (Grafana) as Grafana `Admin` | With `analytics.enabled` and `ingress.enabled`, Grafana signs every visitor in anonymously as `Admin`, and with `traefik.enabled: false` (the default) the `/analytics` ingress has no authentication. | Use `traefik.enabled: true`, add forward authentication, or do not expose `/analytics` ([Grafana](access.md#grafana-when-analytics-is-enabled)). |
 

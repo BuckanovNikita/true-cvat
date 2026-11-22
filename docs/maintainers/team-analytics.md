@@ -20,7 +20,7 @@ How the Team Analytics app, page and worker are built. Operating it is on [Opera
 
 ## Page wording
 
-- The page is in Russian (ADR 0010); the glossary terms stay English in code, comments and documents. The Russian wording of each term on the page is its `_Russian_` line in [GLOSSARY.md](../../GLOSSARY.md). "Team Analytics", "Grafana" and "CVAT" are not translated.
+- The page is in Russian (ADR 0010); the glossary terms stay English in code, comments and documents. The Russian wording of each term on the page is its `_Russian_` line in [GLOSSARY.md](../../GLOSSARY.md). "Team Analytics", "Grafana" and "CVAT" are not translated. Words of the page that are not glossary terms: job work = работа в заданиях (job = задание, task = задача); object = объект.
 - UI wording of these terms is copied by hand, in Russian, into `cvat-ui/src/components/team-analytics-page/{definitions.tsx,creation-methods.ts,settings-modal.tsx}` and asserted by `verify/team-analytics-page/definitions.test.cjs` and the stack's `fixes_browser.cjs`.
 
 ## Known limit of unprocessed periods

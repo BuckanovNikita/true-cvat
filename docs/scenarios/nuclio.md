@@ -31,7 +31,7 @@ Follow this page to add nuclio, the serverless platform CVAT uses for automatic 
    helm upgrade --install nuclio ./helm-chart-nuclio --namespace cvat -f nuclio.values.prod.yaml
    ```
 
-   Expect `0 chart(s) failed`, then `STATUS: deployed`. The release creates the Services and Deployments `nuclio-dashboard` and `nuclio-controller` ([What it renders](../charts/nuclio.md#what-it-renders)). A different release name changes these names, and then step 4 must follow.
+   Expect `0 chart(s) failed`, then `STATUS: deployed`. The release creates the Services and Deployments `nuclio-dashboard` and `nuclio-controller` ([What it renders](../charts/nuclio.md#what-it-renders)). A different release name changes these names: use the new ones in step 4, in `nuclio.dashboard.host` of step 5 and in the checks below.
 
 4. **Wait for nuclio.**
 

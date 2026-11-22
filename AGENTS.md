@@ -114,5 +114,5 @@ ADR 0002 (no new event types), ADR 0003 (Kubernetes only), ADR 0006 (Team Analyt
 - Changes to behavior, interfaces, dependencies, security or operational policy need a fresh independent review after integration and verification. Small wording edits may be self-reviewed.
 - Split large work into independent delegated tasks with explicit write ownership and acceptance evidence; delegated agents do not delegate further.
 - Use Conventional Commits. Commit automatic formatting separately from logic. Local commits within the task scope need no approval.
-- README.md is Russian; AGENTS.md, GLOSSARY.md and `docs/` are English. Keep observed counts, timings and deployment status out of them.
+- README.md is Russian (here `README.fork.md`: the root `README.md` is upstream's); AGENTS.md, GLOSSARY.md and everything under `docs/`, its `README.md` index pages included, are English by the owner's decision. Keep observed counts, timings and deployment status out of them.
 - Keep machine-specific paths, endpoints and settings in local configuration, not in these files.
