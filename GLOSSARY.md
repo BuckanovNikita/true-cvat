@@ -119,7 +119,7 @@ _Russian_: Техническая учётная запись
 <a id="technical-accounts-list"></a>
 **Technical accounts list**:
 The one instance-wide list of technical accounts, kept by user id and edited by administrators in the Team Analytics settings. It applies retroactively, and a deleted account stays on it marked as deleted.
-_Russian_: Настройки Team Analytics (the settings window that holds the list)
+_Russian_: Технические учётные записи (the list's heading in the settings window «Настройки Team Analytics»)
 _Avoid_: bot list, service accounts
 
 <a id="no-project"></a>
@@ -140,7 +140,7 @@ A pause of more than 100 seconds before an action. It belongs to no operation.
 
 <a id="working-time"></a>
 **Working time**:
-The time the server counts as worked, the same figure Grafana shows. It is the only total; every breakdown of time adds up to it.
+The time the server counts as worked, the same figure Grafana shows. It is the only total.
 _Russian_: Рабочее время
 
 <a id="other"></a>
@@ -200,7 +200,7 @@ _Russian_: Действие мышью
 
 <a id="hotkey-share"></a>
 **Hotkey share**:
-Hotkey actions divided by the sum of hotkey and mouse actions. Hotkey and mouse actions are recorded only in 2D jobs; 3D jobs give sessions and working time only.
+Hotkey actions divided by the sum of hotkey and mouse actions. Hotkey and mouse actions are recorded only in 2D jobs.
 _Russian_: Доля горячих клавиш
 
 <a id="bounding-box"></a>
@@ -216,7 +216,7 @@ _Russian_: Все фигуры
 
 <a id="saved-boxes"></a>
 **Saved boxes**:
-The count of boxes saved, shown in place of Model for a legacy period.
+The count of boxes saved in a legacy period, where the creation method of a box is not known. It stands in for Model.
 _Russian_: Сохранённые боксы
 
 ## Periods and history
@@ -250,11 +250,11 @@ _Russian_: Обзор (shown only in the back link «Назад к обзору�
 <a id="cutover"></a>
 **Cutover**:
 The hour of the first operation event of a user in a job that carries a shape type, which is when the new activity logging began. It is stored and only ever moves earlier.
-_Russian_: новый учёт действий (what starts at the cutover)
+_Russian_: переход на новый учёт действий (the new activity logging itself is «новый учёт действий»)
 
 <a id="legacy-period"></a>
 **Legacy period**:
-A period that ends at or before the cutover, or any period when there is no cutover. It has sessions, working time, projects, all-shape operations and saved boxes only.
+A period that ends at or before the cutover, or any period when there is no cutover. Its operations cover all shapes, class changes and hotkey use were not recorded, and saved boxes stand in for Model.
 
 <a id="partly-legacy-period"></a>
 **Partly legacy period**:
