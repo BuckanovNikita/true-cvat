@@ -1,6 +1,6 @@
 # Ссылки «Grafana» и «Team Analytics» в шапке
 
-В шапке (header) CVAT форк показывает две ссылки на аналитику: «Grafana» ([Grafana](../../../GLOSSARY.md)) и «Team Analytics» ([Team Analytics](../../../GLOSSARY.md)). Эта страница говорит, что открывает каждая и кто её видит.
+В шапке (header) CVAT форк показывает две ссылки на аналитику: «Grafana» ([Grafana](../../../GLOSSARY.md#grafana)) и «Team Analytics» ([Team Analytics](../../../GLOSSARY.md#team-analytics)). Эта страница говорит, что открывает каждая и кто её видит.
 
 ## Что изменено относительно CVAT
 
@@ -45,3 +45,4 @@
 
 - [Team Analytics](team-analytics.md)
 - [Настройки сервера](server-settings.md)
+- [Access: Grafana when analytics is enabled](../../access.md#grafana-when-analytics-is-enabled) — кто может открыть Grafana (для DevOps, на английском)

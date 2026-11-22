@@ -1,6 +1,6 @@
 # HTTP API Team Analytics
 
-Адреса `/api/team-analytics/*` отдают те же цифры и настройки, что страница Team Analytics ([Team Analytics](../../../GLOSSARY.md)): обзор, полный вид, динамику, подробности, список «Технические учётные записи». Они нужны, когда вы читаете цифры скриптом, например чтобы выгружать их по расписанию.
+Адреса `/api/team-analytics/*` отдают те же цифры и настройки, что страница Team Analytics ([Team Analytics](../../../GLOSSARY.md#team-analytics)): обзор, полный вид, динамику, подробности, список «Технические учётные записи». Они нужны, когда вы читаете цифры скриптом, например чтобы выгружать их по расписанию.
 
 Этих адресов нет в схеме API CVAT (`/api/schema/`) и в SDK CVAT: вызывайте их обычным HTTP-запросом (request). Это API форка, а не CVAT; поля и параметры могут меняться вместе с форком.
 
@@ -36,7 +36,7 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
 - заголовок `X-Organization: visionteam`;
 - параметр `org_id` с id организации.
 
-С организацией цифры относятся к ней («Организация», [Organization scope](../../../GLOSSARY.md)). Без организации, или с пустым `org=`, цифры охватывают весь сервер: «Все организации и личные пространства» ([Instance scope](../../../GLOSSARY.md)). Это отличие от остального CVAT, где запрос без организации означает личное пространство (personal workspace) того, кто спрашивает: у Team Analytics нет цифр одного личного пространства. Администратору не нужно быть участником (member) организации.
+С организацией цифры относятся к ней («Организация», [Organization scope](../../../GLOSSARY.md#organization-scope)). Без организации, или с пустым `org=`, цифры охватывают весь сервер: «Все организации и личные пространства» ([Instance scope](../../../GLOSSARY.md#instance-scope)). Это отличие от остального CVAT, где запрос без организации означает личное пространство (personal workspace) того, кто спрашивает: у Team Analytics нет цифр одного личного пространства. Администратору не нужно быть участником (member) организации.
 
 Неизвестная организация — `404` с телом `{"detail": "<имя> organization does not exist."}`. `org_id` вместе с `org` или `X-Organization`, либо `org` и `X-Organization` с разными значениями — `400` с телом-списком из одного предложения CVAT.
 
@@ -56,12 +56,12 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
 
 | Параметр | Обязателен | Значения | Что задаёт |
 | --- | --- | --- | --- |
-| `period` | нет | `week` (по умолчанию), `two_weeks`, `month`, `year`; до 16 символов | Период ([Period](../../../GLOSSARY.md)): «Неделя» и «Две недели» кончаются сегодня, «Месяц» — один календарный месяц, «Год» — двенадцать месяцев до сегодня. |
+| `period` | нет | `week` (по умолчанию), `two_weeks`, `month`, `year`; до 16 символов | Период ([Period](../../../GLOSSARY.md#period)): «Неделя» и «Две недели» кончаются сегодня, «Месяц» — один календарный месяц, «Год» — двенадцать месяцев до сегодня. |
 | `month` | нет | `ГГГГ-ММ`, не раньше `1970-01` и не позже текущего месяца; 7 символов | Месяц для `period=month`. По умолчанию текущий месяц в поясе `tz`. При другом `period` не действует. |
 | `tz` | нет | имя часового пояса IANA, до 64 символов; по умолчанию `UTC` | Часовой пояс дней периода. |
-| `project` | нет | id проекта (project), до 19 цифр; `0` — «Без проекта» ([No project](../../../GLOSSARY.md)) | Фильтр по проекту. |
-| `annotator` | нет | id пользователя (user), до 19 цифр | Фильтр по аннотатору ([Annotator](../../../GLOSSARY.md)). |
-| `shapes` | нет | `all` (по умолчанию), `bounding_boxes`; до 16 символов | Переключатель «Все фигуры» ([All shapes](../../../GLOSSARY.md)) / «Боксы» ([Bounding box](../../../GLOSSARY.md)). |
+| `project` | нет | id проекта (project), до 19 цифр; `0` — «Без проекта» ([No project](../../../GLOSSARY.md#no-project)) | Фильтр по проекту. |
+| `annotator` | нет | id пользователя (user), до 19 цифр | Фильтр по аннотатору ([Annotator](../../../GLOSSARY.md#annotator)). |
+| `shapes` | нет | `all` (по умолчанию), `bounding_boxes`; до 16 символов | Переключатель «Все фигуры» ([All shapes](../../../GLOSSARY.md#all-shapes)) / «Боксы» ([Bounding box](../../../GLOSSARY.md#bounding-box)). |
 
 Ошибки проверки: `unknown period: <значение>`, `not a month (YYYY-MM): <значение>`, `month not reached yet: <значение>`, `project must be an identifier`, `annotator must be an identifier`, `shapes must be bounding_boxes or all`.
 
@@ -85,7 +85,7 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
 
 ### Период, обработанный не полностью
 
-Цифры есть только за обработанную историю ([Processed history](../../../GLOSSARY.md)), см. [team-analytics-figures.md](../features/team-analytics-figures.md). Если период обработан не полностью, ответ сохраняет поле `processed: false`, описание периода, фильтры и флаги перехода (`legacy`, `partly_legacy`, `cutover`, `shapes`), а все поля с цифрами равны `null`: не частичные числа, а `null`. Что именно остаётся, сказано в разделе каждого адреса. В `trends` то же самое происходит с каждой неделей или месяцем отдельно. Какие периоды уже обработаны, показывает `status`.
+Цифры есть только за обработанную историю ([Processed history](../../../GLOSSARY.md#processed-history)), см. [team-analytics-figures.md](../features/team-analytics-figures.md). Если период обработан не полностью, ответ сохраняет поле `processed: false`, описание периода, фильтры и флаги перехода (`legacy`, `partly_legacy`, `cutover`, `shapes`), а все поля с цифрами равны `null`: не частичные числа, а `null`. Что именно остаётся, сказано в разделе каждого адреса. В `trends` то же самое происходит с каждой неделей или месяцем отдельно. Какие периоды уже обработаны, показывает `status`.
 
 ### Ожидание и повторы
 
@@ -114,7 +114,7 @@ echo "HTTP $code"; cat answer.json
 
 ## GET /api/team-analytics/status
 
-Состояние сохранённых цифр: когда они обновлялись, насколько обработана история, когда был переход на новый учёт действий ([Cutover](../../../GLOSSARY.md)). Сам по себе не возвращает `processed` и не обнуляется. Что значат поля, описано в [team-analytics-figures.md](../features/team-analytics-figures.md).
+Состояние сохранённых цифр: когда они обновлялись, насколько обработана история, когда был переход на новый учёт действий ([Cutover](../../../GLOSSARY.md#cutover)). Сам по себе не возвращает `processed` и не обнуляется. Что значат поля, описано в [team-analytics-figures.md](../features/team-analytics-figures.md).
 
 ### Параметры
 
@@ -169,7 +169,7 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
 
 ## GET /api/team-analytics/overview
 
-Цифры обзора ([Overview](../../../GLOSSARY.md)): по одному ключу на карточку (card). Что показывает каждая карточка, описано в [team-analytics.md](../features/team-analytics.md), как считаются цифры — в [team-analytics-figures.md](../features/team-analytics-figures.md).
+Цифры обзора ([Overview](../../../GLOSSARY.md#overview)): по одному ключу на карточку (card). Что показывает каждая карточка, описано в [team-analytics.md](../features/team-analytics.md), как считаются цифры — в [team-analytics-figures.md](../features/team-analytics-figures.md).
 
 ### Параметры
 
@@ -215,12 +215,12 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
 | --- | --- |
 | `processed` | Обработан ли весь период. |
 | `filters` | Повтор фильтров: id проекта и аннотатор с его именем. |
-| `operations` | Рабочее время ([Working time](../../../GLOSSARY.md)) и операции ([Operation](../../../GLOSSARY.md)) периода, флаги перехода. |
+| `operations` | Рабочее время ([Working time](../../../GLOSSARY.md#working-time)) и операции ([Operation](../../../GLOSSARY.md#operation)) периода, флаги перехода. |
 | `by_annotator`, `by_project` | До 8 самых больших строк по рабочему времени; `rest` — число и сумма остальных. Строки без рабочего времени не входят ни туда, ни туда. |
-| `creation_methods` | Способы создания ([Creation method](../../../GLOSSARY.md)); `technical_accounts` — сколько записей в списке «Технические учётные записи». |
-| `input` | Действия горячими клавишами ([Hotkey action](../../../GLOSSARY.md)) и мышью; `top_hotkeys` — до 7 самых частых, `rest` — остальные. |
-| `saved_boxes` | Сохранённые боксы ([Saved boxes](../../../GLOSSARY.md)). |
-| `sessions` | Сессии ([Session](../../../GLOSSARY.md)). |
+| `creation_methods` | Способы создания ([Creation method](../../../GLOSSARY.md#creation-method)); `technical_accounts` — сколько записей в списке «Технические учётные записи». |
+| `input` | Действия горячими клавишами ([Hotkey action](../../../GLOSSARY.md#hotkey-action)) и мышью; `top_hotkeys` — до 7 самых частых, `rest` — остальные. |
+| `saved_boxes` | Сохранённые боксы ([Saved boxes](../../../GLOSSARY.md#saved-boxes)). |
+| `sessions` | Сессии ([Session](../../../GLOSSARY.md#session)). |
 | `time_series` | Рабочее время по дням (у «Года» — по неделям). |
 
 Если период обработан не полностью, остаются `period`, `filters`, `processed: false` и в `operations` только `legacy`, `partly_legacy`, `cutover`, `shapes`; все остальные ключи равны `null`.
@@ -234,14 +234,14 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
 
 ## GET /api/team-analytics/trends
 
-Динамика ([Trends](../../../GLOSSARY.md)): четыре показателя за последние двенадцать недель или месяцев, независимо от периода. Последняя неделя или месяц — текущие, неполные. Как это выглядит на странице, описано в [team-analytics.md](../features/team-analytics.md).
+Динамика ([Trends](../../../GLOSSARY.md#trends)): четыре показателя за последние двенадцать недель или месяцев, независимо от периода. Последняя неделя или месяц — текущие, неполные. Как это выглядит на странице, описано в [team-analytics.md](../features/team-analytics.md).
 
 ### Параметры
 
 | Параметр | Обязателен | Значения | Что задаёт |
 | --- | --- | --- | --- |
 | `step` | нет | `week` (по умолчанию, недели с понедельника), `month`; до 16 символов | Шаг. |
-| `compare` | нет | `annotators` (по умолчанию), `projects`; до 16 символов | Что сравнивается в сравнении ([Comparison](../../../GLOSSARY.md)) и кто предлагается в `candidates`. |
+| `compare` | нет | `annotators` (по умолчанию), `projects`; до 16 символов | Что сравнивается в сравнении ([Comparison](../../../GLOSSARY.md#comparison)) и кто предлагается в `candidates`. |
 | `ids` | нет | до 5 id через запятую, каждый до 19 цифр; повторы считаются один раз | Линии сравнения. Без `ids` — одна линия по фильтрам; с `ids` — по линии на id, и фильтр того же вида не применяется. |
 | `tz` | нет | см. [Параметры](#параметры) | Пояс недель и месяцев. |
 | `project`, `annotator`, `shapes` | нет | см. [Параметры](#параметры) | Фильтры и переключатель фигур. |
@@ -289,7 +289,7 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
 
 ## GET /api/team-analytics/list
 
-Все строки одного графика для полного вида ([Full view](../../../GLOSSARY.md)): по аннотаторам, по проектам или по горячим клавишам.
+Все строки одного графика для полного вида ([Full view](../../../GLOSSARY.md#full-view)): по аннотаторам, по проектам или по горячим клавишам.
 
 ### Параметры
 
@@ -387,7 +387,7 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
 
 ## GET /api/team-analytics/settings
 
-Список «Технические учётные записи» ([Technical accounts list](../../../GLOSSARY.md)), один на весь сервер. Что он меняет в цифрах, описано в [team-analytics-settings.md](../features/team-analytics-settings.md). Отвечает сразу, без очереди и без `429`.
+Список «Технические учётные записи» ([Technical accounts list](../../../GLOSSARY.md#technical-accounts-list)), один на весь сервер. Что он меняет в цифрах, описано в [team-analytics-settings.md](../features/team-analytics-settings.md). Отвечает сразу, без очереди и без `429`.
 
 ### Параметры
 
@@ -495,7 +495,8 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" "https://cvat.example.com/api/team-analy
 | `503` | `{"error": "unavailable"}` | Кэш или очередь недоступны, чтение цифр не удалось, или `PUT settings` сохранил список, но не обновил ответы. | Повторите позже; несколько секунд сервер отвечает тем же. Если не проходит, сообщите администратору сервера. |
 
 Если `429` или `503` не проходят долго, причина обычно в обработчике очереди Team Analytics на сервере: его состояние проверяет администратор сервера.
-<!-- ALIGN: link to the DevOps docs (operating the Team Analytics worker) -->
+
+Что проверить на сервере, если это не проходит, описано в документации для DevOps (на английском): [Operating Team Analytics](../../team-analytics.md#health-checks-and-status-codes).
 
 ## См. также
 
