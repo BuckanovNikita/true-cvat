@@ -53,7 +53,7 @@ const CONTROLS = `
  */
 async function annotationView(t, {
     job = { dimension: '2d' }, shownKeys = SHOWN_KEYS, bound = Object.keys(KEY_MAP), canvas = true, shownMs = 60000,
-    hintOf = null,
+    hintOf = null, declined = [],
 } = {}) {
     globalThis.localStorage.clear();
     t.mock.timers.enable({ apis: ['Date'], now: START });
@@ -90,7 +90,10 @@ async function annotationView(t, {
         { store },
         React.createElement(hotkeys.default, {
             keyMap: Object.fromEntries(bound.map((action) => [action, keyMap[action]])),
-            handlers: Object.fromEntries(bound.map((action) => [action, () => {}])),
+            // a handler returns true to let the browser have the key (Ctrl+C over selected text, say)
+            handlers: Object.fromEntries(bound.map((action) => [
+                action, () => (declined.includes(action) ? true : undefined),
+            ])),
         }),
         React.createElement(ShortcutHintHost, { shownMs }),
         // the rest of the application, beside the hints in the same React tree
@@ -242,6 +245,34 @@ for (const [why, options] of [
         await page.click('lock', 5);
         await page.press('l');
         assert.equal(globalThis.localStorage.getItem('shortcutHints'), null);
+    });
+}
+
+// "Make a copy" takes two shortcuts and is hinted under the first: Ctrl+C counts only where a click on it would.
+for (const [why, options] of [
+    ['the paste shortcut is not bound in the workspace', {
+        bound: Object.keys(KEY_MAP).filter((action) => action !== 'PASTE_SHAPE'),
+    }],
+    ['the paste shortcut has no key', { shownKeys: { ...SHOWN_KEYS, PASTE_SHAPE: '' } }],
+]) {
+    test(`Ctrl+C is not counted when ${why}`, async (t) => {
+        const page = await annotationView(t, options);
+        await page.click('copy', 5);
+        await page.press('ctrl+c');
+        assert.equal(globalThis.localStorage.getItem('shortcutHints'), null);
+    });
+}
+
+// A handler that returns true leaves the key to the browser (Ctrl+C over selected text copies the text): the
+// action was not done, so the press is not counted. One that takes the key is.
+for (const [why, declined, counted] of [
+    ['the copy handler lets the browser have the key', ['COPY_SHAPE'], false],
+    ['the copy handler takes the key', [], true],
+]) {
+    test(`Ctrl+C is ${counted ? '' : 'not '}counted when ${why}`, async (t) => {
+        const page = await annotationView(t, { declined });
+        await page.press('ctrl+c');
+        assert.equal(globalThis.localStorage.getItem('shortcutHints') !== null, counted);
     });
 }
 

@@ -108,7 +108,10 @@ function ShortcutHintHost({ shownMs = SHOWN_MS }: Props): JSX.Element {
         };
         // capture: a control that stops the click from bubbling is still seen
         window.addEventListener('click', onClick, { capture: true });
-        countPressesWhile(counted);
+        // a press counts where a click on its control would: the same gates, and the control has a hint
+        countPressesWhile((control) => (
+            counted() && hintOf(control, view.current.shortcuts, getApplicationKeyMap()) !== null
+        ));
         return () => {
             window.removeEventListener('click', onClick, { capture: true });
             countPressesWhile(null);

@@ -51,8 +51,8 @@ export default function GlobalHotKeys(props: Props): JSX.Element {
 
             Mousetrap.bind(sequences, (event, combo) => {
                 hotkeyUsed(key, event);
-                shortcutPressed(key, event); // shortcut hints: the person knows this shortcut (utils/shortcut-hints)
                 if (handler(event, combo) !== true) {
+                    shortcutPressed(key, event); // shortcut hints: a press the handler took (utils/shortcut-hints)
                     event.preventDefault();
                     event.stopPropagation();
                 }
