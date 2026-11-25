@@ -58,16 +58,15 @@ const LIST = {
 };
 
 const WORDING = {
-    Session: 'One uninterrupted interval of job work by one person, at most a day long. A pause longer than five ' +
-        'minutes ends it. Seen for a single project, a session counts if it touched that project, and its length ' +
-        'is only the time spent inside it.',
-    'Working time': 'The time the server counts as worked, the same figure Grafana reports. It is the only total: ' +
-        'every breakdown of time adds up to it.',
-    'Time per operation': "The time from a person's previous action to the end of the operation, so that finding, " +
-        'deciding and pointing are part of it. A pause longer than 100 seconds before an action belongs to no ' +
-        'operation.',
-    Model: 'Created without a person drawing it: saved by a technical account or produced by the built-in ' +
-        'detector. Model boxes have counts but no time.',
+    Session: 'Один непрерывный интервал работы одного человека в заданиях, не длиннее суток. Пауза дольше ' +
+        'пяти минут завершает сессию. Для отдельного проекта сессия учитывается, если она затронула этот ' +
+        'проект, а её длина — только время, проведённое в нём.',
+    'Working time': 'Время, которое сервер считает отработанным, — тот же показатель, что показывает Grafana. ' +
+        'Это единственный итог: любая разбивка времени в сумме даёт его.',
+    'Time per operation': 'Время от предыдущего действия человека до конца операции, поэтому поиск, решение и ' +
+        'наведение входят в него. Пауза дольше 100 секунд перед действием не относится ни к одной операции.',
+    Model: 'Создано без рисования человеком: сохранено технической учётной записью или получено встроенным ' +
+        'детектором. У боксов модели есть количество, но нет времени.',
 };
 
 function answer(url) {
@@ -133,26 +132,26 @@ test('there is no block of definitions at the end of the overview', async () => 
     await opened('?period=week', (container) => {
         assert.ok(container.querySelector('.cvat-team-analytics-cards'), 'the overview is shown');
         assert.equal(container.querySelector('.cvat-team-analytics-definitions') === null, true);
-        assert.doesNotMatch(container.textContent, /One uninterrupted interval of job work/);
+        assert.doesNotMatch(container.textContent, /Один непрерывный интервал работы/);
     });
 });
 
 test('the terms sit on the words of the overview, once per card or table header', async () => {
     await opened('?period=week', (container) => {
         assert.deepEqual(terms(container).map((term) => [placeOf(term), term.textContent]), [
-            ['sessions', 'Sessions'],
-            ['average-creation', 'Avg time per box'],
-            ['time-chart', 'Working time'],
-            ['split', 'working time'],
-            ['operations', 'Avg time'],
-            ['creation-methods', 'Avg time'],
-            ['creation-methods', 'Model'],
-            ['working-time-by-project', 'Working time'],
-            ['working-time-by-annotator', 'Working time'],
-            ['details', 'Sessions'],
-            ['details', 'Working time'],
-            ['details', 'Model'],
-            ['details', 'Avg time to create'],
+            ['sessions', 'Сессии'],
+            ['average-creation', 'Ср. время на бокс'],
+            ['time-chart', 'Рабочее время'],
+            ['split', 'рабочее время'],
+            ['operations', 'Ср. время'],
+            ['creation-methods', 'Ср. время'],
+            ['creation-methods', 'Модель'],
+            ['working-time-by-project', 'Рабочее время'],
+            ['working-time-by-annotator', 'Рабочее время'],
+            ['details', 'Сессии'],
+            ['details', 'Рабочее время'],
+            ['details', 'Модель'],
+            ['details', 'Ср. время создания'],
         ]);
     });
 });
@@ -160,13 +159,13 @@ test('the terms sit on the words of the overview, once per card or table header'
 test('each term is focusable and described by a tooltip with the glossary wording', async () => {
     await opened('?period=week', (container) => {
         const byWords = {
-            Sessions: 'Session',
-            'Working time': 'Working time',
-            'working time': 'Working time',
-            'Avg time': 'Time per operation',
-            'Avg time per box': 'Time per operation',
-            'Avg time to create': 'Time per operation',
-            Model: 'Model',
+            Сессии: 'Session',
+            'Рабочее время': 'Working time',
+            'рабочее время': 'Working time',
+            'Ср. время': 'Time per operation',
+            'Ср. время на бокс': 'Time per operation',
+            'Ср. время создания': 'Time per operation',
+            Модель: 'Model',
         };
         for (const term of terms(container)) {
             assert.equal(term.tagName, 'BUTTON', `${term.textContent} is focusable`);

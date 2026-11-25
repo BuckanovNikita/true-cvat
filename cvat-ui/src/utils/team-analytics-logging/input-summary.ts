@@ -2,8 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-// Hotkey actions and mouse actions inside the open job, counted in memory and sent as one input
-// summary record (RECORD.inputSummary: `hotkeys` = action name -> count, `mouse` = zone -> count).
+// Hotkey actions, mouse actions and shortcut hints shown inside the open job, counted in memory and sent as
+// one input summary record (RECORD.inputSummary: `hotkeys` = action name -> count, `mouse` = zone -> count,
+// `hints` = action name -> hints shown for that action's shortcut).
 //
 //   trackInputJob(job)    the annotation page opened `job`: counting starts (an earlier job's counts are
 //                         written first)
@@ -16,6 +17,8 @@
 //                         frame-navigation hotkey that asked for it, or null
 //   frameShown(hotkey, from, to)  that frame change shows frame `to`; `from` is the frame shown when it
 //                         started
+//   hintShown(action)     the shortcut hint of `action` was just shown (components/shortcut-hints); a hint
+//                         is what the interface did, so it is neither a hotkey action nor a mouse action
 //
 // A hotkey action is named by what the shortcut does, so a remapped key is the same action. A held
 // key counts once (auto-repeats ignored), except frame navigation, where every frame moved counts: a
@@ -84,6 +87,7 @@ interface Closest {
 let job: LoggingJob | null = null;
 let hotkeys: Record<string, number> = {};
 let mouse: Record<string, number> = {};
+let hints: Record<string, number> = {};
 let lastWritten = 0;
 // the frame-navigation hotkey whose turn is running and whose frame change has not started yet
 let navigation: string | null = null;
@@ -104,7 +108,7 @@ function endTurn(current: number, left: number): void {
 }
 
 function counted(): boolean {
-    return Object.keys(hotkeys).length > 0 || Object.keys(mouse).length > 0;
+    return Object.keys(hotkeys).length > 0 || Object.keys(mouse).length > 0 || Object.keys(hints).length > 0;
 }
 
 function add(counts: Record<string, number>, name: string): void {
@@ -113,9 +117,11 @@ function add(counts: Record<string, number>, name: string): void {
 }
 
 function write(): Promise<void> {
-    const logged = job && counted() ? logRecord(job, RECORD.inputSummary, { hotkeys, mouse }) : Promise.resolve();
+    const logged = job && counted() ?
+        logRecord(job, RECORD.inputSummary, { hotkeys, mouse, hints }) : Promise.resolve();
     hotkeys = {};
     mouse = {};
+    hints = {};
     lastWritten = Date.now();
     return logged;
 }
@@ -147,6 +153,7 @@ export function trackInputJob(next: LoggingJob | null | undefined): void {
         job = next ?? null;
         hotkeys = {};
         mouse = {};
+        hints = {};
         lastWritten = Date.now();
         navigation = null;
         shownFrame = null;
@@ -198,6 +205,12 @@ export function frameShown(hotkey: string | null, from: number, to: number): voi
         const before = shownFrame ?? from;
         shownFrame = to;
         if (hotkey !== null && to !== before) add(hotkeys, hotkey);
+    });
+}
+
+export function hintShown(action: string): void {
+    guarded(undefined, () => {
+        if (tracked()) add(hints, action);
     });
 }
 

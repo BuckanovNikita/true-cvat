@@ -85,6 +85,7 @@ import QualityControlPage from './quality-control/quality-control-page';
 import AnalyticsReportPage from './analytics-report/analytics-report-page';
 import ConsensusManagementPage from './consensus-management-page/consensus-management-page';
 import TeamAnalyticsRoute from './team-analytics-page/team-analytics-route';
+import ShortcutHintHost from './shortcut-hints/shortcut-hint-host';
 import InvitationWatcher from './invitation-watcher/invitation-watcher';
 import SelectOrganizationModal from './select-organization-modal/select-organization-modal';
 import BulkProgress from './bulk-progress';
@@ -557,6 +558,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                 <Header />
                                 <Layout.Content style={{ height: '100%', position: 'relative' }}>
                                     <ShortcutsDialog />
+                                    <ShortcutHintHost />
                                     <Switch>
                                         <Route exact path='/auth/logout' component={LogoutComponent} />
                                         <Route exact path='/projects' component={ProjectsPageComponent} />

@@ -123,7 +123,7 @@ test('the header has a Settings button in the ready, loading and error states, n
     assert.equal(shown({ kind: 'signed-out' }), false);
     const html = render(View, { organization: null, state: { kind: 'ready', overview: OVERVIEW }, onOpenSettings() {} });
     const header = html.match(/<div class="cvat-team-analytics-header">(.*?)<\/button><\/div>/)[1];
-    assert.match(text(header), /Team analytics .* Settings$/, 'at the right of the title');
+    assert.match(text(header), /Team Analytics .* Настройки$/, 'at the right of the title');
     assert.match(header, /anticon-setting/, 'with a gear');
 });
 
@@ -135,12 +135,12 @@ test('the page loads nothing of the settings until the button is used; opening l
         await openSettings(view);
         assert.deepEqual(settings, [{ method: 'GET', body: undefined }]);
         assert.ok(modal(), 'the modal is open');
-        assert.match(document.body.querySelector('.ant-modal-title').textContent, /^Team Analytics settings$/);
-        assert.match(modal().textContent, /Technical accounts/);
-        assert.match(modal().textContent, /A technical account is a user account that stands for an automated process/);
-        assert.match(modal().textContent, /A change applies to every past period the next time the page is loaded\./);
-        assert.deepEqual(rows(), ['ta-bot', 'deleted account, id 40'], 'a deleted account by its id');
-        assert.ok(modal().querySelector('[aria-label="Remove deleted account, id 40"]'));
+        assert.match(document.body.querySelector('.ant-modal-title').textContent, /^Настройки Team Analytics$/);
+        assert.match(modal().textContent, /Технические учётные записи/);
+        assert.match(modal().textContent, /Техническая учётная запись — это учётная запись пользователя, которая представляет автоматизированный процесс/);
+        assert.match(modal().textContent, /Изменение применяется ко всем прошлым периодам при следующей загрузке страницы\./);
+        assert.deepEqual(rows(), ['ta-bot', 'удалённая учётная запись, ID 40'], 'a deleted account by its id');
+        assert.ok(modal().querySelector('[aria-label="Убрать из списка: удалённая учётная запись, ID 40"]'));
         const label = modal().querySelector('.cvat-team-analytics-settings-picker-label');
         assert.equal(document.getElementById(label.htmlFor)?.tagName, 'INPUT', 'the picker\'s label names its input');
     });
@@ -153,7 +153,7 @@ test('while the list loads the modal says so, and a failed load can be tried aga
     });
     await opened(Page, async (view) => {
         await openSettings(view);
-        assert.match(modal().querySelector('.cvat-team-analytics-settings-loading').textContent, /Loading…/);
+        assert.match(modal().querySelector('.cvat-team-analytics-settings-loading').textContent, /Загрузка…/);
         assert.ok(document.body.querySelector('.cvat-team-analytics-settings-save').disabled, 'nothing to save yet');
         await click(document.body.querySelector('.cvat-team-analytics-settings-cancel'));
         await view.settle();
@@ -161,11 +161,11 @@ test('while the list loads the modal says so, and a failed load can be tried aga
         answer = () => ({ status: 503, body: { error: 'unavailable' } });
         await openSettings(view);
         assert.match(modal().querySelector('.cvat-team-analytics-settings-load-failed').textContent,
-            /The settings could not be loaded\./);
+            /Не удалось загрузить настройки\./);
         answer = () => ({ body: SETTINGS });
         await click(modal().querySelector('.cvat-team-analytics-settings-load-failed button'));
         await view.settle();
-        assert.deepEqual(rows(), ['ta-bot', 'deleted account, id 40']);
+        assert.deepEqual(rows(), ['ta-bot', 'удалённая учётная запись, ID 40']);
         assert.equal(settings.filter((sent) => sent.method === 'GET').length, 3);
     });
 });
@@ -178,15 +178,15 @@ test('the search asks the fork\'s user search; accounts on the list are shown di
         const searches = figures.filter((sent) => sent.endpoint === 'settings/users');
         assert.deepEqual(searches.at(-1).params, { search: 'ta' });
         // the server's 20 are all shown: one already listed is there, marked
-        assert.deepEqual(offered(), ['ta-bot already on the list', 'ta-loader (Upload Script)', 'tamara']);
+        assert.deepEqual(offered(), ['ta-bot уже в списке', 'ta-loader (Upload Script)', 'tamara']);
         const listed = document.body.querySelector('.cvat-team-analytics-settings-picker-dropdown .ant-select-item-option');
         assert.ok(listed.classList.contains('ant-select-item-option-disabled'), listed.className);
-        assert.equal(listed.querySelector('.cvat-team-analytics-settings-listed').textContent, 'already on the list');
+        assert.equal(listed.querySelector('.cvat-team-analytics-settings-listed').textContent, 'уже в списке');
         await click(listed);
         await view.settle();
-        assert.deepEqual(rows(), ['ta-bot', 'deleted account, id 40'], 'choosing it adds nothing');
+        assert.deepEqual(rows(), ['ta-bot', 'удалённая учётная запись, ID 40'], 'choosing it adds nothing');
         // removed from the list, it is offered again
-        await click(modal().querySelector('[aria-label="Remove ta-bot"]'));
+        await click(modal().querySelector('[aria-label="Убрать из списка: ta-bot"]'));
         await searchFor(view, 'ta');
         assert.deepEqual(offered(), ['ta-bot', 'ta-loader (Upload Script)', 'tamara']);
     });
@@ -199,17 +199,17 @@ test('a failed user search says so, apart from a search without results; the tex
     await opened(Page, async (view) => {
         await openSettings(view);
         await searchFor(view, 'ta');
-        assert.equal(statusOf(), 'The search could not be completed.', 'a 503');
+        assert.equal(statusOf(), 'Не удалось выполнить поиск.', 'a 503');
         assert.deepEqual(offered(), []);
         answer = () => new Error('Network Error');
         await searchFor(view, 'tam');
-        assert.equal(statusOf(), 'The search could not be completed.', 'no answer at all');
+        assert.equal(statusOf(), 'Не удалось выполнить поиск.', 'no answer at all');
         answer = () => ({ status: 400, body: { error: 'bad_request', detail: 'too long' } });
         await searchFor(view, 'tama');
-        assert.equal(statusOf(), 'The search could not be completed.', 'a 400');
+        assert.equal(statusOf(), 'Не удалось выполнить поиск.', 'a 400');
         answer = () => ({ body: { users: [] } });
         await searchFor(view, 'nobody');
-        assert.equal(statusOf(), 'No users found');
+        assert.equal(statusOf(), 'Пользователи не найдены');
 
         await searchFor(view, 'x'.repeat(160));
         assert.equal(figures.filter((sent) => sent.endpoint === 'settings/users').at(-1).params.search, 'x'.repeat(150));
@@ -234,7 +234,7 @@ test('while a save is on its way the modal stays open and a second Save sends no
         });
         await view.settle();
         await click(document.body.querySelector('.cvat-team-analytics-settings-cancel'));
-        await click(document.body.querySelector('.ant-modal-close'));
+        await click(document.body.querySelector('.cvat-team-analytics-settings-close'));
         await act(async () => {
             document.body.querySelector('.ant-modal-wrap').dispatchEvent(
                 new window.KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, bubbles: true }),
@@ -305,14 +305,14 @@ test('removing and adding, then Save, sends the whole list of ids; the modal clo
     });
     await opened(Page, async (view) => {
         await openSettings(view);
-        await click(modal().querySelector('[aria-label="Remove ta-bot"]'));
-        assert.deepEqual(rows(), ['deleted account, id 40']);
+        await click(modal().querySelector('[aria-label="Убрать из списка: ta-bot"]'));
+        assert.deepEqual(rows(), ['удалённая учётная запись, ID 40']);
         await searchFor(view, 'loader');
         const option = [...document.body.querySelectorAll('.cvat-team-analytics-settings-picker-dropdown .ant-select-item-option')]
             .find((element) => element.textContent.startsWith('ta-loader'));
         await click(option);
         await view.settle();
-        assert.deepEqual(rows(), ['deleted account, id 40', 'ta-loader']);
+        assert.deepEqual(rows(), ['удалённая учётная запись, ID 40', 'ta-loader']);
 
         const before = figures.length;
         await click(document.body.querySelector('.cvat-team-analytics-settings-save'));
@@ -354,15 +354,16 @@ test('a failed save keeps the modal open with the reason; nothing is reloaded', 
     });
     await opened(Page, async (view) => {
         await openSettings(view);
-        await click(modal().querySelector('[aria-label="Remove ta-bot"]'));
+        await click(modal().querySelector('[aria-label="Убрать из списка: ta-bot"]'));
         const before = figures.length;
         await click(document.body.querySelector('.cvat-team-analytics-settings-save'));
         await view.settle();
         assert.equal(settings.at(-1).method, 'PUT');
         assert.ok(modal(), 'still open');
-        assert.equal(modal().querySelector('.cvat-team-analytics-settings-error').textContent, 'User 99 does not exist.');
+        assert.equal(modal().querySelector('.cvat-team-analytics-settings-error').textContent,
+            'Сервер не принял список: User 99 does not exist.');
         assert.equal(modal().querySelector('.cvat-team-analytics-settings-error').getAttribute('role'), 'alert');
-        assert.deepEqual(rows(), ['deleted account, id 40'], 'the edit is kept');
+        assert.deepEqual(rows(), ['удалённая учётная запись, ID 40'], 'the edit is kept');
         assert.equal(figures.filter((sent) => sent.endpoint === 'overview').length,
             figures.slice(0, before).filter((sent) => sent.endpoint === 'overview').length);
     });
@@ -372,13 +373,13 @@ test('Cancel sends nothing and leaves the list as it was', async () => {
     const { settings, Page } = openPage();
     await opened(Page, async (view) => {
         await openSettings(view);
-        await click(modal().querySelector('[aria-label="Remove ta-bot"]'));
+        await click(modal().querySelector('[aria-label="Убрать из списка: ta-bot"]'));
         await click(document.body.querySelector('.cvat-team-analytics-settings-cancel'));
         await view.settle();
         assert.equal(modal() === null, true);
         assert.deepEqual(settings.map((sent) => sent.method), ['GET']);
         await openSettings(view);
-        assert.deepEqual(rows(), ['ta-bot', 'deleted account, id 40'], 'opened again from the server\'s list');
+        assert.deepEqual(rows(), ['ta-bot', 'удалённая учётная запись, ID 40'], 'opened again from the server\'s list');
     });
 });
 
@@ -448,13 +449,16 @@ const service = loadPage('service.ts');
 
 // a failure after which the list may have been saved (no answer, or the 503 of a save whose older answers
 // could not be retired) does not claim that nothing was saved
-const UNFINISHED = 'The save did not finish, so the list may not have changed. Open the settings again to see the ' +
-    'saved list.';
+const UNFINISHED = 'Сохранение не завершилось, поэтому список мог не измениться. Откройте настройки снова, чтобы увидеть ' +
+    'сохранённый список.';
 
 test('saveSettings says each failure in a sentence', async () => {
     const cases = [
-        [{ status: 400, body: null, message: 'Too many technical accounts.' }, 'Too many technical accounts.'],
-        [{ status: 403, body: null }, 'Only administrators can change Team Analytics settings.'],
+        [{ status: 400, body: null, message: 'Too many technical accounts.' },
+            'Сервер не принял список: Too many technical accounts.'],
+        [{ status: 400, body: null }, 'Список отклонён.'],
+        [{ status: 401, body: null }, 'Сеанс завершён. Войдите снова, чтобы сохранить.'],
+        [{ status: 403, body: null }, 'Настройки Team Analytics могут менять только администраторы.'],
         [{ status: 503, body: { error: 'unavailable' } }, UNFINISHED],
         [new Error('Network Error'), UNFINISHED],
     ];
@@ -492,7 +496,7 @@ test('the real boundary reads and replaces the settings through cvat-core, with 
     // cvat-core turns {"error": "bad_request", "detail": "<sentence>"} into an error whose message is the sentence
     next = () => new ServerError('An account that is not on the list must be an existing user.', 400, 'Bad Request');
     assert.deepEqual(await real.saveSettings([99]),
-        { kind: 'failed', error: 'An account that is not on the list must be an existing user.' });
+        { kind: 'failed', error: 'Сервер не принял список: An account that is not on the list must be an existing user.' });
     next = () => new ServerError('The CVAT server is unavailable', 0, 'ERR_NETWORK');
     assert.equal((await real.saveSettings([99])).kind, 'failed');
     assert.equal(await real.loadSettings(), null);
@@ -550,7 +554,7 @@ test('a save that never answers stops being waited for after the limit, says so,
         assert.equal(saveLoading(), false, 'no longer saving');
         await click(document.body.querySelector('.cvat-team-analytics-settings-cancel'));
         assert.equal(calls.closed, 1, 'Cancel works again');
-        await click(document.body.querySelector('.ant-modal-close'));
+        await click(document.body.querySelector('.cvat-team-analytics-settings-close'));
         assert.equal(calls.closed, 2, 'and the close button');
         assert.equal(puts(), 1);
     });
@@ -590,5 +594,72 @@ test('a success that arrives after the limit neither closes a reopened modal nor
         await act(async () => { answers[1]({ body: SETTINGS }); });
         await view.settle();
         assert.equal(calls.saved, 1, 'one reload, from the save answered in time');
+    });
+});
+
+// --- shortcut hints (UI-3): the switch an administrator sets for the interface of everyone --------------------
+
+const hintsSwitch = () => modal().querySelector('.cvat-team-analytics-settings-hints input[type="checkbox"]');
+
+for (const shown of [true, false]) {
+    test(`the settings show the shortcut hints switched ${shown ? 'on' : 'off'}, as the server holds it`, async () => {
+        const { Page } = openPage({ settings: () => ({ body: { ...SETTINGS, shortcut_hints: shown } }) });
+        await opened(Page, async (view) => {
+            await openSettings(view);
+            assert.equal(hintsSwitch().checked, shown);
+            const section = modal().querySelector('.cvat-team-analytics-settings-hints');
+            assert.equal(section.querySelector('h3').textContent, 'Подсказки о горячих клавишах');
+            assert.match(section.textContent, /Показывать подсказки аннотаторам/);
+        });
+    });
+}
+
+test('Save sends the switch of the shortcut hints with the list, changed or not', async () => {
+    const { settings, Page } = openPage({ settings: () => ({ body: { ...SETTINGS, shortcut_hints: true } }) });
+    await opened(Page, async (view) => {
+        await openSettings(view);
+        await click(hintsSwitch());
+        assert.equal(hintsSwitch().checked, false);
+        await click(document.body.querySelector('.cvat-team-analytics-settings-save'));
+        await view.settle();
+        assert.deepEqual(settings.at(-1), { method: 'PUT', body: { technical_accounts: [12, 40], shortcut_hints: false } });
+
+        await openSettings(view);
+        await click(document.body.querySelector('.cvat-team-analytics-settings-save'));
+        await view.settle();
+        assert.deepEqual(settings.at(-1), { method: 'PUT', body: { technical_accounts: [12, 40], shortcut_hints: true } });
+    });
+});
+
+test('Cancel leaves the switch of the shortcut hints as the server holds it', async () => {
+    const { settings, Page } = openPage({ settings: () => ({ body: { ...SETTINGS, shortcut_hints: true } }) });
+    await opened(Page, async (view) => {
+        await openSettings(view);
+        await click(hintsSwitch());
+        await click(document.body.querySelector('.cvat-team-analytics-settings-cancel'));
+        await view.settle();
+        assert.deepEqual(settings.map((sent) => sent.method), ['GET']);
+        await openSettings(view);
+        assert.equal(hintsSwitch().checked, true);
+    });
+});
+
+test('settings from a server without the switch show none, and Save sends the list alone', async () => {
+    const { settings, Page } = openPage();
+    await opened(Page, async (view) => {
+        await openSettings(view);
+        assert.equal(modal().querySelector('.cvat-team-analytics-settings-hints'), null);
+        await click(document.body.querySelector('.cvat-team-analytics-settings-save'));
+        await view.settle();
+        assert.deepEqual(settings.at(-1), { method: 'PUT', body: { technical_accounts: [12, 40] } });
+    });
+});
+
+test('settings whose switch is neither true nor false are not shown as loaded', async () => {
+    const { Page } = openPage({ settings: () => ({ body: { ...SETTINGS, shortcut_hints: 'yes' } }) });
+    await opened(Page, async (view) => {
+        await openSettings(view);
+        assert.match(modal().textContent, /Не удалось загрузить настройки\./);
+        assert.equal(modal().querySelector('.cvat-team-analytics-settings-hints'), null);
     });
 });

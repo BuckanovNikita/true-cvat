@@ -111,10 +111,15 @@ function listAnswer(url) {
             body: {
                 ...base,
                 hotkey_actions: 300,
+                hints_shown: 1042,
                 rows: [
-                    { action: 'NEXT_FRAME', actions: 200, share: 2 / 3 },
-                    { action: 'SAVE_JOB', actions: 60, share: 0.2 },
-                    { action: 'UNKNOWN_ACTION', actions: 40, share: 40 / 300 },
+                    { action: 'NEXT_FRAME', actions: 200, share: 2 / 3, hints: 0 },
+                    { action: 'SAVE_JOB', actions: 60, share: 0.2, hints: 1021 },
+                    { action: 'UNKNOWN_ACTION', actions: 40, share: 40 / 300, hints: 0 },
+                ],
+                hinted_unused: [
+                    { action: 'SAVE_JOB_AS', hints: 20 },
+                    { action: 'NEXT_FRAME_FAST', hints: 1 },
                 ],
             },
         };
@@ -162,8 +167,10 @@ function answer(url) {
 }
 
 const KEYMAP = {
-    keyMap: { NEXT_FRAME: { name: 'Next frame' }, SAVE_JOB: { name: 'Save the job' } },
-    normalizedKeyMap: { NEXT_FRAME: '[f]', SAVE_JOB: '[Ctrl+s]' },
+    keyMap: {
+        NEXT_FRAME: { name: 'Next frame' }, SAVE_JOB: { name: 'Save the job' }, SAVE_JOB_AS: { name: 'Save the job as' },
+    },
+    normalizedKeyMap: { NEXT_FRAME: '[f]', SAVE_JOB: '[Ctrl+s]', SAVE_JOB_AS: '[Ctrl+Shift+s]' },
 };
 
 const { createMemoryHistory } = dependency('history');
@@ -265,7 +272,7 @@ test('each of the four trend charts has a Full view button', () => {
     });
     const charts = [...html.matchAll(/<figure[^>]*cvat-team-analytics-trend-chart[^>]*>(.*?)<\/figure>/g)];
     assert.equal(charts.length, 4);
-    for (const chart of charts) assert.match(chart[1], /cvat-team-analytics-full-view-button.*?Full view<\/button>/);
+    for (const chart of charts) assert.match(chart[1], /cvat-team-analytics-full-view-button.*?Полный вид<\/button>/);
 });
 
 test('a card on the overview keeps its top rows; its show all control names every row', () => {
@@ -274,9 +281,9 @@ test('a card on the overview keeps its top rows; its show all control names ever
     });
     const annotators = html.match(/cvat-team-analytics-working-time-by-annotator[^>]*>(.*?)<\/section>/)[1];
     assert.equal([...annotators.matchAll(/cvat-team-analytics-annotator-row/g)].length, 2);
-    assert.match(text(annotators), /10 more, not shown 20\.0 h Show all 12 in full view$/);
+    assert.match(text(annotators), /Ещё 10 аннотаторов не показано 20,0 ч Показать все 12 в полном виде$/);
     const keyboard = html.match(/cvat-team-analytics-keyboard"[^>]*>(.*?)<\/section>/)[1];
-    assert.match(text(keyboard), /Show all 3 in full view$/);
+    assert.match(text(keyboard), /Показать все 3 в полном виде$/);
 });
 
 // --- opening, closing and the address ------------------------------------------------------------
@@ -293,10 +300,10 @@ test('a full view replaces the overview, keeps the header and filters, and is pa
             'the details table stays on the overview');
         assert.ok(view.container.querySelector('.cvat-team-analytics-header'));
         assert.ok(view.container.querySelector('.cvat-team-analytics-filters'));
-        assert.equal(fullView(view.container).querySelector('h2').textContent, 'Working time by annotator');
+        assert.equal(fullView(view.container).querySelector('h2').textContent, 'Рабочее время по аннотаторам');
         assert.equal(listRequests(requests).at(-1).get('by'), 'annotators');
 
-        await click(button(view.container, 'Back to overview'));
+        await click(button(view.container, 'Назад к обзору'));
         await view.settle();
         assert.equal(search(history).get('view'), null);
         assert.ok(view.container.querySelector('.cvat-team-analytics-cards'));
@@ -315,7 +322,7 @@ test('a full view replaces the overview, keeps the header and filters, and is pa
 test('a shared address opens its full view; an unknown one shows the overview', async () => {
     const shared = openPage({ search: '?period=week&view=hotkeys' });
     await opened(shared.Page, async (view) => {
-        assert.equal(fullView(view.container).querySelector('h2').textContent, 'Hotkey usage');
+        assert.equal(fullView(view.container).querySelector('h2').textContent, 'Использование горячих клавиш');
     });
     const unknown = openPage({ search: '?view=everything' });
     await opened(unknown.Page, async (view) => {
@@ -329,7 +336,7 @@ test('the show all control of a chart opens its full view', async () => {
     const { history, Page } = openPage();
     await opened(Page, async (view) => {
         await click(button(view.container.querySelector('.cvat-team-analytics-working-time-by-annotator'),
-            'Show all 12 in full view'));
+            'Показать все 12 в полном виде'));
         await view.settle();
         assert.equal(search(history).get('view'), 'annotators');
         assert.equal(listRows(view.container).length, 12);
@@ -343,24 +350,24 @@ test('by annotator: every row with its rank, whole name, bar, value and share; s
     await opened(Page, async (view) => {
         const rows = listRows(view.container);
         assert.equal(rows.length, 12);
-        assert.deepEqual(rows[0], ['1', 'alice', '9.0 h', '24%']);
-        assert.deepEqual(rows[11], ['12', LONG_NAME, '2.0 h', '5%'], 'the whole name, never shortened');
+        assert.deepEqual(rows[0], ['1', 'alice', '9,0\u00a0ч', '24%']);
+        assert.deepEqual(rows[11], ['12', LONG_NAME, '2,0\u00a0ч', '5%'], 'the whole name, never shortened');
         const firstRow = view.container.querySelector('.cvat-team-analytics-full-list-row');
         assert.equal(firstRow.querySelectorAll('.cvat-team-analytics-full-bar-part').length, 5,
             'the bar is split by operation and Other');
-        assert.match(text(fullView(view.container).querySelector('.cvat-team-analytics-full-summary').innerHTML),
-            /12 annotators · 37\.0 h in total/);
+        assert.match(text(fullView(view.container).querySelector('.cvat-team-analytics-full-summary').textContent),
+            /12 аннотаторов · 37,0 ч всего/);
 
         await type(view.container.querySelector('.cvat-team-analytics-full-view input[type="search"]'), 'USER');
         assert.deepEqual(listRows(view.container).map((row) => row[0]), ['3', '4', '5', '6', '7', '8', '9', '10', '11'],
             'a found row keeps its rank');
-        await click(button(view.container, 'By name'));
+        await click(button(view.container, 'По имени'));
         assert.deepEqual(listRows(view.container).slice(0, 2).map((row) => row[1]), ['user0', 'user1']);
         await type(view.container.querySelector('.cvat-team-analytics-full-view input[type="search"]'), 'zzz');
         assert.equal(listRows(view.container).length, 0);
-        assert.match(fullView(view.container).textContent, /No match for this search/);
+        assert.match(fullView(view.container).textContent, /По этому запросу ничего не найдено/);
         await type(view.container.querySelector('.cvat-team-analytics-full-view input[type="search"]'), '');
-        await click(button(view.container, 'By value'));
+        await click(button(view.container, 'По значению'));
         assert.deepEqual(listRows(view.container).slice(0, 2).map((row) => row[1]), ['alice', 'bob']);
     });
 });
@@ -368,7 +375,7 @@ test('by annotator: every row with its rank, whole name, bar, value and share; s
 test('by project: names from the names lookup, No project, an unknown project by its identifier', async () => {
     const { lookups, Page } = openPage({ search: '?view=projects' });
     await opened(Page, async (view) => {
-        assert.deepEqual(listRows(view.container).map((row) => row[1]), ['Street scenes', 'No project', 'Project #7']);
+        assert.deepEqual(listRows(view.container).map((row) => row[1]), ['Street scenes', 'Без проекта', 'Проект #7']);
         assert.ok(lookups.some((ids) => ids.includes(7)), 'every listed project is asked of CVAT');
         await type(view.container.querySelector('.cvat-team-analytics-full-view input[type="search"]'), 'street');
         assert.deepEqual(listRows(view.container).map((row) => row[1]), ['Street scenes']);
@@ -381,7 +388,7 @@ test('the legend sits at the top of a full view, above the rows', async () => {
         const full = fullView(view.container);
         const legend = full.querySelector('.cvat-team-analytics-full-legend');
         assert.ok(legend);
-        assert.match(legend.textContent, /Creation.*Alignment.*Class change.*Deletion.*Other/);
+        assert.match(legend.textContent, /Создание.*Подгонка.*Смена класса.*Удаление.*Прочее/);
         const firstRow = full.querySelector('.cvat-team-analytics-full-list-row');
         // eslint-disable-next-line no-bitwise
         assert.ok(legend.compareDocumentPosition(firstRow) & window.Node.DOCUMENT_POSITION_FOLLOWING);
@@ -391,14 +398,14 @@ test('the legend sits at the top of a full view, above the rows', async () => {
 test('where working time goes: the same list with a switch between annotators and projects', async () => {
     const { history, requests, Page } = openPage({ search: '?view=split' });
     await opened(Page, async (view) => {
-        assert.equal(fullView(view.container).querySelector('h2').textContent, 'Where working time goes, by annotator');
+        assert.equal(fullView(view.container).querySelector('h2').textContent, 'Куда уходит рабочее время по аннотаторам');
         assert.equal(listRows(view.container).length, 12);
-        await click(button(view.container.querySelector('[aria-label="Rows"]'), 'Projects'));
+        await click(button(view.container.querySelector('[aria-label="Строки"]'), 'Проекты'));
         await view.settle();
         assert.equal(search(history).get('rows'), 'projects');
         assert.equal(listRequests(requests).at(-1).get('by'), 'projects');
-        assert.equal(fullView(view.container).querySelector('h2').textContent, 'Where working time goes, by project');
-        assert.deepEqual(listRows(view.container).map((row) => row[1]), ['Street scenes', 'No project', 'Project #7']);
+        assert.equal(fullView(view.container).querySelector('h2').textContent, 'Куда уходит рабочее время по проектам');
+        assert.deepEqual(listRows(view.container).map((row) => row[1]), ['Street scenes', 'Без проекта', 'Проект #7']);
     });
 });
 
@@ -420,11 +427,11 @@ test('clicking a row in a list sets the page filter, as on the overview', async 
 test('the period, the shape switch and the filters still work inside a full view', async () => {
     const { history, requests, Page } = openPage({ search: '?view=split&rows=projects' });
     await opened(Page, async (view) => {
-        await click(button(view.container.querySelector('.cvat-team-analytics-filters'), 'Two weeks'));
+        await click(button(view.container.querySelector('.cvat-team-analytics-filters'), 'Две недели'));
         await view.settle();
         assert.equal(search(history).get('view'), 'split');
         assert.equal(listRequests(requests).at(-1).get('period'), 'two_weeks');
-        await click(button(view.container.querySelector('.cvat-team-analytics-filters'), 'All shapes'));
+        await click(button(view.container.querySelector('.cvat-team-analytics-filters'), 'Все фигуры'));
         await view.settle();
         assert.equal(listRequests(requests).at(-1).get('shapes'), 'all');
         await act(async () => { history.push('/team-analytics?view=split&rows=projects&period=two_weeks&annotator=11&org=team-org'); });
@@ -449,6 +456,51 @@ test('hotkeys: every hotkey labelled from the viewer keymap with its keys, count
     });
 });
 
+test('hotkeys: each hotkey shows the shortcut hints shown for it, and the list says how many were shown', async () => {
+    const { Page } = openPage({ search: '?view=hotkeys' });
+    await opened(Page, async (view) => {
+        const list = fullView(view.container);
+        assert.equal(list.querySelector('.cvat-team-analytics-full-list-header .cvat-team-analytics-full-note').textContent,
+            'Подсказки');
+        assert.deepEqual([...list.querySelectorAll('.cvat-team-analytics-full-list-row .cvat-team-analytics-full-note')]
+            .map((cell) => cell.textContent), ['0', '1\u00a0021', '0']);
+        assert.match(list.querySelector('.cvat-team-analytics-full-summary').textContent,
+            /3\u00a0горячие клавиши · 300\u00a0действий · 1\u00a0042\u00a0подсказки показаны/);
+    });
+});
+
+test('hotkeys: the actions hinted but never done by hotkey are listed apart, most hinted first', async () => {
+    const { Page } = openPage({ search: '?view=hotkeys' });
+    await opened(Page, async (view) => {
+        const unused = fullView(view.container).querySelector('.cvat-team-analytics-hinted-unused');
+        assert.equal(unused.querySelector('h3').textContent, 'Подсказка показана, горячая клавиша не использовалась');
+        assert.deepEqual([...unused.querySelectorAll('li')].map((row) => [
+            row.querySelector('.cvat-team-analytics-hinted-name').textContent,
+            row.querySelector('.cvat-team-analytics-hinted-keys').textContent,
+            row.querySelector('.cvat-team-analytics-hinted-count').textContent,
+        ]), [['Save the job as', 'Ctrl+Shift+s', '20\u00a0подсказок'], ['NEXT_FRAME_FAST', '—', '1\u00a0подсказка']]);
+        // these actions are no rows of the hotkey list
+        assert.equal(listRows(view.container).length, 3);
+    });
+});
+
+test('hotkeys: an answer without hint figures, from before the hints, shows the list as it was', async () => {
+    const before = (url) => {
+        const response = answer(url);
+        if (new URL(url, 'http://localhost').searchParams.get('by') !== 'hotkeys') return response;
+        const { hints_shown: _shown, hinted_unused: _unused, ...body } = response.body;
+        return { body: { ...body, rows: body.rows.map(({ hints: _hints, ...row }) => row) } };
+    };
+    const { Page } = openPage({ search: '?view=hotkeys', respond: before });
+    await opened(Page, async (view) => {
+        const list = fullView(view.container);
+        assert.equal(listRows(view.container).length, 3);
+        assert.equal(list.querySelector('.cvat-team-analytics-full-note'), null);
+        assert.equal(list.querySelector('.cvat-team-analytics-hinted-unused'), null);
+        assert.doesNotMatch(list.textContent, /подсказ/i);
+    });
+});
+
 // --- tables --------------------------------------------------------------------------------------
 
 function tableRows(container) {
@@ -463,29 +515,29 @@ function tableHeader(container) {
 test('operations: a table by annotator or by project with a switch between the two', async () => {
     const { history, Page } = openPage({ search: '?view=operations' });
     await opened(Page, async (view) => {
-        assert.equal(fullView(view.container).querySelector('h2').textContent, 'Bounding box operations, by annotator');
-        assert.deepEqual(tableHeader(view.container), ['Annotator', 'Created', 'Avg create', 'Aligned', 'Avg align',
-            'Class changes', 'Avg change', 'Deleted', 'Avg delete']);
+        assert.equal(fullView(view.container).querySelector('h2').textContent, 'Операции с боксами по аннотаторам');
+        assert.deepEqual(tableHeader(view.container), ['Аннотатор', 'Создано', 'Ср. создание', 'Подогнано', 'Ср. подгонка',
+            'Смены класса', 'Ср. смена', 'Удалено', 'Ср. удаление']);
         assert.equal(tableRows(view.container).length, 12);
-        assert.deepEqual(tableRows(view.container)[0], ['alice', '90', '90 s', '9', '0.0 s', '0', '—', '1', '2.0 s']);
-        await click(button(view.container.querySelector('[aria-label="Rows"]'), 'Projects'));
+        assert.deepEqual(tableRows(view.container)[0], ['alice', '90', '90\u00a0с', '9', '0,0\u00a0с', '0', '—', '1', '2,0\u00a0с']);
+        await click(button(view.container.querySelector('[aria-label="Строки"]'), 'Проекты'));
         await view.settle();
         assert.equal(search(history).get('rows'), 'projects');
-        assert.equal(tableHeader(view.container)[0], 'Project');
-        assert.deepEqual(tableRows(view.container).map((row) => row[0]), ['Street scenes', 'No project', 'Project #7']);
-        await type(view.container.querySelector('.cvat-team-analytics-full-view input[type="search"]'), 'project');
-        assert.deepEqual(tableRows(view.container).map((row) => row[0]), ['No project', 'Project #7']);
+        assert.equal(tableHeader(view.container)[0], 'Проект');
+        assert.deepEqual(tableRows(view.container).map((row) => row[0]), ['Street scenes', 'Без проекта', 'Проект #7']);
+        await type(view.container.querySelector('.cvat-team-analytics-full-view input[type="search"]'), 'проект');
+        assert.deepEqual(tableRows(view.container).map((row) => row[0]), ['Без проекта', 'Проект #7']);
     });
 });
 
 test('creation methods: a table with each method, Model and all annotator methods', async () => {
     const { Page } = openPage({ search: '?view=methods' });
     await opened(Page, async (view) => {
-        assert.equal(fullView(view.container).querySelector('h2').textContent, 'How boxes are created, by annotator');
-        assert.deepEqual(tableHeader(view.container), ['Annotator', 'Drawn', 'Avg drawn', 'Pasted', 'Avg pasted',
-            'Propagated', 'Avg propagated', 'Model', 'All annotator methods', 'Avg all']);
-        assert.deepEqual(tableRows(view.container)[1], ['bob', '64', '90 s', '16', '90 s', '0', '—', '8', '80', '90 s']);
-        await click(button(view.container, 'By name'));
+        assert.equal(fullView(view.container).querySelector('h2').textContent, 'Как создаются боксы по аннотаторам');
+        assert.deepEqual(tableHeader(view.container), ['Аннотатор', 'Нарисовано', 'Ср. нарисовано', 'Вставлено', 'Ср. вставлено',
+            'Распространено', 'Ср. распространено', 'Модель', 'Все способы аннотаторов', 'Ср. по всем']);
+        assert.deepEqual(tableRows(view.container)[1], ['bob', '64', '90\u00a0с', '16', '90\u00a0с', '0', '—', '8', '80', '90\u00a0с']);
+        await click(button(view.container, 'По имени'));
         assert.deepEqual(tableRows(view.container).slice(0, 3).map((row) => row[0]), ['alice', LONG_NAME, 'bob']);
     });
 });
@@ -498,10 +550,11 @@ test('working time over the period: a large chart and every value listed', async
         await click(fullViewButton(view.container, 'cvat-team-analytics-time-chart'));
         await view.settle();
         const full = fullView(view.container);
-        assert.equal(full.querySelector('h2').textContent, 'Working time by day');
+        assert.equal(full.querySelector('h2').textContent, 'Рабочее время по дням');
         assert.ok(full.querySelector('.cvat-team-analytics-time-chart-large'));
         assert.deepEqual([...full.querySelectorAll('.cvat-team-analytics-full-values li')].map((item) => item.textContent),
-            ['Nov 71.0 h', 'Nov 82.0 h', 'Nov 93.0 h', 'Nov 104.0 h', 'Nov 115.0 h', 'Nov 126.0 h', 'Nov 137.0 h']);
+            ['7\u00a0нояб.1,0\u00a0ч', '8\u00a0нояб.2,0\u00a0ч', '9\u00a0нояб.3,0\u00a0ч', '10\u00a0нояб.4,0\u00a0ч',
+                '11\u00a0нояб.5,0\u00a0ч', '12\u00a0нояб.6,0\u00a0ч', '13\u00a0нояб.7,0\u00a0ч']);
         assert.equal(listRequests(requests).length, 0, 'every value is in the overview already');
     });
 });
@@ -515,17 +568,17 @@ test('a trend: a large chart, a legend with whole names and latest values on top
         await view.settle();
         assert.equal(search(history).get('view'), 'trend-boxes');
         const full = fullView(view.container);
-        assert.equal(full.querySelector('h2').textContent, 'Boxes created');
+        assert.equal(full.querySelector('h2').textContent, 'Создано боксов');
         const chart = full.querySelector('.cvat-team-analytics-trend-chart');
         assert.ok(chart.classList.contains('cvat-team-analytics-trend-chart-large'));
         const legend = chart.querySelector('.cvat-team-analytics-trend-legend');
-        assert.equal(legend.textContent, 'All annotators · All projects120');
+        assert.equal(legend.textContent, 'Все аннотаторы · Все проекты120');
         // eslint-disable-next-line no-bitwise
         assert.ok(legend.compareDocumentPosition(chart.querySelector('svg')) & window.Node.DOCUMENT_POSITION_FOLLOWING,
             'the legend is above the chart');
         assert.equal(chart.querySelector('details') === null, true, 'the values are not folded away');
         assert.equal(chart.querySelectorAll('tbody tr').length, 12);
-        await click(button(view.container, 'Back to overview'));
+        await click(button(view.container, 'Назад к обзору'));
         await view.settle();
         assert.equal(view.container.querySelectorAll('.cvat-team-analytics-trend-chart').length, 4);
     });
@@ -552,7 +605,7 @@ for (const search of ['?view=annotators', '?view=projects', '?view=split&rows=pr
         await opened(Page, async (view) => {
             assert.equal(listRows(view.container).length, 0);
             assert.ok(view.container.querySelector('.cvat-team-analytics-not-processed'));
-            assert.doesNotMatch(view.container.textContent, /could not be loaded/);
+            assert.doesNotMatch(view.container.textContent, /Не удалось загрузить список/);
             assert.deepEqual(lookups.filter((ids) => ids.includes(7)), [], 'no list row asks for a name');
         });
     });
@@ -591,7 +644,7 @@ test('a list that cannot be updated keeps the previous rows dimmed and says so',
         await view.settle();
         assert.ok(fullView(view.container).classList.contains('cvat-team-analytics-pending'));
         assert.match(fullView(view.container).querySelector('.cvat-team-analytics-full-failed').textContent,
-            /could not be updated/);
+            /Не удалось обновить список/);
     });
 });
 
@@ -604,13 +657,31 @@ test('a project with no working time is left out of the working time list but st
     };
     const lists = openPage({ search: '?view=projects', respond });
     await opened(lists.Page, async (view) => {
-        assert.deepEqual(listRows(view.container).map((row) => row[1]), ['Street scenes', 'No project', 'Project #7']);
+        assert.deepEqual(listRows(view.container).map((row) => row[1]), ['Street scenes', 'Без проекта', 'Проект #7']);
         assert.match(fullView(view.container).querySelector('.cvat-team-analytics-full-summary').textContent,
-            /^3 projects/);
+            /^3\u00a0проекта/);
     });
     const tables = openPage({ search: '?view=methods&rows=projects', respond });
     await opened(tables.Page, async (view) => {
-        assert.equal(tableRows(view.container).at(-1)[0], 'Project #9');
+        assert.equal(tableRows(view.container).at(-1)[0], 'Проект #9');
         assert.equal(tableRows(view.container).at(-1)[7], '5');
     });
+});
+
+test('the list summary counts with the Russian plural forms', async () => {
+    const forms = [[1, 'проект'], [2, 'проекта'], [5, 'проектов'], [11, 'проектов'], [21, 'проект']];
+    for (const [count, word] of forms) {
+        const respond = (url) => {
+            if (!url.includes('/list?') || !url.includes('by=projects')) return answer(url);
+            const body = listAnswer(url).body;
+            const rows = Array.from({ length: count }, (_, index) => listRow(100 + index, null, 1));
+            return { body: { ...body, total: { count, working_time_ms: count * HOUR }, rows } };
+        };
+        const { Page } = openPage({ search: '?view=projects', respond });
+        await opened(Page, async (view) => {
+            assert.equal(listRows(view.container).length, count);
+            assert.match(fullView(view.container).querySelector('.cvat-team-analytics-full-summary').textContent,
+                new RegExp(`^${count}\\u00a0${word}\\u00a0?[^а-я]`));
+        });
+    }
 });

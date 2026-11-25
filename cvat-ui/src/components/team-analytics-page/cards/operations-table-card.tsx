@@ -18,6 +18,10 @@ import { shapeWording } from '../shapes';
 import { FullViewButton } from '../full-view-button';
 import { Term } from '../definitions';
 
+function capitalized(text: string): string {
+    return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 interface Props {
     figures: OperationsFigures;
     onFullView?: () => void;
@@ -30,7 +34,7 @@ const MOUSE_COLOR = '#c9c8c2';
 // it to the operation's row header, and a hidden prefix names the operation for a screen reader that reads the
 // row on its own.
 function InputSplitRow({ name, split, header }: { name: string; split: InputSplit; header: string }): JSX.Element {
-    const prefix = <span className='cvat-team-analytics-visually-hidden'>{`${name} started by: `}</span>;
+    const prefix = <span className='cvat-team-analytics-visually-hidden'>{`${name}, начато: `}</span>;
     if (split.kind === 'split') {
         const hotkey = Math.round(split.hotkey * 100);
         const mouse = 100 - hotkey;
@@ -40,19 +44,19 @@ function InputSplitRow({ name, split, header }: { name: string; split: InputSpli
                     colSpan={5}
                     headers={header}
                     className='cvat-team-analytics-input-split'
-                    title={`${name}: ${hotkey}% by hotkey, ${mouse}% by mouse`}
+                    title={`${name}: ${hotkey}% горячей клавишей, ${mouse}% мышью`}
                 >
                     {prefix}
                     <span className='cvat-team-analytics-input-split-bar' aria-hidden>
                         <span style={{ flexGrow: Math.max(split.hotkey, 0.01), background: HOTKEY_COLOR }} />
                         <span style={{ flexGrow: Math.max(split.mouse, 0.01), background: MOUSE_COLOR }} />
                     </span>
-                    {`${hotkey}% hotkey / ${mouse}% mouse`}
+                    {`${hotkey}% горячей клавишей / ${mouse}% мышью`}
                 </td>
             </tr>
         );
     }
-    const label = { 'mouse-only': 'Mouse only', 'not-recorded': 'Not recorded', none: MISSING }[split.kind];
+    const label = { 'mouse-only': 'Только мышью', 'not-recorded': 'Не записано', none: MISSING }[split.kind];
     return (
         <tr className='cvat-team-analytics-input-split-row'>
             <td
@@ -80,17 +84,17 @@ function OperationsTableCard({ figures, onFullView }: Props): JSX.Element {
                 <FullViewButton onClick={onFullView} />
             </div>
             <Text type='secondary'>
-                {`Counts and average time per ${wording.noun} · ${wording.label.toLowerCase()}`}
+                {`${capitalized(wording.countsAndAverage)} · ${wording.label.toLowerCase()}`}
             </Text>
             <div className='cvat-team-analytics-table-scroll cvat-team-analytics-operations-scroll'>
                 <table className='cvat-team-analytics-operations-table'>
                     <thead>
                         <tr>
-                            <th scope='col'>Operation</th>
-                            <th scope='col'>{wording.nouns}</th>
-                            <th scope='col'><Term name='Time per operation'>Avg time</Term></th>
-                            <th scope='col'>Total time</th>
-                            <th scope='col'>Share</th>
+                            <th scope='col'>Операция</th>
+                            <th scope='col'>{wording.column}</th>
+                            <th scope='col'><Term name='time_per_operation'>Ср. время</Term></th>
+                            <th scope='col'>Общее время</th>
+                            <th scope='col'>Доля</th>
                         </tr>
                     </thead>
                     {rows.map((row) => {
@@ -114,7 +118,7 @@ function OperationsTableCard({ figures, onFullView }: Props): JSX.Element {
                                         </>
                                     ) : (
                                         <>
-                                            <td className='cvat-team-analytics-not-recorded'>Not recorded</td>
+                                            <td className='cvat-team-analytics-not-recorded'>Не записано</td>
                                             <td>{MISSING}</td>
                                             <td>{MISSING}</td>
                                             <td>{MISSING}</td>
@@ -128,10 +132,10 @@ function OperationsTableCard({ figures, onFullView }: Props): JSX.Element {
                 </table>
             </div>
             <Text type='secondary' className='cvat-team-analytics-footnote'>
-                Creation covers drawn, pasted and propagated objects. The bar under each operation shows how its
-                objects were started, by hotkey or by mouse; alignment is done on the canvas, so it has no hotkey.
-                Average time runs from the previous action to the end of the operation; pauses over 100 seconds are
-                left out.
+                Создание охватывает нарисованные, вставленные и распространённые объекты. Полоса под каждой
+                операцией показывает, как были начаты её объекты: горячей клавишей или мышью; подгонка
+                выполняется на холсте, поэтому для неё горячей клавиши нет. Среднее время считается от
+                предыдущего действия до конца операции; паузы дольше 100 секунд не учитываются.
             </Text>
         </section>
     );

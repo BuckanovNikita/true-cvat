@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: MIT
 
 """What the settings actions of the view set accept: the body of `PUT settings` and the query of
-`GET settings/users` and `GET project-names`. The rules themselves are in technical_accounts.py."""
+`GET settings/users` and `GET project-names`. The rules themselves are in technical_accounts.py and
+client_settings.py."""
 
 from rest_framework import serializers
 
+from . import client_settings as client_rules
 from . import technical_accounts as rules
 
 # The code of an error whose message is a rule's own sentence (it names what it refuses).
@@ -19,12 +21,17 @@ def _check(rule, value):
 
 
 class TechnicalAccountsWriteSerializer(serializers.Serializer):
-    """`{"technical_accounts": [12, 40]}`: the whole list, by user id."""
+    """`{"technical_accounts": [12, 40], "shortcut_hints": true}`: the whole list, by user id, and
+    the switch of the shortcut hints. A body without `shortcut_hints` leaves the switch as it is."""
 
     technical_accounts = serializers.JSONField()
+    shortcut_hints = serializers.JSONField(required=False)
 
     def validate_technical_accounts(self, value):
         return _check(rules.clean_account_ids, value)
+
+    def validate_shortcut_hints(self, value):
+        return _check(client_rules.clean_shortcut_hints, value)
 
 
 class UserSearchSerializer(serializers.Serializer):

@@ -61,7 +61,7 @@ function card(props = {}) {
         kind: 'annotators',
         compared: [],
         query: '',
-        scopeLabel: 'All annotators · All projects',
+        scopeLabel: 'Все аннотаторы · Все проекты',
         ...props,
     });
 }
@@ -82,31 +82,31 @@ function valueRows(chart) {
 test('four charts: working time, boxes created, average time per box and hotkey share', () => {
     const html = card();
     const shown = text(html);
-    assert.match(shown, /Trends Last 12 weeks, independent of the period above/);
+    assert.match(shown, /Динамика Последние 12 недель, независимо от выбранного выше периода/);
     const titles = charts(html).map((chart) => text(chart.match(/cvat-team-analytics-trend-title[^>]*>(.*?)</)[1]));
-    assert.deepEqual(titles, ['Working time', 'Boxes created', 'Average time per box', 'Hotkey share']);
+    assert.deepEqual(titles, ['Рабочее время', 'Создано боксов', 'Среднее время на бокс', 'Доля горячих клавиш']);
 });
 
 test('with nothing compared each chart has one line for the scope, named in its legend', () => {
     for (const chart of charts(card())) {
         assert.equal([...chart.matchAll(/cvat-team-analytics-trend-line/g)].length, 1);
-        assert.match(legend(chart)[0], /^All annotators · All projects /);
+        assert.match(legend(chart)[0], /^Все аннотаторы · Все проекты /);
     }
     const [work, boxes, average, share] = charts(card()).map((chart) => legend(chart)[0]);
     // the legend gives the latest value, so no colour is needed to read it
-    assert.match(work, /12\.0 h$/);
+    assert.match(work, /12,0 ч$/);
     assert.match(boxes, /120$/);
-    assert.match(average, /4\.0 s$/);
+    assert.match(average, /4,0 с$/);
     assert.match(share, /75%$/);
 });
 
 test('every value can be read as text: a table per chart and a title on every point', () => {
     const [work] = charts(card());
     const rows = valueRows(work);
-    assert.deepEqual(rows[0], ['Week', 'All annotators · All projects']);
-    assert.deepEqual(rows[1], ['Week of Aug 24', '1.0 h']);
-    assert.deepEqual(rows[12], ['Week of Nov 9', '12.0 h']);
-    assert.match(work, /title="All annotators · All projects · week of Nov 9: 12\.0 h"/);
+    assert.deepEqual(rows[0], ['Неделя', 'Все аннотаторы · Все проекты']);
+    assert.deepEqual(rows[1], ['Неделя с 24 авг.', '1,0 ч']);
+    assert.deepEqual(rows[12], ['Неделя с 9 нояб.', '12,0 ч']);
+    assert.match(work.replace(/\u00a0/g, ' '), /title="Все аннотаторы · Все проекты · неделя с 9 нояб\.: 12,0 ч"/);
 });
 
 test('each chart has one vertical scale of its own measure', () => {
@@ -114,24 +114,24 @@ test('each chart has one vertical scale of its own measure', () => {
         assert.equal([...chart.matchAll(/cvat-team-analytics-trend-scale"/g)].length, 1);
     }
     const scales = charts(card()).map((chart) => text(chart.match(/cvat-team-analytics-trend-scale"[^>]*>(.*?)<\/div>/)[1]));
-    assert.deepEqual(scales, ['20 h 10 h 0 h', '200 100 0', '5 s 2.5 s 0 s', '100% 50% 0%']);
+    assert.deepEqual(scales, ['20 ч 10 ч 0 ч', '200 100 0', '5 с 2,5 с 0 с', '100% 50% 0%']);
 });
 
 test('all shapes name objects instead of boxes', () => {
     const titles = charts(card({ trends: trends({ shapes: 'all' }) }))
         .map((chart) => text(chart.match(/cvat-team-analytics-trend-title[^>]*>(.*?)</)[1]));
-    assert.deepEqual(titles.slice(1, 3), ['Objects created', 'Average time per object']);
+    assert.deepEqual(titles.slice(1, 3), ['Создано объектов', 'Среднее время на объект']);
 });
 
 test('months are labelled by month', () => {
     const months = ['2025-12-01', '2026-01-01', '2026-02-01', '2026-03-01', '2026-04-01', '2026-05-01', '2026-06-01',
         '2026-07-01', '2026-08-01', '2026-09-01', '2026-10-01', '2026-11-01'];
     const html = card({ step: 'month', trends: trends({ step: 'month', buckets: months.map((start) => ({ start, processed: true })) }) });
-    assert.match(text(html), /Last 12 months/);
+    assert.match(text(html), /Последние 12 месяцев/);
     const rows = valueRows(charts(html)[0]);
-    assert.deepEqual(rows[0][0], 'Month');
-    assert.deepEqual(rows[1][0], 'Dec 2025');
-    assert.deepEqual(rows[12][0], 'Nov 2026');
+    assert.deepEqual(rows[0][0], 'Месяц');
+    assert.deepEqual(rows[1][0], 'Декабрь 2025');
+    assert.deepEqual(rows[12][0], 'Ноябрь 2026');
 });
 
 test('weeks before the new logging show hotkey share as not recorded', () => {
@@ -141,21 +141,22 @@ test('weeks before the new logging show hotkey share as not recorded', () => {
     } : {});
     const html = card({ trends: trends({ lines: [line(null, null, old)] }) });
     const [work, boxes, , share] = charts(html);
-    assert.deepEqual(valueRows(share)[1], ['Week of Aug 24', 'Not recorded']);
-    assert.deepEqual(valueRows(share)[5], ['Week of Sep 21', '75%']);
-    assert.match(text(share), /Not recorded before the new logging/);
+    assert.deepEqual(valueRows(share)[1], ['Неделя с 24 авг.', 'Не записано']);
+    assert.deepEqual(valueRows(share)[5], ['Неделя с 21 сент.', '75%']);
+    assert.match(text(share), /До нового учёта действий не записывалось/);
+    assert.match(text(share), /До нового учёта действий не записывалось: 4 из 12 недель/);
     // boxes of old weeks cannot be told apart either; working time is complete
-    assert.deepEqual(valueRows(boxes)[1], ['Week of Aug 24', 'Not recorded']);
-    assert.deepEqual(valueRows(work)[1], ['Week of Aug 24', '1.0 h']);
+    assert.deepEqual(valueRows(boxes)[1], ['Неделя с 24 авг.', 'Не записано']);
+    assert.deepEqual(valueRows(work)[1], ['Неделя с 24 авг.', '1,0 ч']);
     // the line is broken where nothing was recorded, never drawn at zero
-    assert.doesNotMatch(share, /title="[^"]*week of Aug 24/);
+    assert.doesNotMatch(share, /title="[^"]*неделя с 24 авг\./);
 });
 
 test('a chart with nothing recorded at all says so instead of drawing', () => {
     const none = () => ({ legacy: true, hotkey_recorded: false, hotkey_share: null });
     const [, , , share] = charts(card({ trends: trends({ lines: [line(null, null, none)] }) }));
     assert.doesNotMatch(share, /cvat-team-analytics-trend-line/);
-    assert.match(text(share), /Not recorded before the new logging/);
+    assert.match(text(share), /До нового учёта действий не записывалось/);
 });
 
 // A point of a week not wholly processed, as the service sends it: the flags, and every value null.
@@ -170,12 +171,13 @@ test('weeks not processed yet are withheld', () => {
     const html = card({ trends: trends({ buckets, lines }) });
     const [work, boxes, average, share] = charts(html);
     for (const chart of [boxes, average, share]) {
-        assert.deepEqual(valueRows(chart)[1][1], 'Not processed yet');
+        assert.deepEqual(valueRows(chart)[1][1], 'Ещё не обработано');
     }
     assert.doesNotMatch(html, /NaN/);
-    assert.deepEqual(valueRows(work)[1], ['Week of Aug 24', 'Not processed yet']);
-    assert.deepEqual(valueRows(work)[10], ['Week of Oct 26', '10.0 h']);
-    assert.doesNotMatch(work, /week of Aug 24:/);
+    assert.match(text(share), /Ещё не обработано: 9 из 12 недель/);
+    assert.deepEqual(valueRows(work)[1], ['Неделя с 24 авг.', 'Ещё не обработано']);
+    assert.deepEqual(valueRows(work)[10], ['Неделя с 26 окт.', '10,0 ч']);
+    assert.doesNotMatch(work, /неделя с 24 авг\.:/);
 });
 
 test('compared annotators are one line each, named in the legend, coloured by their slot', () => {
@@ -183,14 +185,14 @@ test('compared annotators are one line each, named in the legend, coloured by th
         trends: trends({ lines: [line(12, 'bob'), line(11, 'alice')] }),
         compared: [{ id: 12, slot: 3 }, { id: 11, slot: 0 }],
     });
-    assert.match(text(html), /Comparing/);
+    assert.match(text(html), /Сравнение/);
     for (const chart of charts(html)) {
         assert.equal([...chart.matchAll(/cvat-team-analytics-trend-line/g)].length, 2);
         assert.deepEqual(legend(chart).map((item) => item.split(' ')[0]), ['bob', 'alice']);
         assert.match(chart, new RegExp(`stroke="${COLORS[3]}"`));
         assert.match(chart, new RegExp(`stroke="${COLORS[0]}"`));
     }
-    const chips = [...html.matchAll(/<button[^>]*title="Remove ([^"]*)"/g)].map((m) => m[1]);
+    const chips = [...html.matchAll(/<button[^>]*title="Убрать из сравнения: ([^"]*)"/g)].map((m) => m[1]);
     assert.deepEqual(chips, ['bob', 'alice']);
 });
 
@@ -201,21 +203,21 @@ test('compared projects are named as CVAT names them', () => {
         compared: [{ id: 5, slot: 0 }, { id: 0, slot: 1 }],
         projectNames: { 5: 'Street scenes' },
     });
-    assert.deepEqual(legend(charts(html)[0]).map((item) => item.replace(/ [\d.]+ h$/, '')), ['Street scenes', 'No project']);
+    assert.deepEqual(legend(charts(html)[0]).map((item) => item.replace(/ [\d,]+ ч$/, '')), ['Street scenes', 'Без проекта']);
 });
 
 test('people to compare are offered by typing, four at a time', () => {
     const offered = (html) => [...html.matchAll(/<button[^>]*cvat-team-analytics-compare-offer[^>]*>(.*?)<\/button>/g)]
         .map((m) => text(m[1]));
     let html = card();
-    assert.match(html, /<input[^>]*type="search"[^>]*aria-label="Find an annotator"/);
+    assert.match(html, /<input[^>]*type="search"[^>]*aria-label="Найти аннотатора"/);
     assert.deepEqual(offered(html), ['+ alice', '+ bob', '+ carol', '+ dave']);
-    assert.match(text(html), /3 more match\. Type to narrow the list\./);
+    assert.match(text(html), /Ещё совпадений: 3\. Введите текст, чтобы сузить список\./);
     html = card({ query: 'RA' });
     assert.deepEqual(offered(html), ['+ frank', '+ grace']);
     html = card({ query: 'zed' });
-    assert.match(text(html), /No match/);
-    assert.match(card({ kind: 'projects' }), /aria-label="Find a project"/);
+    assert.match(text(html), /Ничего не найдено/);
+    assert.match(card({ kind: 'projects' }), /aria-label="Найти проект"/);
 });
 
 test('at five compared, further choices are disabled with a hint', () => {
@@ -229,16 +231,16 @@ test('at five compared, further choices are disabled with a hint', () => {
     assert.ok(offers.length > 0);
     for (const attributes of offers) {
         assert.match(attributes, /disabled=""/);
-        assert.match(attributes, /title="Remove one to add another"/);
+        assert.match(attributes, /title="Чтобы добавить аннотатора, уберите одного из выбранных"/);
     }
-    assert.match(text(html), /Up to 5 at once\. Remove one to add another\./);
+    assert.match(text(html), /Одновременно — не более 5\. Чтобы добавить аннотатора, уберите одного из выбранных\./);
 });
 
 test('a trends response that cannot be read says so', () => {
-    assert.match(text(card({ trends: null, failed: true })), /Trends could not be loaded/);
+    assert.match(text(card({ trends: null, failed: true })), /Не удалось загрузить динамику/);
     // a failed update keeps the previous charts, dimmed, and says so
     const html = card({ failed: true, pending: true });
-    assert.match(text(html), /Trends could not be updated; the charts show the previous choice\./);
+    assert.match(text(html), /Не удалось обновить динамику; на графиках данные для прежнего выбора\./);
     assert.match(html, /cvat-team-analytics-trends cvat-team-analytics-pending/);
 });
 
@@ -259,7 +261,7 @@ function section(request, props = {}) {
     }).default;
     return React.createElement(Section, {
         organization: 'team-org', timeZone: 'UTC', project: null, annotator: null, shapes: 'bounding_boxes',
-        scopeLabel: 'All annotators · All projects', ...props,
+        scopeLabel: 'Все аннотаторы · Все проекты', ...props,
     });
 }
 
@@ -268,8 +270,8 @@ async function click(element) {
 }
 
 function swatches(container) {
-    return Object.fromEntries([...container.querySelectorAll('button[title^="Remove "]')].map((button) => [
-        button.title.slice('Remove '.length),
+    return Object.fromEntries([...container.querySelectorAll('button[title^="Убрать из сравнения: "]')].map((button) => [
+        button.title.slice('Убрать из сравнения: '.length),
         button.querySelector('.cvat-team-analytics-compare-swatch').style.background,
     ]));
 }
@@ -292,7 +294,7 @@ test('a compared line keeps its colour while others are added and removed', asyn
             await page.settle();
         }
         assert.deepEqual(swatches(page.container), { alice: rgb(COLORS[0]), bob: rgb(COLORS[1]), carol: rgb(COLORS[2]) });
-        await click(page.container.querySelector('button[title="Remove alice"]'));
+        await click(page.container.querySelector('button[title="Убрать из сравнения: alice"]'));
         await page.settle();
         await click(offer(page.container, 'dave'));
         await page.settle();
@@ -323,17 +325,17 @@ test('typing narrows the offer; switching to projects or months asks the service
         });
         assert.deepEqual([...page.container.querySelectorAll('.cvat-team-analytics-compare-offer')].map((b) => b.textContent),
             ['+ grace']);
-        await click([...page.container.querySelectorAll('[aria-label="Trend step"] button')]
-            .find((b) => b.textContent === 'Months'));
+        await click([...page.container.querySelectorAll('[aria-label="Шаг динамики"] button')]
+            .find((b) => b.textContent === 'Месяцы'));
         await page.settle();
         let last = new URL(requests[requests.length - 1].url, 'http://localhost').searchParams;
         assert.equal(last.get('step'), 'month');
-        await click([...page.container.querySelectorAll('[aria-label="Compare"] button')]
-            .find((b) => b.textContent === 'Projects'));
+        await click([...page.container.querySelectorAll('[aria-label="Сравнение"] button')]
+            .find((b) => b.textContent === 'Проекты'));
         await page.settle();
         last = new URL(requests[requests.length - 1].url, 'http://localhost').searchParams;
         assert.equal(last.get('compare'), 'projects');
-        assert.equal(page.container.querySelector('input[type="search"]').getAttribute('aria-label'), 'Find a project');
+        assert.equal(page.container.querySelector('input[type="search"]').getAttribute('aria-label'), 'Найти проект');
     } finally {
         await page.unmount();
     }

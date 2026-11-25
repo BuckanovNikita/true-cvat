@@ -11,9 +11,9 @@ import cvat.apps.team_analytics as app
 
 APP_DIR = Path(app.__file__).resolve().parent
 API_SIDE = ("__init__.py", "apps.py", "default_settings.py", "urls.py", "views.py", "permissions.py", "reads.py",
-            "models.py", "serializers.py", "technical_accounts.py")
+            "models.py", "serializers.py", "technical_accounts.py", "client_settings.py")
 # Modules that must import nothing of Django: the calculation code, and the rules the suite tests without it.
-WITHOUT_DJANGO = ("technical_accounts.py",)
+WITHOUT_DJANGO = ("technical_accounts.py", "client_settings.py")
 CORE_DIR = APP_DIR / "core"
 FORBIDDEN_PACKAGES = ("clickhouse_connect",)
 FORBIDDEN_APP_MODULES = ("core", "jobs")

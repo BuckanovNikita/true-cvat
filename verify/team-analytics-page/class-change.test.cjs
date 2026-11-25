@@ -66,23 +66,23 @@ function legend(html) {
 test('class change is the fourth operation of the table, with count, average, total and share', () => {
     const rows = tableRows(render(View, ready(operations())));
 
-    assert.deepEqual(rows.map((cells) => cells[0]), ['Operation', 'Creation', 'Alignment', 'Class change', 'Deletion']);
-    assert.deepEqual(rows[3], ['Class change', '240', '12 s', '0.8 h', '10%']);
+    assert.deepEqual(rows.map((cells) => cells[0]), ['Операция', 'Создание', 'Подгонка', 'Смена класса', 'Удаление']);
+    assert.deepEqual(rows[3], ['Смена класса', '240', '12 с', '0,8 ч', '10%']);
     // a class change starts nothing with a key or the mouse: its split row shows a dash
-    assert.match(splitRow(render(View, ready(operations())), 'Class change'), /—$/);
+    assert.match(splitRow(render(View, ready(operations())), 'Смена класса'), /—$/);
 });
 
 test('class change takes its part of the split of working time', () => {
     const html = render(View, ready(operations()));
 
     assert.deepEqual(legend(html), [
-        'Creation 2.0 h 25%',
-        'Alignment 1.0 h 13%',
-        'Class change 0.8 h 10%',
-        'Deletion 0.2 h 3%',
-        'Other 4.0 h 50%',
+        'Создание 2,0 ч 25%',
+        'Подгонка 1,0 ч 13%',
+        'Смена класса 0,8 ч 10%',
+        'Удаление 0,2 ч 3%',
+        'Прочее 4,0 ч 50%',
     ]);
-    assert.match(html, /title="Class change: 0\.8 h \(10%\)"/);
+    assert.match(html, /title="Смена класса: 0,8\u00a0ч \(10%\)"/);
 });
 
 test('in a legacy period class change reads as not recorded, not as zero', () => {
@@ -92,7 +92,7 @@ test('in a legacy period class change reads as not recorded, not as zero', () =>
         rows: operations().rows.map((r) => (r.operation === 'class_change' ? row('class_change', 0, 0, null, 0) : r)),
     })));
 
-    assert.deepEqual(tableRows(html)[3], ['Class change', 'Not recorded', '—', '—', '—']);
-    assert.match(splitRow(html, 'Class change'), /Not recorded$/);
-    assert.ok(legend(html).every((item) => !item.startsWith('Class change')));
+    assert.deepEqual(tableRows(html)[3], ['Смена класса', 'Не записано', '—', '—', '—']);
+    assert.match(splitRow(html, 'Смена класса'), /Не записано$/);
+    assert.ok(legend(html).every((item) => !item.startsWith('Смена класса')));
 });

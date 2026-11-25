@@ -34,7 +34,7 @@ export {
 } from './contract';
 export type { InputMethod, RecordName } from './contract';
 export {
-    frameRequested, frameShown, hotkeyUsed, inputEvent, listenForInput, trackInputJob, untrackInputJob,
+    frameRequested, frameShown, hintShown, hotkeyUsed, inputEvent, listenForInput, trackInputJob, untrackInputJob,
 } from './input-summary';
 export { drawingEnded, drawingStarted, currentInputMethod } from './input-method';
 // Group move event (group-move.ts): call when the canvas reports a group move, before it is saved.

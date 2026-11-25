@@ -365,3 +365,51 @@ test('a failure inside the counting never affects the shortcut or the click', as
     assert.deepEqual(page.calls, ['NEXT_FRAME', 'NEXT_FRAME']);
     assert.deepEqual(clicked, ['save']);
 });
+
+// Shortcut hints (UI-3): the hint component tells the logging about each hint it shows (hintShown).
+test('each shortcut hint shown inside a job counts under the action it is for', async (t) => {
+    t.mock.timers.enable({ apis: ['Date'], now: Date.parse('2026-11-13T10:00:00Z') });
+    const page = annotationPage();
+    page.logging.trackInputJob(page.job);
+    page.click('sidebar-delete');
+    page.logging.hintShown('DELETE_OBJECT_STANDARD_WORKSPACE');
+    page.logging.hintShown('SAVE_JOB');
+    page.logging.hintShown('DELETE_OBJECT_STANDARD_WORKSPACE');
+    page.press('ctrl+z');
+    page.logging.untrackInputJob();
+
+    const summaries = await page.summaries();
+    assert.equal(summaries.length, 1);
+    assert.deepEqual(summaries[0].payload.hints, { DELETE_OBJECT_STANDARD_WORKSPACE: 2, SAVE_JOB: 1 });
+    // a hint is no action of the person: the hotkey and mouse counts are what they were
+    assert.deepEqual(summaries[0].payload.hotkeys, { UNDO: 1 });
+    assert.deepEqual(summaries[0].payload.mouse, { objects_sidebar: 1 });
+    for (const event of await page.core.sent()) assert.ok(ALLOWED_SCOPES.has(event.scope), event.scope);
+});
+
+test('a summary starts its hints anew, and hints alone are written at job close', async (t) => {
+    t.mock.timers.enable({ apis: ['Date'], now: Date.parse('2026-11-13T10:00:00Z') });
+    const page = annotationPage();
+    page.logging.trackInputJob(page.job);
+    page.logging.hintShown('SAVE_JOB');
+    t.mock.timers.setTime(Date.parse('2026-11-13T10:01:30Z'));
+    page.click('save'); // a moment the person acts: the summary that is due is written
+    page.logging.hintShown('NEXT_FRAME');
+    page.logging.untrackInputJob();
+
+    const summaries = await page.summaries();
+    assert.deepEqual(summaries.map((summary) => summary.payload.hints), [{ SAVE_JOB: 1 }, { NEXT_FRAME: 1 }]);
+});
+
+test('a hint shown outside a job, or in a 3D job, is not counted', async () => {
+    const outside = annotationPage();
+    outside.logging.hintShown('SAVE_JOB');
+    outside.logging.untrackInputJob();
+    assert.deepEqual(await outside.summaries(), []);
+
+    const page = annotationPage({}, { job: { dimension: '3d' } });
+    page.logging.trackInputJob(page.job);
+    page.logging.hintShown('SAVE_JOB');
+    page.logging.untrackInputJob();
+    assert.deepEqual(await page.summaries(), []);
+});

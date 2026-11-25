@@ -98,3 +98,17 @@
     background: #fff2f0;
     color: #a8071a;
 }
+
+// the modal's own close button (see settings-modal.tsx), where antd puts its own: the top right corner
+.cvat-team-analytics-settings-frame {
+    position: relative;
+
+    .cvat-team-analytics-settings-close {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+
+        // the modal lets clicks through everywhere but its content
+        pointer-events: auto;
+    }
+}

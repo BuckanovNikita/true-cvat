@@ -6,7 +6,10 @@ import React from 'react';
 import Text from 'antd/lib/typography/Text';
 
 import { Rest, RowOperations } from '../service';
-import { exactHours, formatHours } from '../format';
+import {
+    NBSP, exactHours, formatCount, formatHours,
+} from '../format';
+import { plural } from '../plural';
 import {
     BarPart, OPERATION_LOOKS, operationParts, splitParts,
 } from '../operations';
@@ -42,6 +45,19 @@ interface Props {
 // stays: other rows may carry parts.
 const UNSPLIT_COLOR = '#595959';
 
+// The line for the rows not shown: a whole phrase per kind, as its noun and verb agree with the count.
+function restLabel(kind: string, count: number): string {
+    const n = `${formatCount(count)}${NBSP}`;
+    if (kind === 'project') {
+        return plural(count, [
+            `Ещё ${n}проект не показан`, `Ещё ${n}проекта не показаны`, `Ещё ${n}проектов не показано`,
+        ]);
+    }
+    return plural(count, [
+        `Ещё ${n}аннотатор не показан`, `Ещё ${n}аннотатора не показаны`, `Ещё ${n}аннотаторов не показано`,
+    ]);
+}
+
 // A row's bar: its operation parts as the full view draws them (operations.ts).
 function barParts(row: BreakdownRow, legacy: boolean): BarPart[] {
     if (row.operations) return operationParts(row.operations, row.name, legacy);
@@ -49,7 +65,7 @@ function barParts(row: BreakdownRow, legacy: boolean): BarPart[] {
         key: 'working',
         color: UNSPLIT_COLOR,
         grow: 1,
-        title: `${row.name}: ${formatHours(row.working_time_ms)}, not split by operation`,
+        title: `${row.name}: ${formatHours(row.working_time_ms)}, без разбивки по операциям`,
     }];
 }
 
@@ -64,7 +80,7 @@ export default function WorkingTimeBreakdown({
         <section className={`cvat-team-analytics-card cvat-team-analytics-working-time-by-${kind}`}>
             <div className='cvat-team-analytics-card-header'>
                 <Text strong>{title}</Text>
-                <Text type='secondary'>{subtitle}</Text>
+                <Text type='secondary' className='cvat-team-analytics-breakdown-period'>{subtitle}</Text>
                 <FullViewButton onClick={onFullView} />
             </div>
             <div className='cvat-team-analytics-breakdown-legend'>
@@ -79,10 +95,10 @@ export default function WorkingTimeBreakdown({
                         </span>
                     ))}
                 </span>
-                {onPick ? <Text type='secondary'>Select a row to filter the whole page</Text> : null}
+                {onPick ? <Text type='secondary'>Выберите строку, чтобы отфильтровать всю страницу</Text> : null}
             </div>
             {rows.length === 0 ? (
-                <Text type='secondary' className='cvat-team-analytics-empty'>No job work in this period</Text>
+                <Text type='secondary' className='cvat-team-analytics-empty'>В этом периоде нет работы в заданиях</Text>
             ) : rows.map((row) => (
                 <button
                     type='button'
@@ -114,7 +130,7 @@ export default function WorkingTimeBreakdown({
             ))}
             {rest && rest.count > 0 ? (
                 <div className='cvat-team-analytics-rest' title={exactHours(rest.working_time_ms)}>
-                    <span>{`${rest.count.toLocaleString('en-US')} more, not shown`}</span>
+                    <span>{restLabel(kind, rest.count)}</span>
                     <span className='cvat-team-analytics-value'>{formatHours(rest.working_time_ms)}</span>
                 </div>
             ) : null}

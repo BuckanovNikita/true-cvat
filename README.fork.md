@@ -1,11 +1,18 @@
 # CVAT fork
 
-Форк — полный исходный код CVAT (`cvat-ai/cvat`), соединённый с историей upstream
-одним merge-коммитом: корень репозитория совпадает с корнем upstream, изменения
-форка — обычные коммиты поверх, новый релиз забирается через `git merge <тег>`.
+Форк — полный исходный код CVAT: репозиторий `BuckanovNikita/true-cvat`,
+GitHub-форк `cvat-ai/cvat`, с тремя ветками ([ADR 0009](docs/maintainers/decisions.md#adr-0009)).
+`main` — релиз upstream, на котором стоит форк, без единого изменения.
+`develop` — изменения форка: линейная цепочка коммитов поверх `main`.
+`release` — то, что форк распространяет: `develop` без каталога `local/`.
+Новый релиз забирается переносом `main` на его тег и перебазированием
+`develop`; каждое слияние в `release` получает тег этапа вида `v2.82.0.N`,
+который только отмечает этап работ и не меняет ни одной версии.
 Форк добавляет отображение прогресса задач по стадиям и состояниям, расширенные
-права участников организации на issues и комментарии и страницу Team Analytics,
-которая работает внутри бэкенда CVAT (`cvat/apps/team_analytics/`).
+права участников организации на issues и комментарии, страницу Team Analytics,
+которая работает внутри бэкенда CVAT (`cvat/apps/team_analytics/`), и подсказки
+о горячих клавишах: когда аннотатор несколько раз делает мышью то, для чего есть
+горячая клавиша, в углу холста ненадолго появляется её название.
 
 ## Сборка образов
 
@@ -14,7 +21,7 @@
 (`build-ui.sh`) собирается по `Dockerfile.ui` upstream. Образ сервера форка
 собирается с нуля из дерева форка по `Dockerfile.server` — переносу
 `Dockerfile` upstream на Debian 12 с Python 3.12 из официального образа Python
-([ADR 0007](docs/adr/0007-the-fork-builds-its-images-from-public-bases-the-server-on-debian-12.md));
+([ADR 0007](docs/maintainers/decisions.md#adr-0007));
 сам `Dockerfile` upstream форк не меняет и не использует.
 
 Сборка по умолчанию — без переменных: скрипты берут публичные базовые образы,
@@ -27,7 +34,7 @@ IMAGE=cvat/ui:v2.82.0-fork ./build-ui.sh
 
 Всё, что нужно сети контура, — аргумент Dockerfile с публичным значением по
 умолчанию; те же имена скрипты читают из окружения и передают в сборку только
-заданные переменные ([ADR 0008](docs/adr/0008-the-fork-is-the-original-for-two-repositories.md)).
+заданные переменные ([ADR 0008](docs/maintainers/decisions.md#adr-0008)).
 
 | Параметр | Что задаёт | По умолчанию |
 | --- | --- | --- |
@@ -65,7 +72,7 @@ IMAGE=cvat/ui:v2.82.0-fork ./build-ui.sh
 
 Чарты форка лежат в самом репозитории: `helm-chart/` разворачивает CVAT,
 `helm-chart-nuclio/` — nuclio, отдельным релизом
-([ADR 0008](docs/adr/0008-the-fork-is-the-original-for-two-repositories.md)).
+([ADR 0008](docs/maintainers/decisions.md#adr-0008)).
 Зависимости `helm-chart/` лежат тарболлами в `helm-chart/charts/` и зафиксированы
 в `helm-chart/Chart.lock`, поэтому `helm template` и `helm install` не
 обращаются к helm-репозиториям и работают без сети; у `helm-chart-nuclio/`
@@ -83,52 +90,57 @@ helm install nuclio ./helm-chart-nuclio --values <файл значений>
 Team Analytics — страница, её API и её настройки — доступна только
 администраторам: с выбранной организацией администратор видит её цифры, без
 неё — цифры всего экземпляра. Владельцы и мейнтейнеры организаций, как и все
-остальные, получают 403. Список технических учётных записей (Technical
-accounts list) один на экземпляр; его ведут администраторы в окне «Team
-Analytics settings» на странице. Переменная окружения
+остальные, получают 403. Страница на русском языке; остальной CVAT остаётся на
+английском. Список технических учётных записей (Technical
+accounts list) один на экземпляр; его ведут администраторы в окне
+«Настройки Team Analytics» на странице. Переменная окружения
 `TEAM_ANALYTICS_TECHNICAL_ACCOUNTS` больше не задаёт список: если она осталась,
 при запуске выводится одно предупреждение, что она не действует. После обновления
 список пуст, и администратор заполняет его заново
-([шаг обновления](docs/upstream-upgrade.md#an-instance-on-a-fork-version-that-read-team_analytics_technical_accounts)).
+([шаг обновления](docs/team-analytics.md#migrating-from-team_analytics_technical_accounts)).
 
 Перед обновлением CVAT используйте:
 
-- [Спецификацию изменений форка](docs/fork-specification.md): поведение, которое
-  нужно сохранить, полный список изменённых файлов upstream, точки интеграции и
-  сценарии приёмки.
-- [Порядок обновления upstream](docs/upstream-upgrade.md): получение тега
-  релиза, слияние, перенос изменений `Dockerfile` upstream в
+- [Документация для DevOps](docs/README.md) (на английском): сборка образов,
+  установка чартов, настройки, обновление и откат, эксплуатация Team Analytics.
+- [Документация пользователя](docs/users/README.md) (на русском): что форк меняет
+  для тех, кто работает в CVAT, — страница Team Analytics и её показатели, создание
+  организаций, права на issue и комментарии, прогресс задач, HTTP API Team Analytics.
+- [Справочник сопровождающих](docs/maintainers/README.md): поведение, которое
+  нужно сохранить, список изменённых файлов upstream, точки интеграции и
+  решения. Термины — в [GLOSSARY.md](GLOSSARY.md).
+- [Порядок обновления upstream](docs/maintainers/upstream-upgrade.md): получение тега
+  релиза, перебазирование `develop`, выпуск `release`, перенос изменений `Dockerfile` upstream в
   `Dockerfile.server`, сборка образов и проверка результата.
-- [Базовый снимок от 2026-11-13](docs/evidence/2026-11-13-fork-baseline.md):
-  исходные ревизии и границы проверки на момент снимка.
-- [Права на issues и комментарии](docs/fork-specification.md#iam-1-organization-issue-and-comment-permissions)
-  и [сборка и доставка политик](docs/fork-specification.md#build-1-packaging-and-policy-delivery):
-  что меняет патч, как политики попадают на сервер и как это проверяется.
+- [Права на issues и комментарии и сборка и доставка политик](docs/maintainers/decisions.md#fork-specification-ids)
+  (IAM-1, BUILD-1): что меняет патч, как политики попадают на сервер и как это проверяется.
+- [Проверки](AGENTS.md#checks): команды проверок форка.
 
 Team Analytics:
 
-- [Раздел TA-1 спецификации форка](docs/fork-specification.md#ta-1-team-analytics):
-  поведение, доступ, настройки, карта затронутых файлов upstream и сценарии
-  приёмки.
-- [Проверки Team Analytics при обновлении](docs/upstream-upgrade.md#team-analytics):
-  тесты расчётов, два набора тестов фронтенда и полный прогон на тестовом стенде.
-- [Тестовый стенд](verify/team-analytics-stack/README.md).
-- [Итоговый прогон от 2026-11-14](docs/evidence/2026-11-14-team-analytics-final-run.md)
-  (ещё на отдельном сервисе) и
-  [переход на полный форк от 2026-11-15](docs/evidence/2026-11-15-full-fork-conversion.md).
-- Решения: [ADR 0005](docs/adr/0005-a-full-source-fork-joined-to-upstream-history.md)
-  (полный форк), [ADR 0006](docs/adr/0006-team-analytics-inside-the-backend-with-reads-on-a-worker.md)
+- [Раздел TA-1](docs/maintainers/team-analytics.md):
+  поведение, доступ, настройки и карта затронутых файлов upstream.
+- [Тестовый стенд](local/team-analytics-stack/README.md).
+- Решения: [ADR 0009](docs/maintainers/decisions.md#adr-0009)
+  (три ветки в GitHub-форке; заменяет соединение историй из
+  [ADR 0005](docs/maintainers/decisions.md#adr-0005)),
+  [ADR 0006](docs/maintainers/decisions.md#adr-0006)
   (Team Analytics внутри бэкенда),
-  [ADR 0007](docs/adr/0007-the-fork-builds-its-images-from-public-bases-the-server-on-debian-12.md)
+  [ADR 0007](docs/maintainers/decisions.md#adr-0007)
   (образы из базовых образов, публичных по умолчанию, сервер на Debian 12) и
-  [ADR 0008](docs/adr/0008-the-fork-is-the-original-for-two-repositories.md)
+  [ADR 0008](docs/maintainers/decisions.md#adr-0008)
   (форк — оригинал для двух репозиториев: два чарта и параметры сборки).
 
 `README.md` в корне — файл upstream, и форк его не меняет: любой релиз, который
-его трогает, давал бы конфликт при слиянии. Поэтому текст форка лежит здесь, в
-`README.fork.md`; это оговорённое исключение из правила, что README пишется
-по-русски (ADR 0005).
+его трогает, давал бы конфликт при перебазировании. Поэтому текст форка лежит
+здесь, в `README.fork.md`; это оговорённое исключение из правила, что README
+пишется по-русски (ADR 0009).
 
-[INFRA_MIGRATION.md](INFRA_MIGRATION.md) описывает миграцию инфраструктуры проверки
-на Kubernetes и её итог: Compose-файлы и скрипты удалены, проверки перенесены на
-тестовый стенд.
+## Каталог `local/`
+
+Всё, что относится к машине, на которой форк разрабатывается, и к прошлым
+работам, собрано в одном каталоге — `local/`
+([описание](local/README.md)): тестовый
+стенд в Kubernetes (`local/team-analytics-stack/`). Каталог есть в `develop` и отсутствует в
+`release`, поэтому ссылки этого файла на `local/` в ветке `release` никуда не
+ведут.

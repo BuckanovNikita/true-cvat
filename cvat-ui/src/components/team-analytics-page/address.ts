@@ -16,10 +16,10 @@ import { Shapes, readShapes, shapesSearch } from './shapes';
 import { FullViewAddress, fullViewSearch, readFullView } from './full-views';
 
 export const PERIODS = [
-    { key: 'week', label: 'Week' },
-    { key: 'two_weeks', label: 'Two weeks' },
-    { key: 'month', label: 'Month' },
-    { key: 'year', label: 'Year' },
+    { key: 'week', label: 'Неделя' },
+    { key: 'two_weeks', label: 'Две недели' },
+    { key: 'month', label: 'Месяц' },
+    { key: 'year', label: 'Год' },
 ] as const;
 
 export type PeriodKey = typeof PERIODS[number]['key'];

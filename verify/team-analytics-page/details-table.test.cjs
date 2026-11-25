@@ -59,11 +59,11 @@ function cells(html) {
 
 test('annotators: every figure in one row each, under the columns of the table', () => {
     const [header, alice, bob] = cells(card());
-    assert.deepEqual(header, ['Annotator', 'Projects', 'Sessions', 'Working time', 'Drawn', 'Pasted', 'Propagated',
-        'Model', 'Alignments', 'Class changes', 'Deletions', 'Avg time to create', 'Hotkey share']);
-    assert.deepEqual(alice, ['alice', '2', '3', '2.5 h', '1,200', '3', '2', '4', '1', '2', '1', '5.0 s', '75%']);
+    assert.deepEqual(header, ['Аннотатор', 'Проекты', 'Сессии', 'Рабочее время', 'Нарисовано', 'Вставлено',
+        'Распространено', 'Модель', 'Подгонки', 'Смены класса', 'Удаления', 'Ср. время создания', 'Доля горячих клавиш']);
+    assert.deepEqual(alice, ['alice', '2', '3', '2,5 ч', '1 200', '3', '2', '4', '1', '2', '1', '5,0 с', '75%']);
     assert.deepEqual(bob.slice(-2), ['—', '—']);
-    assert.match(text(card()), /Sorted by working time/);
+    assert.match(text(card()), /Отсортировано по рабочему времени/);
 });
 
 test('projects: named as CVAT names them, with the annotators who worked in each', () => {
@@ -75,8 +75,8 @@ test('projects: named as CVAT names them, with the annotators who worked in each
         total: 3,
     });
     const [header, ...rows] = cells(card({ details: shown, by: 'projects', projectNames: { 3: 'Cats' } }));
-    assert.deepEqual(header.slice(0, 2), ['Project', 'Annotators']);
-    assert.deepEqual(rows.map((r) => r.slice(0, 2)), [['Cats', '4'], ['No project', '1'], ['Project #8', '2']]);
+    assert.deepEqual(header.slice(0, 2), ['Проект', 'Аннотаторы']);
+    assert.deepEqual(rows.map((r) => r.slice(0, 2)), [['Cats', '4'], ['Без проекта', '1'], ['Проект #8', '2']]);
 });
 
 test('a project with only technical-account boxes shows zeros, its boxes and a dash where nothing can be averaged', () => {
@@ -102,10 +102,10 @@ test('a project with only technical-account boxes shows zeros, its boxes and a d
         by: 'projects', rows: [row(1, { user_name: null, annotators: 2 }), automated], project_ids: [1, 3], total: 2,
     });
     for (const [answer, expected] of [
-        [shown, ['Project #3', '0', '0', '0.0 h', '0', '0', '0', '9', '0', '0', '0', '—', '—']],
+        [shown, ['Проект #3', '0', '0', '0,0 ч', '0', '0', '0', '9', '0', '0', '0', '—', '—']],
         // a legacy period: its saved boxes in place of Model
         [{ ...shown, legacy: true, shapes: 'all' },
-            ['Project #3', '0', '0', '0.0 h', '0', '0', '0', '7', '0', 'Not recorded', '0', '—', 'Not recorded']],
+            ['Проект #3', '0', '0', '0,0 ч', '0', '0', '0', '7', '0', 'Не записано', '0', '—', 'Не записано']],
     ]) {
         const html = card({ details: answer, by: 'projects' });
         const rows = cells(html);
@@ -114,37 +114,52 @@ test('a project with only technical-account boxes shows zeros, its boxes and a d
         // no cell is left empty and no figure is the result of a division by zero, hover text included
         assert.ok(rows.every((cellsOfRow) => cellsOfRow.every((cell) => cell !== '')));
         assert.doesNotMatch(html, /NaN|Infinity|undefined|null/);
-        assert.match(text(html), /1–2 of 2/);
+        assert.match(text(html), /1–2 из 2/);
     }
 });
 
 test('a legacy period shows saved boxes in place of Model and says what was not recorded', () => {
     const [header, alice] = cells(card({ details: details({ legacy: true, shapes: 'all' }) }));
-    assert.equal(header[7], 'Boxes saved');
+    assert.equal(header[7], 'Сохранённые боксы');
     assert.equal(alice[7], '9');
-    assert.equal(alice[9], 'Not recorded');
-    assert.equal(alice[12], 'Not recorded');
+    assert.equal(alice[9], 'Не записано');
+    assert.equal(alice[12], 'Не записано');
 });
 
 test('ten rows a page: which rows are shown, with previous and next', () => {
     const middle = card({ details: details({ page: 2, total: 23, rows: Array.from({ length: 10 }, (_, i) => row(20 + i)) }) });
-    assert.match(text(middle), /11–20 of 23/);
-    const buttons = [...middle.matchAll(/<button[^>]*>(Previous|Next)<\/button>/g)];
-    assert.deepEqual(buttons.map((m) => m[1]), ['Previous', 'Next']);
+    assert.match(text(middle), /11–20 из 23/);
+    const buttons = [...middle.matchAll(/<button[^>]*>(Назад|Вперёд)<\/button>/g)];
+    assert.deepEqual(buttons.map((m) => m[1]), ['Назад', 'Вперёд']);
     assert.ok(buttons.every((m) => !/disabled/.test(m[0])));
 
     const last = card({ details: details({ page: 3, total: 23, rows: [row(1), row(2), row(3)] }) });
-    assert.match(text(last), /21–23 of 23/);
-    assert.match(last, /<button[^>]*disabled[^>]*>Next<\/button>/);
+    assert.match(text(last), /21–23 из 23/);
+    assert.match(last, /<button[^>]*disabled[^>]*>Вперёд<\/button>/);
 
     // one page: no paging buttons
-    assert.match(text(card()), /1–2 of 2/);
-    assert.doesNotMatch(card(), />Previous</);
+    assert.match(text(card()), /1–2 из 2/);
+    assert.doesNotMatch(card(), />Назад</);
 });
 
 test('a search with no rows says so; an empty period says there was no work', () => {
-    assert.match(text(card({ details: details({ total: 0, rows: [] }), search: 'zed' })), /No match for this search\./);
-    assert.match(text(card({ details: details({ total: 0, rows: [] }) })), /No job work in this period/);
+    assert.match(text(card({ details: details({ total: 0, rows: [] }), search: 'zed' })), /По этому запросу ничего не найдено\./);
+    assert.match(text(card({ details: details({ total: 0, rows: [] }) })), /В этом периоде нет работы в заданиях/);
+});
+
+test('technical accounts: the note takes the Russian form of the count', () => {
+    const forms = [
+        [1, 'техническая учётная запись не входит'],
+        [2, 'технические учётные записи не входят'],
+        [5, 'технических учётных записей не входят'],
+        [11, 'технических учётных записей не входят'],
+        [21, 'техническая учётная запись не входит'],
+    ];
+    for (const [count, phrase] of forms) {
+        const html = card({ details: details({ technical_accounts: count }) });
+        assert.match(text(html), new RegExp(`${count} ${phrase} в списки аннотаторов`));
+    }
+    assert.doesNotMatch(text(card({ details: details({ technical_accounts: 0 }) })), /учётн/);
 });
 
 test('a long name is shortened by the column with the full name on hover; the name column stays in place', () => {
@@ -184,8 +199,8 @@ function noFigures(by = 'annotators') {
 test('a period that is not processed yet shows no figures', () => {
     for (const by of ['annotators', 'projects']) {
         const html = card({ details: noFigures(by), by });
-        assert.match(text(html), /not processed yet/i);
-        assert.doesNotMatch(text(html), /NaN|of 0|Previous/);
+        assert.match(text(html), /ещё не обработан/i);
+        assert.doesNotMatch(text(html), /NaN|из 0|Назад/);
     }
 });
 
@@ -245,11 +260,11 @@ test('an answer without figures shows the not processed state, by annotator and 
     const page = await mount(section(request));
     try {
         await page.settle();
-        assert.match(page.container.textContent, /This period is not processed yet/);
-        await click(button(page.container, 'Projects'));
+        assert.match(page.container.textContent, /Этот период ещё не обработан/);
+        await click(button(page.container, 'Проекты'));
         await page.settle();
-        assert.match(page.container.textContent, /This period is not processed yet/);
-        assert.doesNotMatch(page.container.textContent, /could not be/);
+        assert.match(page.container.textContent, /Этот период ещё не обработан/);
+        assert.doesNotMatch(page.container.textContent, /Не удалось/);
     } finally {
         await page.unmount();
     }
@@ -266,11 +281,11 @@ test('the table asks for the period, filters and shapes, pages with next and nar
             period: 'month', tz: 'UTC', month: '2026-10', project: '3', shapes: 'bounding_boxes',
             by: 'annotators', page: '1',
         });
-        assert.match(page.container.textContent, /1–10 of 23/);
-        await click(button(page.container, 'Next'));
+        assert.match(page.container.textContent, /1–10 из 23/);
+        await click(button(page.container, 'Вперёд'));
         await page.settle();
         assert.equal(params(requests[requests.length - 1]).get('page'), '2');
-        assert.match(page.container.textContent, /11–20 of 23/);
+        assert.match(page.container.textContent, /11–20 из 23/);
         // typing starts again from the first page
         await type(page.container, 'ali');
         await page.settle();
@@ -287,24 +302,24 @@ test('projects are found by the name the page shows, No project included', async
     const page = await mount(section(request));
     try {
         await page.settle();
-        await click(button(page.container, 'Projects'));
+        await click(button(page.container, 'Проекты'));
         await page.settle();
         assert.equal(params(requests[requests.length - 1]).get('by'), 'projects');
-        assert.equal(page.container.querySelector('input[type="search"]').getAttribute('aria-label'), 'Find a project');
+        assert.equal(page.container.querySelector('input[type="search"]').getAttribute('aria-label'), 'Найти проект');
         await type(page.container, 'DOG');
         await page.settle();
         let last = params(requests[requests.length - 1]);
         assert.equal(last.get('ids'), '4,7');
         assert.equal(last.get('search'), null);
         assert.deepEqual([...page.container.querySelectorAll('tbody th')].map((th) => th.textContent), ['Dogs', 'Hotdogs']);
-        await type(page.container, 'no proj');
+        await type(page.container, 'без пр');
         await page.settle();
         assert.equal(params(requests[requests.length - 1]).get('ids'), '0');
         await type(page.container, 'zebra');
         await page.settle();
         last = params(requests[requests.length - 1]);
         assert.equal(last.get('ids'), '');
-        assert.match(page.container.textContent, /No match for this search\./);
+        assert.match(page.container.textContent, /По этому запросу ничего не найдено\./);
     } finally {
         await page.unmount();
     }
@@ -328,7 +343,7 @@ test('a project search over thousands of projects asks for one page of ids at a 
     const page = await mount(section(request, {}, names));
     try {
         await page.settle();
-        await click(button(page.container, 'Projects'));
+        await click(button(page.container, 'Проекты'));
         await page.settle();
         await type(page.container, 'shelf');
         await page.settle();
@@ -337,11 +352,11 @@ test('a project search over thousands of projects asks for one page of ids at a 
             assert.ok(query.get('ids').split(',').length <= 10, `ids=${query.get('ids').slice(0, 60)}...`);
         }
         assert.equal(searches().at(-1).get('ids'), many.slice(0, 10).join(','));
-        assert.match(page.container.textContent, /1–10 of 2,000/);
-        await click(button(page.container, 'Next'));
+        assert.match(page.container.textContent, /1–10 из 2\u00a0000/);
+        await click(button(page.container, 'Вперёд'));
         await page.settle();
         assert.equal(searches().at(-1).get('ids'), many.slice(10, 20).join(','));
-        assert.match(page.container.textContent, /11–20 of 2,000/);
+        assert.match(page.container.textContent, /11–20 из 2\u00a0000/);
         assert.deepEqual([...page.container.querySelectorAll('tbody th')].map((th) => th.textContent),
             many.slice(10, 20).map((id) => `Shelf ${id}`));
     } finally {
@@ -354,7 +369,7 @@ test('an unreadable answer leaves a short notice', async () => {
     const page = await mount(section(request));
     try {
         await page.settle();
-        assert.match(page.container.textContent, /Details could not be loaded/);
+        assert.match(page.container.textContent, /Не удалось загрузить подробности/);
     } finally {
         await page.unmount();
     }
@@ -385,7 +400,7 @@ test('clicking a row sets it as the page filter, kept in the address', async () 
         assert.equal(new URLSearchParams(history.location.search).get('annotator'), '100');
         assert.equal(page.container.querySelector('.cvat-team-analytics-details-row [aria-pressed="true"]').textContent, 'user100');
         // the trends card has a Projects button of its own
-        await click(button(page.container.querySelector('[aria-label="Table rows"]'), 'Projects'));
+        await click(button(page.container.querySelector('[aria-label="Строки таблицы"]'), 'Проекты'));
         await page.settle();
         await click(page.container.querySelector('.cvat-team-analytics-details-row'));
         await page.settle();
@@ -394,7 +409,7 @@ test('clicking a row sets it as the page filter, kept in the address', async () 
         const last = detailRequests()[detailRequests().length - 1];
         // the table by project is narrowed by the annotator filter; its own filter only marks a row
         assert.deepEqual([last.get('by'), last.get('annotator'), last.get('project')], ['projects', '100', null]);
-        assert.equal(page.container.querySelector('.cvat-team-analytics-details-row [aria-pressed="true"]').textContent, 'No project');
+        assert.equal(page.container.querySelector('.cvat-team-analytics-details-row [aria-pressed="true"]').textContent, 'Без проекта');
     } finally {
         await page.unmount();
     }
@@ -412,12 +427,12 @@ test('picking a row on a later page keeps that page shown', async () => {
     const page = await mount(React.createElement(Holder));
     try {
         await page.settle();
-        await click(button(page.container, 'Next'));
+        await click(button(page.container, 'Вперёд'));
         await page.settle();
         await click(page.container.querySelectorAll('.cvat-team-analytics-details-row')[2]);
         await page.settle();
         assert.equal(picked, 112);
-        assert.match(page.container.textContent, /11–20 of 23/);
+        assert.match(page.container.textContent, /11–20 из 23/);
         assert.equal(page.container.querySelector('.cvat-team-analytics-details-row [aria-pressed="true"]').textContent, 'user112');
     } finally {
         await page.unmount();

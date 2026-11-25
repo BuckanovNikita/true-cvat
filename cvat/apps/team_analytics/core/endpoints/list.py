@@ -4,11 +4,13 @@ Query `by` = `annotators` | `projects` | `hotkeys`, plus everything the overview
 
 - `annotators` / `projects`: one row per annotator or project, largest working time first (rows.py, which the
   overview's rows by annotator and by project read too).
-- `hotkeys`: every hotkey action with its count and share (read/list_hotkeys.sql); both filters apply, the shape
-  switch does not.
+- `hotkeys`: every hotkey action with its count, its share and the shortcut hints shown for it (`rows`), then the
+  actions a hint was shown for and whose hotkey was never pressed (`hinted_unused`), and all hints shown
+  (`hints_shown`) (read/list_hotkeys.sql); both filters apply, the shape switch does not.
 
 Like the overview, `processed` says whether the whole period is processed. When it is not, the answer keeps
-`period`, `processed`, `by` and the legacy flags, and every figure (`total`, `rows`, `hotkey_actions`) is null
+`period`, `processed`, `by` and the legacy flags, and every figure (`total`, `rows`, `hotkey_actions`,
+`hints_shown`, `hinted_unused`) is null
 (withheld.py). The hotkeys are then not read; the rows by annotator or project are, since the legacy flags come
 from that read. The filters and the shape switch are judged first either way: a bad value is 400 whether or not the
 period is processed.
@@ -24,6 +26,7 @@ from ..withheld import LEGACY_FLAGS, withhold
 PATH = "list"
 
 KINDS = ("annotators", "projects", "hotkeys")
+HOTKEY_FIGURES = ("hotkey_actions", "hints_shown", "rows", "hinted_unused")
 ENVELOPE = frozenset({"period", "processed", "by"}) | LEGACY_FLAGS
 
 
@@ -33,9 +36,21 @@ def _hotkeys(request: Request) -> dict:
     )
     return {
         "hotkey_actions": int(rows[0]["hotkey_actions"]) if rows else 0,
+        "hints_shown": sum(int(row["hinted"]) for row in rows),
         "rows": [
-            {"action": row["action"], "actions": int(row["actions"]), "share": float(row["share"])}
+            {
+                "action": row["action"],
+                "actions": int(row["pressed"]),
+                "share": float(row["share"]),
+                "hints": int(row["hinted"]),
+            }
             for row in rows
+            if int(row["pressed"]) > 0
+        ],
+        "hinted_unused": [
+            {"action": row["action"], "hints": int(row["hinted"])}
+            for row in rows
+            if int(row["pressed"]) == 0
         ],
     }
 
@@ -50,7 +65,7 @@ def handle(request: Request) -> dict:
     processed = request.history().covers(span.start, span.end)
     if by == "hotkeys":
         # no legacy flags in this answer: nothing is read for a period not fully processed
-        body = _hotkeys(request) if processed else {"hotkey_actions": None, "rows": None}
+        body = _hotkeys(request) if processed else dict.fromkeys(HOTKEY_FIGURES)
     else:
         # read even then: the legacy flags of the envelope come from the rows' own read
         body = read_rows(request, by)

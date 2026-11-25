@@ -73,6 +73,9 @@ export interface InputFigures {
     // the most used hotkeys (most first) and the rest
     top_hotkeys: { action: string; actions: number }[];
     rest: { count: number; actions: number };
+    // shortcut hints shown to the annotators of the scope (UI-3); no part of the actions above. Absent in an
+    // answer computed before the hints were counted.
+    hints_shown?: number;
 }
 
 export interface OperationsFigures {
@@ -468,10 +471,18 @@ export interface HotkeyListRow {
     action: string;
     actions: number;
     share: number; // of all hotkey actions
+    // shortcut hints shown for this action; absent in an answer computed before the hints were counted
+    hints?: number;
+}
+
+// An action a shortcut hint was shown for and whose hotkey was never pressed in the scope.
+export interface HintedUnusedRow {
+    action: string;
+    hints: number;
 }
 
 // In a period not wholly processed (`processed: false`) a list keeps its envelope (period, kind, legacy flags)
-// and its figures (`total`, `rows`, `hotkey_actions`) are null.
+// and its figures (`total`, `rows`, `hotkey_actions`, `hints_shown`, `hinted_unused`) are null.
 export interface RowsList {
     by: 'annotators' | 'projects';
     period?: Period;
@@ -492,6 +503,10 @@ export interface HotkeysList {
     processed?: boolean;
     hotkey_actions: number | null;
     rows: HotkeyListRow[] | null;
+    // every hint shown in the scope, and the hinted actions never done by hotkey, most hinted first; both
+    // absent in an answer computed before the hints were counted
+    hints_shown?: number | null;
+    hinted_unused?: HintedUnusedRow[] | null;
 }
 
 export type FullList = RowsList | HotkeysList;
@@ -640,7 +655,8 @@ export async function loadDetails(
     }
 }
 
-// --- Team Analytics settings (GET and PUT settings, GET settings/users): the Technical accounts list -----------
+// --- Team Analytics settings (GET and PUT settings, GET settings/users): the Technical accounts list and the
+// switch of the shortcut hints -------------------------------------------------------------------------------
 
 // One technical account: its user, by id, with the live user's name, or the last known name of a user that no
 // longer exists (`deleted`).
@@ -652,6 +668,9 @@ export interface TechnicalAccount {
 
 export interface TeamAnalyticsSettings {
     technical_accounts: TechnicalAccount[];
+    // whether shortcut hints are shown to everyone in the annotation view (UI-3); absent in the answer of a
+    // server from before the hints
+    shortcut_hints?: boolean;
 }
 
 // A user the settings screen offers to add: any user of the instance.
@@ -686,7 +705,7 @@ export const requestSettings: RequestSettings = async (method, body) => {
 function readableSettings(body: any): body is TeamAnalyticsSettings {
     return !!body && Array.isArray(body.technical_accounts) && body.technical_accounts.every(
         (account: TechnicalAccount) => typeof account?.user_id === 'number' && typeof account.user_name === 'string',
-    );
+    ) && (body.shortcut_hints === undefined || typeof body.shortcut_hints === 'boolean');
 }
 
 // The settings, or null when they cannot be read (the settings screen says so). A refusal takes the page to it.
@@ -702,29 +721,34 @@ export async function loadSettings(request: RequestSettings = requestSettings): 
 
 // Without an answer, or with a server failure, the list may or may not have been saved (the server answers 503
 // when the list was saved but older answers could not be retired)
-export const SAVE_UNFINISHED = 'The save did not finish, so the list may not have changed. Open the settings again ' +
-    'to see the saved list.';
+export const SAVE_UNFINISHED = 'Сохранение не завершилось, поэтому список мог не измениться. ' +
+    'Откройте настройки снова, чтобы увидеть сохранённый список.';
 
 export type SaveResult = { kind: 'saved'; settings: TeamAnalyticsSettings } | { kind: 'failed'; error: string };
 
-// Replaces the Technical accounts list with `ids` (the whole list). A failure is said in a sentence the screen
-// shows: a refused list (400) in the server's words.
+// Replaces the Technical accounts list with `ids` (the whole list) and, when `shortcutHints` is given, sets the
+// switch of the shortcut hints (without it the switch stays as it is). A failure is said in a sentence the
+// screen shows: a refused list (400) in the server's words.
 export async function saveSettings(
-    ids: number[], request: RequestSettings = requestSettings,
+    ids: number[], request: RequestSettings = requestSettings, shortcutHints?: boolean,
 ): Promise<SaveResult> {
     let answer: ServiceAnswer;
     try {
-        answer = await request('PUT', { technical_accounts: ids });
+        answer = await request('PUT', {
+            technical_accounts: ids,
+            ...(shortcutHints === undefined ? {} : { shortcut_hints: shortcutHints }),
+        });
     } catch {
         return { kind: 'failed', error: SAVE_UNFINISHED };
     }
     if (succeeded(answer) && readableSettings(answer.body)) return { kind: 'saved', settings: answer.body };
     if (answer.status === 400) {
-        return { kind: 'failed', error: answer.message || answer.body?.detail || 'The list was refused.' };
+        const reason = answer.message || answer.body?.detail;
+        return { kind: 'failed', error: reason ? `Сервер не принял список: ${reason}` : 'Список отклонён.' };
     }
-    if (answer.status === 401) return { kind: 'failed', error: 'Your session has ended. Sign in again to save.' };
+    if (answer.status === 401) return { kind: 'failed', error: 'Сеанс завершён. Войдите снова, чтобы сохранить.' };
     if (answer.status === 403) {
-        return { kind: 'failed', error: 'Only administrators can change Team Analytics settings.' };
+        return { kind: 'failed', error: 'Настройки Team Analytics могут менять только администраторы.' };
     }
     return { kind: 'failed', error: SAVE_UNFINISHED };
 }

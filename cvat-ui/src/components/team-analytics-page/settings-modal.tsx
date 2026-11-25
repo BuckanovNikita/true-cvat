@@ -7,6 +7,7 @@ import './settings.scss';
 import React, {
     useEffect, useId, useRef, useState,
 } from 'react';
+import Checkbox from 'antd/lib/checkbox';
 import Modal from 'antd/lib/modal';
 import Select from 'antd/lib/select';
 import Button from 'antd/lib/button';
@@ -36,12 +37,19 @@ export const SAVE_TIME_LIMIT_MS = 30000;
 
 type Loaded = { kind: 'loading' } | { kind: 'failed' } | { kind: 'ready' };
 
-// Worded from GLOSSARY.md (Technical account)
-const TECHNICAL_ACCOUNT = 'A technical account is a user account that stands for an automated process rather than ' +
-    'a person. It is never listed among people, and every box it saves counts as a Model box.';
+// Worded from GLOSSARY.md (Technical accounts list), in Russian
+const TECHNICAL_ACCOUNT = 'Техническая учётная запись — это учётная запись пользователя, которая представляет ' +
+    'автоматизированный процесс, а не человека. В списки людей она не попадает, а каждый сохранённый ею бокс ' +
+    'учитывается как бокс модели.';
+
+// Worded from GLOSSARY.md (Shortcut hint), in Russian
+const SHORTCUT_HINT = 'Когда аннотатор в третий раз за час делает мышью то, для чего есть горячая клавиша, ' +
+    'в углу холста на несколько секунд появляется подсказка с этой клавишей: не чаще раза в час для одного ' +
+    'действия. Когда аннотатор делает действие в основном горячей клавишей (за последний час нажатий клавиши ' +
+    'больше половины), подсказка для него не появляется три дня.';
 
 export function accountLabel(account: TechnicalAccount): string {
-    return account.deleted ? `deleted account, id ${account.user_id}` : account.user_name;
+    return account.deleted ? `удалённая учётная запись, ID ${account.user_id}` : account.user_name;
 }
 
 function userLabel(user: SettingsUser): string {
@@ -52,14 +60,17 @@ function userLabel(user: SettingsUser): string {
 // The server refuses a longer search (400)
 export const SEARCH_MAX_LENGTH = 150;
 
-// "Team Analytics settings": the Technical accounts list of the instance, edited here by an administrator and
-// saved as a whole. A change applies to every past period the next time the page is loaded.
+// "Настройки Team Analytics": the Technical accounts list of the instance, edited here by an administrator and
+// saved as a whole. A change applies to every past period the next time the page is loaded. Below it, the
+// switch of the shortcut hints (UI-3), saved with the list.
 export default function SettingsModal({
     open, onClose, onSaved, searchDelayMs = 400, saveTimeLimitMs = SAVE_TIME_LIMIT_MS,
 }: Props): JSX.Element {
     const id = useId();
     const [loaded, setLoaded] = useState<Loaded>({ kind: 'loading' });
     const [accounts, setAccounts] = useState<TechnicalAccount[]>([]);
+    // whether shortcut hints are shown; null when the server holds no such switch (one from before the hints)
+    const [hints, setHints] = useState<boolean | null>(null);
     const [users, setUsers] = useState<SettingsUser[]>([]);
     const [query, setQuery] = useState('');
     const [searching, setSearching] = useState(false);
@@ -90,6 +101,7 @@ export default function SettingsModal({
                 return;
             }
             setAccounts(settings.technical_accounts);
+            setHints(settings.shortcut_hints ?? null);
             setLoaded({ kind: 'ready' });
         });
     };
@@ -164,7 +176,9 @@ export default function SettingsModal({
             stopWaiting();
             setError(SAVE_UNFINISHED);
         }, saveTimeLimitMs);
-        saveSettings(accounts.map((account) => account.user_id), requestSettings).then((result) => {
+        saveSettings(
+            accounts.map((account) => account.user_id), requestSettings, hints ?? undefined,
+        ).then((result) => {
             // an answer for a save no longer waited for (its time was up, or the modal was closed by a refusal
             // meanwhile, and maybe opened again) changes nothing here
             if (saves.current !== current) return;
@@ -179,23 +193,23 @@ export default function SettingsModal({
         if (!inFlight.current) onClose();
     };
 
-    let notFound = 'No users found';
-    if (searching) notFound = 'Searching…';
-    else if (searchFailed) notFound = 'The search could not be completed.';
+    let notFound = 'Пользователи не найдены';
+    if (searching) notFound = 'Поиск…';
+    else if (searchFailed) notFound = 'Не удалось выполнить поиск.';
 
     let body: JSX.Element;
     if (loaded.kind === 'loading') {
         body = (
             <div className='cvat-team-analytics-settings-loading' role='status'>
                 <Spin size='small' />
-                <span>Loading…</span>
+                <span>Загрузка…</span>
             </div>
         );
     } else if (loaded.kind === 'failed') {
         body = (
             <div className='cvat-team-analytics-settings-load-failed' role='alert'>
-                <span>The settings could not be loaded.</span>
-                <Button size='small' onClick={load}>Try again</Button>
+                <span>Не удалось загрузить настройки.</span>
+                <Button size='small' onClick={load}>Повторить</Button>
             </div>
         );
     } else {
@@ -216,8 +230,8 @@ export default function SettingsModal({
                                     type='text'
                                     size='small'
                                     className='cvat-team-analytics-settings-remove'
-                                    aria-label={`Remove ${accountLabel(account)}`}
-                                    title='Remove from the list'
+                                    aria-label={`Убрать из списка: ${accountLabel(account)}`}
+                                    title='Убрать из списка'
                                     icon={<CloseOutlined />}
                                     onClick={() => setAccounts(
                                         accounts.filter((other) => other.user_id !== account.user_id),
@@ -227,12 +241,12 @@ export default function SettingsModal({
                         ))}
                     </ul>
                 ) : (
-                    <div className='cvat-team-analytics-settings-empty'>No technical accounts.</div>
+                    <div className='cvat-team-analytics-settings-empty'>Технических учётных записей нет.</div>
                 )}
                 {/* antd's Select puts `id` on its search input, the control this label names */}
                 {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                 <label className='cvat-team-analytics-settings-picker-label' htmlFor={`${id}-picker`}>
-                    Add an account
+                    Добавить учётную запись
                 </label>
                 <Select
                     id={`${id}-picker`}
@@ -241,7 +255,7 @@ export default function SettingsModal({
                     showSearch
                     filterOption={false}
                     virtual={false}
-                    placeholder='Search users by name'
+                    placeholder='Поиск пользователей по имени'
                     value={null}
                     loading={searching}
                     searchValue={query}
@@ -260,7 +274,7 @@ export default function SettingsModal({
                             <>
                                 {userLabel(user)}
                                 {' '}
-                                <span className='cvat-team-analytics-settings-listed'>already on the list</span>
+                                <span className='cvat-team-analytics-settings-listed'>уже в списке</span>
                             </>
                         ) : userLabel(user),
                     }))}
@@ -279,9 +293,28 @@ export default function SettingsModal({
     return (
         <Modal
             className='cvat-team-analytics-settings-modal'
-            title='Team Analytics settings'
+            title='Настройки Team Analytics'
             open={open}
-            okText='Save'
+            okText='Сохранить'
+            cancelText='Отмена'
+            wrapProps={{ lang: 'ru' }}
+            closable={false}
+            // antd 5.17 gives its own close button the fixed label "Close", so the modal brings its own. It sits
+            // beside the content, not in the title, so that the dialog is still named by the title alone
+            modalRender={(content) => (
+                <div className='cvat-team-analytics-settings-frame'>
+                    {content}
+                    <Button
+                        type='text'
+                        size='small'
+                        className='cvat-team-analytics-settings-close'
+                        aria-label='Закрыть'
+                        icon={<CloseOutlined />}
+                        disabled={saving}
+                        onClick={cancel}
+                    />
+                </div>
+            )}
             onOk={save}
             onCancel={cancel}
             confirmLoading={saving}
@@ -292,16 +325,33 @@ export default function SettingsModal({
             destroyOnClose
         >
             <section className='cvat-team-analytics-settings-section' aria-labelledby={`${id}-title`}>
-                <h3 id={`${id}-title`} className='cvat-team-analytics-settings-title'>Technical accounts</h3>
+                <h3 id={`${id}-title`} className='cvat-team-analytics-settings-title'>Технические учётные записи</h3>
                 <p className='cvat-team-analytics-settings-text'>{TECHNICAL_ACCOUNT}</p>
                 {body}
                 <p className='cvat-team-analytics-settings-text cvat-team-analytics-settings-applies'>
-                    A change applies to every past period the next time the page is loaded.
+                    Изменение применяется ко всем прошлым периодам при следующей загрузке страницы.
                 </p>
-                {error ? (
-                    <div className='cvat-team-analytics-settings-error' role='alert'>{error}</div>
-                ) : null}
             </section>
+            {loaded.kind === 'ready' && hints !== null ? (
+                <section
+                    className='cvat-team-analytics-settings-section cvat-team-analytics-settings-hints'
+                    aria-labelledby={`${id}-hints-title`}
+                >
+                    <h3 id={`${id}-hints-title`} className='cvat-team-analytics-settings-title'>
+                        Подсказки о горячих клавишах
+                    </h3>
+                    <p className='cvat-team-analytics-settings-text'>{SHORTCUT_HINT}</p>
+                    <Checkbox checked={hints} disabled={saving} onChange={(event) => setHints(event.target.checked)}>
+                        Показывать подсказки аннотаторам
+                    </Checkbox>
+                    <p className='cvat-team-analytics-settings-text cvat-team-analytics-settings-applies'>
+                        Изменение действует для каждого пользователя после следующей загрузки страницы CVAT.
+                    </p>
+                </section>
+            ) : null}
+            {error ? (
+                <div className='cvat-team-analytics-settings-error' role='alert'>{error}</div>
+            ) : null}
         </Modal>
     );
 }

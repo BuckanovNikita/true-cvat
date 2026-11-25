@@ -76,19 +76,19 @@ function buttons(html) {
 
 test('an overview without figures shows only why, and the filter row still names the selected annotator', () => {
     const shown = text(view({ overview: NO_FIGURES, address: { period: 'week', month: null, annotator: 11 } }));
-    assert.match(shown, /This period is not processed yet/);
+    assert.match(shown, /Этот период ещё не обработан/);
     assert.match(shown, /alice-echoed/);
 });
 
 test('while history is processed one progress bar shows the earliest ready date and how far it is', () => {
     const html = view();
     const shown = text(html);
-    assert.match(shown, /Processing history/);
-    assert.match(shown, /Ready from Nov 2, 2026 · 12 of 198 days/);
+    assert.match(shown, /Обработка истории/);
+    assert.match(shown, /Готово с 2 нояб\. 2026 · 12 из 198 дней/);
     assert.match(shown, /6%/);
     assert.equal((html.match(/role="progressbar"/g) || []).length, 1);
     assert.match(html, /aria-valuenow="6"/);
-    assert.match(shown, /Recent days are processed first\./);
+    assert.match(shown, /Сначала обрабатываются последние дни\./);
 });
 
 // a status without the day counts (an older server): the bar still reads
@@ -101,31 +101,31 @@ function percentOnlyHistory(overrides = {}) {
 test('without the day counts the progress bar reads as the percentage alone', () => {
     const html = view({ status: { history: percentOnlyHistory() } });
     const shown = text(html);
-    assert.match(shown, /Processing history/);
+    assert.match(shown, /Обработка истории/);
     assert.match(shown, /37%/);
     assert.match(html, /aria-valuenow="37"/);
     assert.match(html, /width:\s*37%/);
-    assert.doesNotMatch(shown, /of \d+ days|Ready from|Nothing ready yet|undefined|NaN/);
+    assert.doesNotMatch(shown, /из \d+ дн|Готово с|Пока ничего не готово|undefined|NaN/);
 });
 
 test('with the day counts the line shows them and the bar the percentage from the service', () => {
     const shown = text(view({ status: { history: history({ percent: 7 }) } }));
-    assert.match(shown, /Ready from Nov 2, 2026 · 12 of 198 days/);
+    assert.match(shown, /Готово с 2 нояб\. 2026 · 12 из 198 дней/);
     assert.match(shown, /7%/);
 });
 
 test('without the day counts the periods are still offered only when processed', () => {
     const periods = buttons(view({ status: { history: percentOnlyHistory() } }))
-        .filter((b) => ['Week', 'Two weeks', 'Month', 'Year'].includes(b.name));
+        .filter((b) => ['Неделя', 'Две недели', 'Месяц', 'Год'].includes(b.name));
     assert.deepEqual(periods.map((b) => [b.name, b.disabled]), [
-        ['Week', false], ['Two weeks', true], ['Month', true], ['Year', true],
+        ['Неделя', false], ['Две недели', true], ['Месяц', true], ['Год', true],
     ]);
 });
 
 test('no progress bar once history is complete, or when the status is not known', () => {
     for (const status of [{ history: history({ complete: true, ready_from: null, ready_from_day: null }) }, null, {}]) {
         const html = view({ status });
-        assert.doesNotMatch(text(html), /Processing history/);
+        assert.doesNotMatch(text(html), /Обработка истории/);
         assert.doesNotMatch(html, /role="progressbar"/);
     }
 });
@@ -134,40 +134,49 @@ test('before anything is processed the bar says nothing is ready yet', () => {
     const shown = text(view({ status: { history: history({
         ready_from: null, ready_from_day: null, days_ready: 0, percent: 0,
     }) } }));
-    assert.match(shown, /Nothing ready yet · 0 of 198 days/);
+    assert.match(shown, /Пока ничего не готово · 0 из 198 дней/);
     assert.match(shown, /0%/);
 });
 
+test('the day count of the progress bar takes the Russian plural form of the total', () => {
+    // "из N дня" is genitive: 1 and 21 take "дня", the rest "дней" (11 and 12 included)
+    const forms = [[1, 'дня'], [2, 'дней'], [5, 'дней'], [11, 'дней'], [21, 'дня']];
+    for (const [total, word] of forms) {
+        const shown = text(view({ status: { history: history({ days_total: total, days_ready: 0 }) } }));
+        assert.match(shown, new RegExp(`0 из ${total} ${word}(?![а-я])`), `${total}`);
+    }
+});
+
 test('periods not wholly processed are disabled with an explanation', () => {
-    const periods = buttons(view()).filter((b) => ['Week', 'Two weeks', 'Month', 'Year'].includes(b.name));
+    const periods = buttons(view()).filter((b) => ['Неделя', 'Две недели', 'Месяц', 'Год'].includes(b.name));
     assert.deepEqual(periods.map((b) => [b.name, b.disabled, b.title]), [
-        ['Week', false, null],
-        ['Two weeks', true, 'Not processed yet'],
-        ['Month', true, 'Not processed yet'],
-        ['Year', true, 'Not processed yet'],
+        ['Неделя', false, null],
+        ['Две недели', true, 'Ещё не обработано'],
+        ['Месяц', true, 'Ещё не обработано'],
+        ['Год', true, 'Ещё не обработано'],
     ]);
 });
 
 test('every period is offered once history is complete, or when the status is not known', () => {
     for (const status of [{ history: history({ complete: true, periods: { week: true, two_weeks: true, month: true, year: true } }) }, null]) {
-        assert.ok(buttons(view({ status })).every((b) => !b.disabled || b.name === 'Next month'));
+        assert.ok(buttons(view({ status })).every((b) => !b.disabled || b.name === 'Следующий месяц'));
     }
 });
 
 test('an earlier month is offered only when all of it is processed', () => {
     const month = { period: 'month', month: '2026-10' };
     const status = (overrides) => ({ history: history({ periods: { week: true, two_weeks: true, month: true, year: false }, ...overrides }) });
-    const previous = (html) => buttons(html).find((b) => b.name === 'Previous month');
+    const previous = (html) => buttons(html).find((b) => b.name === 'Предыдущий месяц');
     assert.equal(previous(view({ address: month, status: status({ earliest_month: '2026-10' }) })).disabled, true);
-    assert.equal(previous(view({ address: month, status: status({ earliest_month: '2026-10' }) })).title, 'Not processed yet');
+    assert.equal(previous(view({ address: month, status: status({ earliest_month: '2026-10' }) })).title, 'Ещё не обработано');
     assert.equal(previous(view({ address: month, status: status({ earliest_month: '2026-09' }) })).disabled, false);
     assert.equal(previous(view({ address: month, status: status({ complete: true, earliest_month: null }) })).disabled, false);
 });
 
 test('a period that is not wholly processed shows no figure, only why', () => {
     const shown = text(view({ overview: NO_FIGURES }));
-    assert.doesNotMatch(shown, /alice-figures|1\.0 h/);
-    assert.match(shown, /This period is not processed yet/);
+    assert.doesNotMatch(shown, /alice-figures|1,0 ч/);
+    assert.match(shown, /Этот период ещё не обработан/);
 
     assert.match(text(view({ overview: { ...FIGURES, processed: true } })), /alice-figures/);
     assert.match(text(view({ overview: FIGURES })), /alice-figures/); // a service that does not say
@@ -175,13 +184,13 @@ test('a period that is not wholly processed shows no figure, only why', () => {
 
 test('trends are replaced by a short notice until three complete weeks are ready', () => {
     const shown = text(view({ status: { history: history({ complete_weeks: 2 }) } }));
-    assert.match(shown, /Trends appear as history is processed/);
-    assert.match(shown, /A trend needs at least three complete weeks\. Two are ready so far\./);
-    assert.match(text(view({ status: { history: history({ complete_weeks: 0 }) } })), /None are ready so far\./);
-    assert.match(text(view({ status: { history: history({ complete_weeks: 1 }) } })), /One is ready so far\./);
+    assert.match(shown, /Динамика появится по мере обработки истории/);
+    assert.match(shown, /Для динамики нужно не менее трёх полных недель\. Пока готовы две\./);
+    assert.match(text(view({ status: { history: history({ complete_weeks: 0 }) } })), /Пока нет ни одной\./);
+    assert.match(text(view({ status: { history: history({ complete_weeks: 1 }) } })), /Пока готова одна\./);
 
     for (const status of [{ history: history({ complete_weeks: 3, trends_ready: true }) }, null]) {
-        assert.doesNotMatch(text(view({ status })), /Trends appear as history is processed/);
+        assert.doesNotMatch(text(view({ status })), /Динамика появится по мере обработки истории/);
     }
 });
 
@@ -203,7 +212,7 @@ test('an open page shows the figures once its period has been processed meanwhil
     const overviews = () => requests.filter((request) => request.url.includes('/overview')).length;
     try {
         await view.settle();
-        assert.match(view.container.textContent, /This period is not processed yet/);
+        assert.match(view.container.textContent, /Этот период ещё не обработан/);
         await act(async () => { t.mock.timers.tick(60000); }); // still not processed: no new request
         await view.settle();
         assert.equal(overviews(), 1);
@@ -213,7 +222,7 @@ test('an open page shows the figures once its period has been processed meanwhil
         await view.settle();
         assert.equal(overviews(), 2);
         assert.match(view.container.textContent, /alice-figures/);
-        assert.doesNotMatch(view.container.textContent, /This period is not processed yet|Processing history/);
+        assert.doesNotMatch(view.container.textContent, /Этот период ещё не обработан|Обработка истории/);
     } finally {
         await view.unmount();
     }
@@ -235,8 +244,8 @@ test('the page asks for the status in the viewer time zone and shows the bar bes
         assert.ok(status, 'status is requested');
         assert.equal(new URL(status.url, 'http://localhost').searchParams.get('tz'), 'Asia/Tokyo');
         const shown = view.container.textContent;
-        assert.match(shown, /Processing history/);
-        assert.match(shown, /This period is not processed yet/);
+        assert.match(shown, /Обработка истории/);
+        assert.match(shown, /Этот период ещё не обработан/);
         assert.doesNotMatch(shown, /alice-figures/);
     } finally {
         await view.unmount();

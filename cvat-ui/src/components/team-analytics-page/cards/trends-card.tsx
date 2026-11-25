@@ -8,7 +8,10 @@ import Text from 'antd/lib/typography/Text';
 import {
     CompareKind, ProjectNames, TrendLine, TrendStep, Trends,
 } from '../service';
-import { MISSING, dayLabel, projectName } from '../format';
+import {
+    MISSING, NBSP, dayLabel, formatNumber, monthLabel, projectName, shortMonthLabel,
+} from '../format';
+import { plural } from '../plural';
 import { FullViewButton } from '../full-view-button';
 import {
     Cell, Compared, LINE_COLORS, MAX_COMPARED, NOT_PROCESSED, NOT_RECORDED, TrendMetric, cellOf, scaleTop,
@@ -45,12 +48,29 @@ interface Props {
 
 // offered candidates shown at once; the rest are reached by typing
 const OFFERED = 4;
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+// a bucket on the chart's scale: the day a week starts, or the month
 function bucketName(start: string, monthly: boolean): string {
-    if (!monthly) return dayLabel(start);
-    const [year, month] = start.split('-').map(Number);
-    return `${MONTHS[month - 1]} ${year}`;
+    return monthly ? shortMonthLabel(start) : dayLabel(start);
+}
+
+// a bucket as a whole phrase: a row header of the values table, in a sentence (the dot's hover title) lower case
+function bucketPhrase(start: string, monthly: boolean, inSentence = false): string {
+    if (monthly) return monthLabel(start);
+    return `${inSentence ? 'неделя' : 'Неделя'} с ${dayLabel(start)}`;
+}
+
+// 'N of 12 weeks / months', the noun in the genitive after «из»
+function ofBuckets(withheld: number, count: number, monthly: boolean): string {
+    const unit = plural(count, monthly ? ['месяца', 'месяцев', 'месяцев'] : ['недели', 'недель', 'недель']);
+    return `${formatNumber(withheld)} из ${formatNumber(count)}${NBSP}${unit}`;
+}
+
+// what picking a candidate means, for the compared kind (the noun agrees with the sentence)
+function removeOneToAdd(projects: boolean): string {
+    return projects ?
+        'Чтобы добавить проект, уберите один из выбранных' :
+        'Чтобы добавить аннотатора, уберите одного из выбранных';
 }
 
 function cellText(metric: TrendMetric, cell: Cell): string {
@@ -96,7 +116,7 @@ function Values({ open, children }: { open: boolean; children: React.ReactNode }
     if (open) return <div className='cvat-team-analytics-trend-values cvat-team-analytics-trend-values-open'>{children}</div>;
     return (
         <details className='cvat-team-analytics-trend-values'>
-            <summary>Values</summary>
+            <summary>Значения</summary>
             {children}
         </details>
     );
@@ -122,7 +142,6 @@ function TrendChart({
     // buckets where a line has nothing recorded or nothing processed, for the note under the chart
     const withheld = (kind: Cell['kind']): number => trends.buckets
         .filter((_, index) => cells.some((line) => line[index].kind === kind)).length;
-    const unitName = monthly ? 'months' : 'weeks';
     // the legend: under the chart on the overview, at the top (names whole) in the full view
     const legend = (
         <ul className='cvat-team-analytics-trend-legend'>
@@ -148,7 +167,7 @@ function TrendChart({
                 </figcaption>
             )}
             {values.length === 0 && notRecorded ? (
-                <div className='cvat-team-analytics-trend-empty'>Not recorded before the new logging</div>
+                <div className='cvat-team-analytics-trend-empty'>До нового учёта действий не записывалось</div>
             ) : (
                 <>
                     <div className='cvat-team-analytics-trend-plot'>
@@ -192,7 +211,8 @@ function TrendChart({
                                         style={{
                                             left: `${x(index)}%`, bottom: `${y(cell.value)}%`, background: shown.color,
                                         }}
-                                        title={`${shown.name} · ${monthly ? '' : 'week of '}${bucketName(trends.buckets[index].start, monthly)}: ${metric.show(cell.value)}`}
+                                        // eslint-disable-next-line max-len
+                                        title={`${shown.name} · ${bucketPhrase(trends.buckets[index].start, monthly, true)}: ${metric.show(cell.value)}`}
                                     />
                                 ) : null
                             )))}
@@ -209,12 +229,12 @@ function TrendChart({
             )}
             {withheld('not-recorded') && values.length > 0 ? (
                 <div className='cvat-team-analytics-trend-note'>
-                    {`Not recorded before the new logging: ${withheld('not-recorded')} of ${count} ${unitName}`}
+                    {`До нового учёта действий не записывалось: ${ofBuckets(withheld('not-recorded'), count, monthly)}`}
                 </div>
             ) : null}
             {withheld('not-processed') ? (
                 <div className='cvat-team-analytics-trend-note'>
-                    {`${NOT_PROCESSED}: ${withheld('not-processed')} of ${count} ${unitName}`}
+                    {`${NOT_PROCESSED}: ${ofBuckets(withheld('not-processed'), count, monthly)}`}
                 </div>
             ) : null}
             {full ? null : legend}
@@ -222,14 +242,14 @@ function TrendChart({
                 <table>
                     <thead>
                         <tr>
-                            <th scope='col'>{monthly ? 'Month' : 'Week'}</th>
+                            <th scope='col'>{monthly ? 'Месяц' : 'Неделя'}</th>
                             {lines.map((shown) => <th key={shown.key} scope='col'>{shown.name}</th>)}
                         </tr>
                     </thead>
                     <tbody>
                         {trends.buckets.map((bucket, index) => (
                             <tr key={bucket.start}>
-                                <th scope='row'>{`${monthly ? '' : 'Week of '}${bucketName(bucket.start, monthly)}`}</th>
+                                <th scope='row'>{bucketPhrase(bucket.start, monthly)}</th>
                                 {lines.map((shown, lineIndex) => (
                                     <td key={shown.key}>{cellText(metric, cells[lineIndex][index])}</td>
                                 ))}
@@ -254,7 +274,7 @@ function TrendsCard({
     const nameOf = (id: number): string => {
         if (projects) return projectName(id, projectNames);
         const candidate = candidates.find((row) => row.id === id)?.user_name;
-        return candidate ?? annotatorNames[id] ?? `Annotator #${id}`;
+        return candidate ?? annotatorNames[id] ?? `Аннотатор #${id}`;
     };
     const atLimit = compared.length >= MAX_COMPARED;
     const typed = query.trim().toLowerCase();
@@ -262,9 +282,11 @@ function TrendsCard({
         .filter((row) => !compared.some((item) => item.id === row.id))
         .filter((row) => nameOf(row.id).toLowerCase().includes(typed));
     let hint = '';
-    if (atLimit) hint = `Up to ${MAX_COMPARED} at once. Remove one to add another.`;
-    else if (trends && offered.length === 0) hint = 'No match';
-    else if (offered.length > OFFERED) hint = `${offered.length - OFFERED} more match. Type to narrow the list.`;
+    if (atLimit) hint = `Одновременно — не более ${MAX_COMPARED}. ${removeOneToAdd(projects)}.`;
+    else if (trends && offered.length === 0) hint = 'Ничего не найдено';
+    else if (offered.length > OFFERED) {
+        hint = `Ещё совпадений: ${formatNumber(offered.length - OFFERED)}. Введите текст, чтобы сузить список.`;
+    }
 
     const lines: ShownLine[] = (trends?.lines ?? []).map((line, index) => {
         if (line.id === null) {
@@ -286,7 +308,7 @@ function TrendsCard({
         if (!trends || !metric) {
             return (
                 <div className='cvat-team-analytics-trend-failed' role='status'>
-                    {failed ? 'Trends could not be loaded.' : 'Loading trends…'}
+                    {failed ? 'Не удалось загрузить динамику.' : 'Загрузка динамики…'}
                 </div>
             );
         }
@@ -294,7 +316,7 @@ function TrendsCard({
             <div className={`cvat-team-analytics-trend-full${pending ? ' cvat-team-analytics-pending' : ''}`}>
                 <h2 className='cvat-team-analytics-full-title'>{metric.title}</h2>
                 <div className='cvat-team-analytics-full-subtitle'>
-                    {`${metric.unit} · last 12 ${step === 'month' ? 'months' : 'weeks'}`}
+                    {`${metric.unit} · последние 12 ${step === 'month' ? 'месяцев' : 'недель'}`}
                 </div>
                 <TrendChart metric={metric} lines={lines} trends={trends} full />
             </div>
@@ -307,7 +329,7 @@ function TrendsCard({
             <>
                 {failed ? (
                     <div className='cvat-team-analytics-trend-failed' role='status'>
-                        Trends could not be updated; the charts show the previous choice.
+                        Не удалось обновить динамику; на графиках данные для прежнего выбора.
                     </div>
                 ) : null}
                 <div className='cvat-team-analytics-trend-charts'>
@@ -326,11 +348,11 @@ function TrendsCard({
     } else if (failed) {
         body = (
             <div className='cvat-team-analytics-trend-failed' role='status'>
-                Trends could not be loaded. They are asked for again when the filters change.
+                Не удалось загрузить динамику. Запрос повторится при смене фильтров.
             </div>
         );
     } else {
-        body = <div className='cvat-team-analytics-trend-loading'>Loading trends…</div>;
+        body = <div className='cvat-team-analytics-trend-loading'>Загрузка динамики…</div>;
     }
 
     return (
@@ -340,27 +362,29 @@ function TrendsCard({
         >
             <div className='cvat-team-analytics-trends-header'>
                 <div>
-                    <Text strong>Trends</Text>
+                    <Text strong>Динамика</Text>
                     <div className='cvat-team-analytics-trends-subtitle'>
-                        {`Last 12 ${step === 'month' ? 'months' : 'weeks'}, independent of the period above`}
+                        {step === 'month' ?
+                            'Последние 12 месяцев, независимо от выбранного выше периода' :
+                            'Последние 12 недель, независимо от выбранного выше периода'}
                     </div>
                 </div>
                 <Segmented
-                    label='Trend step'
-                    options={[{ key: 'week', label: 'Weeks' }, { key: 'month', label: 'Months' }]}
+                    label='Шаг динамики'
+                    options={[{ key: 'week', label: 'Недели' }, { key: 'month', label: 'Месяцы' }]}
                     value={step}
                     onChange={onStep}
                 />
                 <Segmented
-                    label='Compare'
-                    options={[{ key: 'annotators', label: 'Annotators' }, { key: 'projects', label: 'Projects' }]}
+                    label='Сравнение'
+                    options={[{ key: 'annotators', label: 'Аннотаторы' }, { key: 'projects', label: 'Проекты' }]}
                     value={kind}
                     onChange={onKind}
                 />
             </div>
             <div className='cvat-team-analytics-compare'>
                 <span className='cvat-team-analytics-compare-label'>
-                    {compared.length ? 'Comparing' : `Showing ${scopeLabel}. Compare:`}
+                    {compared.length ? 'Сравнение' : `Показано: ${scopeLabel}. Сравнить:`}
                 </span>
                 {compared.map((item) => {
                     const name = nameOf(item.id);
@@ -369,7 +393,7 @@ function TrendsCard({
                             key={item.id}
                             type='button'
                             className='cvat-team-analytics-compare-chip'
-                            title={`Remove ${name}`}
+                            title={`Убрать из сравнения: ${name}`}
                             onClick={() => onRemove?.(item.id)}
                         >
                             <span
@@ -385,8 +409,8 @@ function TrendsCard({
                 <input
                     type='search'
                     className='cvat-team-analytics-compare-search'
-                    aria-label={projects ? 'Find a project' : 'Find an annotator'}
-                    placeholder={projects ? 'Find a project' : 'Find an annotator'}
+                    aria-label={projects ? 'Найти проект' : 'Найти аннотатора'}
+                    placeholder={projects ? 'Найти проект' : 'Найти аннотатора'}
                     disabled={atLimit}
                     value={query}
                     onChange={(event) => onQuery?.(event.target.value)}
@@ -399,7 +423,7 @@ function TrendsCard({
                             type='button'
                             className='cvat-team-analytics-compare-offer'
                             disabled={atLimit}
-                            title={atLimit ? 'Remove one to add another' : `Add ${name}`}
+                            title={atLimit ? removeOneToAdd(projects) : `Добавить в сравнение: ${name}`}
                             onClick={() => onAdd?.(row.id)}
                         >
                             {`+ ${name}`}
