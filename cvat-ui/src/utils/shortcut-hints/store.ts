@@ -6,10 +6,11 @@
 // between tabs. The storage is a convenience: when it cannot be read or written (private mode, blocked or full
 // storage) or holds something else, the caller gets null or nothing happens, and keeps its state in memory.
 
-import { HintState } from './policy';
+import { HintState, UseCount } from './policy';
 
 export const STORAGE_KEY = 'shortcutHints';
-const VERSION = 1;
+// 2: the counts of uses (`uses`) were added; a state of version 1 is unreadable and the browser starts over
+const VERSION = 2;
 
 function isTime(value: unknown): value is number {
     return typeof value === 'number' && Number.isFinite(value);
@@ -19,6 +20,15 @@ function isTimes(value: unknown): value is number[] {
     return Array.isArray(value) && value.every(isTime);
 }
 
+function isCount(value: unknown): value is number {
+    return isTime(value) && value >= 0;
+}
+
+function isUseCounts(value: unknown): value is UseCount[] {
+    return Array.isArray(value) &&
+        value.every((item) => Array.isArray(item) && item.length === 3 && item.every(isCount));
+}
+
 function isRecord<T>(value: unknown, isValue: (item: unknown) => item is T): value is Record<string, T> {
     return !!value && typeof value === 'object' && !Array.isArray(value) && Object.values(value).every(isValue);
 }
@@ -26,12 +36,12 @@ function isRecord<T>(value: unknown, isValue: (item: unknown) => item is T): val
 function stateOf(stored: unknown): HintState | null {
     if (!stored || typeof stored !== 'object') return null;
     const {
-        version, mouseUses, lastShown, shown, silencedUntil,
+        version, mouseUses, lastShown, shown, silencedUntil, uses,
     } = stored as Record<string, unknown>;
     if (version !== VERSION || !isRecord(mouseUses, isTimes) || !isRecord(lastShown, isTime) ||
-        !isTimes(shown) || !isRecord(silencedUntil, isTime)) return null;
+        !isTimes(shown) || !isRecord(silencedUntil, isTime) || !isRecord(uses, isUseCounts)) return null;
     return {
-        mouseUses, lastShown, shown, silencedUntil,
+        mouseUses, lastShown, shown, silencedUntil, uses,
     };
 }
 

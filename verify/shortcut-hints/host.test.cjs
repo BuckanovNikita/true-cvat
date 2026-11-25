@@ -122,10 +122,10 @@ async function annotationView(t, {
                 });
             }
         },
-        /** A key press, as Mousetrap passes it to the dispatcher. */
-        async press(sequence) {
+        /** A key press, as Mousetrap passes it to the dispatcher; `init` adds to the event (`repeat`, say). */
+        async press(sequence, init = {}) {
             await act(async () => {
-                bindings[sequence](new window.KeyboardEvent('keydown', { key: sequence }), sequence);
+                bindings[sequence](new window.KeyboardEvent('keydown', { key: sequence, ...init }), sequence);
             });
         },
         async later(ms) {
@@ -193,11 +193,25 @@ test('a later hint replaces the one on the screen', async (t) => {
     assert.deepEqual(page.hint().keys, ['Ctrl+S']);
 });
 
-test('after the person uses the shortcut, the clicks are not hinted', async (t) => {
+test('after the person presses the shortcut with no click before it, the clicks are not hinted', async (t) => {
     const page = await annotationView(t);
     await page.press('l');
     await page.click('lock', 5);
     assert.equal(page.hint(), null);
+});
+
+// The dispatcher hands the key event on: the repeats of a held key are not counted as presses.
+test('a held shortcut counts as one press', async (t) => {
+    const page = await annotationView(t);
+    await page.click('lock', 2);
+    await page.press('l');
+    for (let i = 0; i < 5; i += 1) {
+        // eslint-disable-next-line no-await-in-loop
+        await page.press('l', { repeat: true });
+    }
+    // one press against two clicks: the third click is hinted
+    await page.click('lock');
+    assert.deepEqual(page.hint()?.keys, ['L']);
 });
 
 for (const [why, options, control] of [
@@ -215,6 +229,32 @@ for (const [why, options, control] of [
         assert.equal(globalThis.localStorage.getItem('shortcutHints'), null);
     });
 }
+
+// The share weighs presses against clicks: where clicks are not counted, presses are not either, or one press
+// there would weigh as all the uses and silence the hint.
+for (const [why, options] of [
+    ['in a 3D job', { job: { dimension: '3d' } }],
+    ['with no job open', { job: null }],
+    ['with no canvas on the page', { canvas: false }],
+]) {
+    test(`a press ${why} is not counted, as the clicks there are not`, async (t) => {
+        const page = await annotationView(t, options);
+        await page.click('lock', 5);
+        await page.press('l');
+        assert.equal(globalThis.localStorage.getItem('shortcutHints'), null);
+    });
+}
+
+test('a press in a 3D job does not silence the hint in a 2D job', async (t) => {
+    const page = await annotationView(t, { job: { dimension: '3d' } });
+    await page.press('l');
+    await act(async () => {
+        const twoD = { annotation: { job: { instance: { dimension: '2d' } } } };
+        page.store.dispatch({ type: 'job', state: { ...page.store.getState(), ...twoD } });
+    });
+    await page.click('lock', 3);
+    assert.deepEqual(page.hint()?.keys, ['L']);
+});
 
 test('a control used from the keyboard (Enter or Space on it) is no mouse use', async (t) => {
     const page = await annotationView(t);

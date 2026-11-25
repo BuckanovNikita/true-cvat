@@ -219,7 +219,7 @@ _Russian_: Доля горячих клавиш
 
 <a id="shortcut-hint"></a>
 **Shortcut hint**:
-The box in the 2D annotation view that names an action and its hotkey to a person who keeps doing that action by mouse. It is shown rarely and stops once the person uses the hotkey.
+The box in the 2D annotation view that names an action and its hotkey to a person who keeps doing that action by mouse. It is shown rarely and stops for three days once the person does the action mostly by hotkey: a press of the hotkey that brings the action's [hotkey share](#hotkey-share) within the last hour, in that browser, above half. A held key counts as one press.
 _Russian_: Горячая клавиша (the line under the action's Russian name in the hint)
 _Avoid_: tooltip, tip, popup
 

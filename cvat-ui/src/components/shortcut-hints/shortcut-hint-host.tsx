@@ -16,7 +16,7 @@ import { DimensionType } from 'cvat-core-wrapper';
 import { CombinedState } from 'reducers';
 import { getApplicationKeyMap } from 'utils/mousetrap-react';
 import {
-    Hint, Shortcuts, controlOf, guarded, hintOf, mouseUsed, switchOff,
+    Hint, Shortcuts, controlOf, countPressesWhile, guarded, hintOf, mouseUsed, switchOff,
 } from 'utils/shortcut-hints';
 
 // How long a hint stays on the screen.
@@ -92,11 +92,13 @@ function ShortcutHintHost({ shownMs = SHOWN_MS }: Props): JSX.Element {
     view.current = { shortcuts, in2DJob };
 
     useEffect(() => {
+        // where clicks are counted; hotkey presses are counted only there too (utils/shortcut-hints)
+        const counted = (): boolean => view.current.in2DJob && !!window.document.querySelector(CANVAS);
         const onClick = (event: MouseEvent): void => {
             guarded(undefined, () => {
                 // detail 0: the click a browser makes of Enter or Space on a focused control, no mouse use
                 if (event.detail === 0) return;
-                if (!view.current.in2DJob || !window.document.querySelector(CANVAS)) return;
+                if (!counted()) return;
                 const control = controlOf(event.target);
                 if (!control) return;
                 const next = hintOf(control, view.current.shortcuts, getApplicationKeyMap());
@@ -106,7 +108,11 @@ function ShortcutHintHost({ shownMs = SHOWN_MS }: Props): JSX.Element {
         };
         // capture: a control that stops the click from bubbling is still seen
         window.addEventListener('click', onClick, { capture: true });
-        return () => window.removeEventListener('click', onClick, { capture: true });
+        countPressesWhile(counted);
+        return () => {
+            window.removeEventListener('click', onClick, { capture: true });
+            countPressesWhile(null);
+        };
     }, []);
 
     useEffect(() => {
