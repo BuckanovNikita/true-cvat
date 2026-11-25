@@ -182,6 +182,12 @@ $full-row-line: #ececec;
     grid-template-columns: 40px minmax(220px, 1.7fr) minmax(96px, 0.7fr) minmax(180px, 3fr) 104px 56px;
 }
 
+// with the last column of notes (the shortcut hints shown for a hotkey)
+.cvat-team-analytics-full-list-extra.cvat-team-analytics-full-list-note .cvat-team-analytics-full-list-header,
+.cvat-team-analytics-full-list-extra.cvat-team-analytics-full-list-note .cvat-team-analytics-full-list-row {
+    grid-template-columns: 40px minmax(220px, 1.7fr) minmax(96px, 0.7fr) minmax(180px, 3fr) 104px 56px 96px;
+}
+
 .cvat-team-analytics-full-list-header {
     border-bottom: 1px solid $border-color-1;
     color: $text-color-secondary;
@@ -228,6 +234,56 @@ $full-row-line: #ececec;
 
 .cvat-team-analytics-full-share {
     text-align: right;
+}
+
+.cvat-team-analytics-full-note {
+    text-align: right;
+    color: $text-color-secondary;
+    font-variant-numeric: tabular-nums;
+}
+
+// the actions a shortcut hint was shown for and whose hotkey was never pressed
+.cvat-team-analytics-hinted-unused {
+    margin-top: $grid-unit-size * 2;
+
+    h3 {
+        margin: 0 0 $grid-unit-size * 0.5;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    ul {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 0 $grid-unit-size * 3.5;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font-variant-numeric: tabular-nums;
+    }
+
+    li {
+        display: flex;
+        align-items: baseline;
+        gap: $grid-unit-size * 1.5;
+        padding: 7px 0;
+        border-bottom: 1px solid $full-row-line;
+    }
+
+    .cvat-team-analytics-hinted-name {
+        flex: 1;
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .cvat-team-analytics-hinted-keys {
+        color: $text-color-secondary;
+        font-size: 13px;
+    }
+
+    .cvat-team-analytics-hinted-count {
+        white-space: nowrap;
+    }
 }
 
 .cvat-team-analytics-full-bar {

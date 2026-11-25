@@ -212,8 +212,44 @@ class EveryHotkeyTest(FullViewCase):
         self.assertEqual(len(body["rows"]), len(overview["top_hotkeys"]) + overview["rest"]["count"])
 
         self.assertEqual(self.listed("hotkeys", project="2")["rows"],
-                         [{"action": "ACTION_01", "actions": 100, "share": 1.0}])
+                         [{"action": "ACTION_01", "actions": 100, "share": 1.0, "hints": 0}])
         self.assertEqual(len(self.listed("hotkeys", annotator=str(ALICE[0]))["rows"]), 10)
+
+    def test_each_hotkey_carries_the_hints_shown_for_it_and_hinted_actions_never_pressed_are_listed_apart(self):
+        self.stack.add_events([
+            client("load:job", seconds(T, 0)),
+            summary(seconds(T, 10), hotkeys={"NEXT_FRAME": 8, "SAVE_JOB": 2},
+                    hints={"SAVE_JOB": 3, "SWITCH_LOCK": 1, "SWITCH_HIDDEN": 4}),
+            summary(seconds(T, 20), hints={"SWITCH_LOCK": 1}),
+        ])
+
+        body = self.listed("hotkeys")
+
+        self.assertEqual(body["rows"], [
+            {"action": "NEXT_FRAME", "actions": 8, "share": 0.8, "hints": 0},
+            {"action": "SAVE_JOB", "actions": 2, "share": 0.2, "hints": 3},
+        ])
+        # most hinted first: these are the shortcuts the hints have not taught yet
+        self.assertEqual(body["hinted_unused"], [
+            {"action": "SWITCH_HIDDEN", "hints": 4},
+            {"action": "SWITCH_LOCK", "hints": 2},
+        ])
+        self.assertEqual(body["hints_shown"], 9)
+        self.assertEqual(body["hotkey_actions"], 10)
+        overview = self.overview()["input"]
+        self.assertEqual(body["hints_shown"], overview["hints_shown"])
+        self.assertEqual(len(body["rows"]), len(overview["top_hotkeys"]) + overview["rest"]["count"])
+
+    def test_hints_without_any_hotkey_action_are_listed(self):
+        self.stack.add_events([
+            client("load:job", seconds(T, 0)),
+            summary(seconds(T, 10), hints={"SWITCH_LOCK": 2}),
+        ])
+
+        body = self.listed("hotkeys")
+
+        self.assertEqual((body["hotkey_actions"], body["rows"]), (0, []))
+        self.assertEqual(body["hinted_unused"], [{"action": "SWITCH_LOCK", "hints": 2}])
 
 
 class ProcessedTest(FullViewCase):
@@ -241,6 +277,7 @@ class ProcessedTest(FullViewCase):
         self.assertEqual(status, 200, body)
         self.assertFalse(body["processed"])
         self.assertEqual((body["hotkey_actions"], body["rows"]), (None, None))
+        self.assertEqual((body["hints_shown"], body["hinted_unused"]), (None, None))
         self.assertLessEqual({key for key, value in body.items() if value is not None}, envelope)
 
     def test_a_bad_filter_or_shape_switch_is_refused_whether_or_not_the_period_is_processed(self):

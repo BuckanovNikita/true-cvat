@@ -314,3 +314,28 @@ class ProcessedTest(TrendsCase):
             self.stack.engine.step()
         self.assertEqual([bucket["processed"] for bucket in self.trends()["buckets"]], [True] * 12)
         self.assertEqual(candidates(), [(ALICE[0], 6 * HOUR), (CAROL[0], 3 * HOUR), (BOB[0], 2 * HOUR)])
+
+
+class HintsTest(TrendsCase):
+    """Shortcut hints shown (UI-3) are in the input summaries, and are no keyboard or mouse use."""
+
+    def test_hints_alone_do_not_make_a_week_before_the_new_logging_count_as_recorded(self):
+        before = "2026-10-13 10:00:00"  # the week of October 12
+        after = "2026-11-10 10:00:00"
+        self.stack.add_events([
+            working_time(at(before), HOUR, user=ALICE, org=ORG),
+            client("load:job", seconds(before, 0)),
+            summary(seconds(before, 60), hints={"SWITCH_LOCK": 2}),
+            # the cutover: the first shape-tagged operation
+            working_time(at(after), HOUR, user=ALICE, org=ORG),
+            client("load:job", seconds(after, 0)),
+            draw(seconds(after, 10), shape_type="rectangle", object_type="shape", rectangle_count=1),
+        ])
+        self.stack.refresh()
+
+        body = self.trends()
+        week = body["lines"][0]["points"][[bucket["start"] for bucket in body["buckets"]].index("2026-10-12")]
+
+        self.assertTrue(week["legacy"])
+        self.assertFalse(week["hotkey_recorded"])
+        self.assertIsNone(week["hotkey_share"])

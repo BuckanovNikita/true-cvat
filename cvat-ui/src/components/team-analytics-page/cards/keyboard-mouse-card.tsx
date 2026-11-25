@@ -25,6 +25,9 @@ interface Props {
 }
 
 const HOTKEY_COLOR = '#2a78d6';
+// Worded from GLOSSARY.md (Shortcut hint, Hints shown), in Russian
+const HINTS_EXPLAINED = 'Подсказка о горячей клавише появляется у аннотатора после действий мышью, ' +
+    'для которых есть горячая клавиша. Подсказки не входят в действия.';
 
 function Figure({ label, value, title }: { label: string; value: string; title?: string }): JSX.Element {
     return (
@@ -73,6 +76,13 @@ function KeyboardMouseCard({
                             title={`Точное значение: ${formatCount(figures.mouse_actions)}`}
                         />
                         <Figure label='Доля горячих клавиш' value={formatShare(figures.hotkey_share)} />
+                        {typeof figures.hints_shown === 'number' ? (
+                            <Figure
+                                label='Показано подсказок'
+                                value={shortCount(figures.hints_shown)}
+                                title={`Точное значение: ${formatCount(figures.hints_shown)}. ${HINTS_EXPLAINED}`}
+                            />
+                        ) : null}
                     </div>
                     <div
                         className='cvat-team-analytics-keyboard-share'

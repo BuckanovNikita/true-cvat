@@ -2,6 +2,7 @@
 -- out). One row per hotkey action among the {top} most used (most first), each carrying the scope's
 -- totals and the number and actions of the hotkeys not shown (rest_*). With no hotkey action at all, one
 -- row with action '' carries the totals. Mouse actions leave out the canvas zone (counted apart).
+-- hints_shown: shortcut hints shown in the scope, whatever their action; no part of the other totals.
 WITH
     scoped AS (
         SELECT kind, name, actions
@@ -20,6 +21,7 @@ WITH
     (SELECT toUInt64(sumIf(actions, kind = 'hotkey')) FROM scoped) AS hotkey_actions,
     (SELECT toUInt64(sumIf(actions, kind = 'mouse' AND name != 'canvas')) FROM scoped) AS mouse_actions,
     (SELECT toUInt64(sumIf(actions, kind = 'mouse' AND name = 'canvas')) FROM scoped) AS canvas_clicks,
+    (SELECT toUInt64(sumIf(actions, kind = 'hint')) FROM scoped) AS hints_shown,
     ranked AS (
         SELECT
             action,
@@ -39,7 +41,7 @@ WITH
         )
     )
 SELECT
-    action, used, place, rest_count, rest_actions, hotkey_actions, mouse_actions, canvas_clicks
+    action, used, place, rest_count, rest_actions, hotkey_actions, mouse_actions, canvas_clicks, hints_shown
 FROM (
     SELECT toString(action) AS action, toUInt64(used) AS used, toUInt64(place) AS place,
            toUInt64(rest_count) AS rest_count, toUInt64(rest_actions) AS rest_actions

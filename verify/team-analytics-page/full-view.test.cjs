@@ -111,10 +111,15 @@ function listAnswer(url) {
             body: {
                 ...base,
                 hotkey_actions: 300,
+                hints_shown: 1042,
                 rows: [
-                    { action: 'NEXT_FRAME', actions: 200, share: 2 / 3 },
-                    { action: 'SAVE_JOB', actions: 60, share: 0.2 },
-                    { action: 'UNKNOWN_ACTION', actions: 40, share: 40 / 300 },
+                    { action: 'NEXT_FRAME', actions: 200, share: 2 / 3, hints: 0 },
+                    { action: 'SAVE_JOB', actions: 60, share: 0.2, hints: 1021 },
+                    { action: 'UNKNOWN_ACTION', actions: 40, share: 40 / 300, hints: 0 },
+                ],
+                hinted_unused: [
+                    { action: 'SAVE_JOB_AS', hints: 20 },
+                    { action: 'NEXT_FRAME_FAST', hints: 1 },
                 ],
             },
         };
@@ -162,8 +167,10 @@ function answer(url) {
 }
 
 const KEYMAP = {
-    keyMap: { NEXT_FRAME: { name: 'Next frame' }, SAVE_JOB: { name: 'Save the job' } },
-    normalizedKeyMap: { NEXT_FRAME: '[f]', SAVE_JOB: '[Ctrl+s]' },
+    keyMap: {
+        NEXT_FRAME: { name: 'Next frame' }, SAVE_JOB: { name: 'Save the job' }, SAVE_JOB_AS: { name: 'Save the job as' },
+    },
+    normalizedKeyMap: { NEXT_FRAME: '[f]', SAVE_JOB: '[Ctrl+s]', SAVE_JOB_AS: '[Ctrl+Shift+s]' },
 };
 
 const { createMemoryHistory } = dependency('history');
@@ -446,6 +453,51 @@ test('hotkeys: every hotkey labelled from the viewer keymap with its keys, count
             .map((cell) => cell.textContent), ['f', 'Ctrl+s', '—']);
         await type(view.container.querySelector('.cvat-team-analytics-full-view input[type="search"]'), 'ctrl');
         assert.deepEqual(listRows(view.container).map((row) => row[1]), ['Save the job'], 'found by key too');
+    });
+});
+
+test('hotkeys: each hotkey shows the shortcut hints shown for it, and the list says how many were shown', async () => {
+    const { Page } = openPage({ search: '?view=hotkeys' });
+    await opened(Page, async (view) => {
+        const list = fullView(view.container);
+        assert.equal(list.querySelector('.cvat-team-analytics-full-list-header .cvat-team-analytics-full-note').textContent,
+            'Подсказки');
+        assert.deepEqual([...list.querySelectorAll('.cvat-team-analytics-full-list-row .cvat-team-analytics-full-note')]
+            .map((cell) => cell.textContent), ['0', '1\u00a0021', '0']);
+        assert.match(list.querySelector('.cvat-team-analytics-full-summary').textContent,
+            /3\u00a0горячие клавиши · 300\u00a0действий · 1\u00a0042\u00a0подсказки показаны/);
+    });
+});
+
+test('hotkeys: the actions hinted but never done by hotkey are listed apart, most hinted first', async () => {
+    const { Page } = openPage({ search: '?view=hotkeys' });
+    await opened(Page, async (view) => {
+        const unused = fullView(view.container).querySelector('.cvat-team-analytics-hinted-unused');
+        assert.equal(unused.querySelector('h3').textContent, 'Подсказка показана, горячая клавиша не использовалась');
+        assert.deepEqual([...unused.querySelectorAll('li')].map((row) => [
+            row.querySelector('.cvat-team-analytics-hinted-name').textContent,
+            row.querySelector('.cvat-team-analytics-hinted-keys').textContent,
+            row.querySelector('.cvat-team-analytics-hinted-count').textContent,
+        ]), [['Save the job as', 'Ctrl+Shift+s', '20\u00a0подсказок'], ['NEXT_FRAME_FAST', '—', '1\u00a0подсказка']]);
+        // these actions are no rows of the hotkey list
+        assert.equal(listRows(view.container).length, 3);
+    });
+});
+
+test('hotkeys: an answer without hint figures, from before the hints, shows the list as it was', async () => {
+    const before = (url) => {
+        const response = answer(url);
+        if (new URL(url, 'http://localhost').searchParams.get('by') !== 'hotkeys') return response;
+        const { hints_shown: _shown, hinted_unused: _unused, ...body } = response.body;
+        return { body: { ...body, rows: body.rows.map(({ hints: _hints, ...row }) => row) } };
+    };
+    const { Page } = openPage({ search: '?view=hotkeys', respond: before });
+    await opened(Page, async (view) => {
+        const list = fullView(view.container);
+        assert.equal(listRows(view.container).length, 3);
+        assert.equal(list.querySelector('.cvat-team-analytics-full-note'), null);
+        assert.equal(list.querySelector('.cvat-team-analytics-hinted-unused'), null);
+        assert.doesNotMatch(list.textContent, /подсказ/i);
     });
 });
 

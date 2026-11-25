@@ -201,6 +201,7 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
                        "total": {"objects": 1000, "timed_objects": 850, "time_ms": 9000000, "average_ms": 10588.2},
                        "model": {"objects": 100, "share": 0.1}, "technical_accounts": 1},
   "input": {"hotkey_actions": 1200, "mouse_actions": 800, "canvas_clicks": 3000, "hotkey_share": 0.6,
+            "hints_shown": 40,
             "top_hotkeys": [{"action": "...", "actions": 300}], "rest": {"count": 4, "actions": 120}},
   "saved_boxes": {"boxes": 950, "by_annotator": [{"user_id": 7, "user_name": "annotator-1", "boxes": 600}],
                   "by_project": [{"project_id": 12, "boxes": 950}]},
@@ -218,7 +219,7 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
 | `operations` | Рабочее время ([Working time](../../../GLOSSARY.md#working-time)) и операции ([Operation](../../../GLOSSARY.md#operation)) периода, флаги перехода. |
 | `by_annotator`, `by_project` | До 8 самых больших строк по рабочему времени; `rest` — число и сумма остальных. Строки без рабочего времени не входят ни туда, ни туда. |
 | `creation_methods` | Способы создания ([Creation method](../../../GLOSSARY.md#creation-method)); `technical_accounts` — сколько записей в списке «Технические учётные записи». |
-| `input` | Действия горячими клавишами ([Hotkey action](../../../GLOSSARY.md#hotkey-action)) и мышью; `top_hotkeys` — до 7 самых частых, `rest` — остальные. |
+| `input` | Действия горячими клавишами ([Hotkey action](../../../GLOSSARY.md#hotkey-action)) и мышью; `top_hotkeys` — до 7 самых частых, `rest` — остальные; `hints_shown` — сколько показано подсказок о горячих клавишах ([Hints shown](../../../GLOSSARY.md#hints-shown)), в действия не входит. |
 | `saved_boxes` | Сохранённые боксы ([Saved boxes](../../../GLOSSARY.md#saved-boxes)). |
 | `sessions` | Сессии ([Session](../../../GLOSSARY.md#session)). |
 | `time_series` | Рабочее время по дням (у «Года» — по неделям). |
@@ -326,10 +327,14 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
 
 ```json
 {"period": {"...": "..."}, "processed": true, "by": "hotkeys",
- "hotkey_actions": 1200, "rows": [{"action": "...", "actions": 300, "share": 0.25}]}
+ "hotkey_actions": 1200, "hints_shown": 40,
+ "rows": [{"action": "...", "actions": 300, "share": 0.25, "hints": 12}],
+ "hinted_unused": [{"action": "...", "hints": 5}]}
 ```
 
-Что значат поля, описано в [team-analytics-figures.md](../features/team-analytics-figures.md). Если период обработан не полностью, остаются `period`, `processed`, `by` и, для `annotators` и `projects`, флаги перехода; `total`, `rows` и `hotkey_actions` равны `null`.
+`rows[].hints` — подсказки, показанные для действия; `hinted_unused` — действия, для которых подсказки показаны, а клавишу в периоде никто не нажал, по убыванию `hints`; `hints_shown` — все подсказки области, то есть сумма `hints` по обоим спискам.
+
+Что значат поля, описано в [team-analytics-figures.md](../features/team-analytics-figures.md). Если период обработан не полностью, остаются `period`, `processed`, `by` и, для `annotators` и `projects`, флаги перехода; `total`, `rows`, `hotkey_actions`, `hints_shown` и `hinted_unused` равны `null`.
 
 ### Пример
 

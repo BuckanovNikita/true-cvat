@@ -70,10 +70,13 @@ async function annotationView(t, {
         mousetrap: { __esModule: true, default: mousetrap },
         'utils/shortcut-hints': hints,
     });
+    // what the host tells Team Analytics (utils/team-analytics-logging, hintShown)
+    const reported = [];
     const { default: ShortcutHintHost } = loadSource(HOST, {
         // `hintOf`, when a test names one, replaces what the hint says (to make drawing it fail)
         'utils/shortcut-hints': hintOf ? { ...hints, hintOf } : hints,
         'utils/mousetrap-react': hotkeys,
+        'utils/team-analytics-logging': { hintShown: (action) => { reported.push(action); } },
         // cvat-core's own enums (DimensionType)
         'cvat-core-wrapper': loadSource('cvat-core/src/enums.ts'),
     });
@@ -107,6 +110,7 @@ async function annotationView(t, {
     const page = {
         hints,
         store,
+        reported,
         async click(id, times = 1) {
             for (let i = 0; i < times; i += 1) {
                 // eslint-disable-next-line no-await-in-loop
@@ -194,6 +198,18 @@ test('a later hint replaces the one on the screen', async (t) => {
     await page.later(3 * MINUTE);
     await page.click('save', 3);
     assert.deepEqual(page.hint().keys, ['Ctrl+S']);
+});
+
+test('each hint shown is reported to Team Analytics under its action, and only a hint shown is', async (t) => {
+    const page = await annotationView(t);
+    await page.click('lock', 2);
+    await page.click('elsewhere');
+    assert.deepEqual(page.reported, []);
+    await page.click('lock', 3);
+    assert.deepEqual(page.reported, ['SWITCH_LOCK']);
+    await page.later(3 * MINUTE);
+    await page.click('copy', 3);
+    assert.deepEqual(page.reported, ['SWITCH_LOCK', 'COPY_SHAPE']);
 });
 
 test('after the person presses the shortcut with no click before it, the clicks are not hinted', async (t) => {

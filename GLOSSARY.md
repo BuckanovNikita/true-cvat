@@ -223,6 +223,11 @@ The box in the 2D annotation view that names an action and its hotkey to a perso
 _Russian_: Горячая клавиша (the line under the action's Russian name in the hint)
 _Avoid_: tooltip, tip, popup
 
+<a id="hints-shown"></a>
+**Hints shown**:
+The number of [shortcut hints](#shortcut-hint) shown to the annotators of the scope, counted by action in 2D jobs. A hint is what the interface did, so it is neither a hotkey action nor a mouse action.
+_Russian_: Показано подсказок (the total on the keyboard and mouse card); Подсказки (the column of the full view of hotkeys); Подсказка показана, горячая клавиша не использовалась (the heading over the hinted actions never done by hotkey)
+
 <a id="bounding-box"></a>
 **Bounding box**:
 A rectangle object, the default shape type of the figures. The interface never abbreviates it.

@@ -44,6 +44,8 @@ export const GROUP = {
 export const RECORD = {
     classChange: 'team_analytics:class_change',
     modelCreation: 'team_analytics:model_creation',
+    // payload: `hotkeys` (action name -> count), `mouse` (zone -> count) and `hints` (action name -> shortcut
+    // hints shown for it; absent in records written before the hints)
     inputSummary: 'team_analytics:input_summary',
 } as const;
 

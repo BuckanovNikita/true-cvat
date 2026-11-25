@@ -11,9 +11,21 @@ from tests.test_operations import ALICE, BOB, ORG, client, draw, seconds
 SUMMARY = "team_analytics:input_summary"
 
 
-def summary(when: datetime, hotkeys: dict | None = None, mouse: dict | None = None, **kwargs) -> dict:
-    """The input summary record the UI writes through the job logger (a debug:info event)."""
-    return client("debug:info", when, obj_name=SUMMARY, hotkeys=hotkeys or {}, mouse=mouse or {}, **kwargs)
+def summary(
+    when: datetime,
+    hotkeys: dict | None = None,
+    mouse: dict | None = None,
+    hints: dict | None = None,
+    **kwargs,
+) -> dict:
+    """The input summary record the UI writes through the job logger (a debug:info event).
+
+    `hints` (shortcut hints shown, by action) is in the record only when given: a UI from before the hints
+    writes none."""
+    counts = {"hotkeys": hotkeys or {}, "mouse": mouse or {}}
+    if hints is not None:
+        counts["hints"] = hints
+    return client("debug:info", when, obj_name=SUMMARY, **counts, **kwargs)
 
 
 class KeyboardMouseCase(StackTestCase):
@@ -96,6 +108,81 @@ class InputFiguresTest(KeyboardMouseCase):
         figures = self.input()
 
         self.assertEqual((figures["hotkey_actions"], figures["mouse_actions"]), (2, 1))
+
+
+class HintsShownTest(KeyboardMouseCase):
+    """Shortcut hints shown (UI-3): counted by action, and no part of the hotkey or mouse actions."""
+
+    def test_hints_shown_add_up_over_summaries_and_are_neither_hotkey_nor_mouse_actions(self):
+        t = "2026-11-13 10:00:00"
+        self.stack.add_events([
+            client("load:job", seconds(t, 0)),
+            summary(seconds(t, 60), {"NEXT_FRAME": 12}, {"objects_sidebar": 5, "canvas": 30},
+                    {"SWITCH_LOCK": 2, "SAVE_JOB": 1}),
+            summary(seconds(t, 130), {"NEXT_FRAME": 5}, {"header": 3}, {"SWITCH_LOCK": 1}),
+        ])
+
+        figures = self.input()
+
+        self.assertEqual(figures["hints_shown"], 4)
+        self.assertEqual(figures["hotkey_actions"], 17)
+        self.assertEqual(figures["mouse_actions"], 8)
+        self.assertEqual(figures["canvas_clicks"], 30)
+        self.assertAlmostEqual(figures["hotkey_share"], 17 / 25)
+        self.assertEqual(figures["top_hotkeys"], [{"action": "NEXT_FRAME", "actions": 17}])
+        self.assertEqual(figures["rest"], {"count": 0, "actions": 0})
+
+    def test_summaries_written_before_the_hints_count_none(self):
+        t = "2026-11-13 10:00:00"
+        self.stack.add_events([
+            client("load:job", seconds(t, 0)),
+            summary(seconds(t, 60), {"NEXT_FRAME": 12}, {"header": 3}),
+        ])
+
+        self.assertEqual(self.input()["hints_shown"], 0)
+
+    def test_hints_alone_are_counted_and_leave_the_hotkey_share_without_a_value(self):
+        t = "2026-11-13 10:00:00"
+        self.stack.add_events([
+            client("load:job", seconds(t, 0)),
+            summary(seconds(t, 60), hints={"SWITCH_LOCK": 3}),
+        ])
+
+        figures = self.input()
+
+        self.assertEqual(figures["hints_shown"], 3)
+        self.assertIsNone(figures["hotkey_share"])
+        self.assertEqual(figures["top_hotkeys"], [])
+
+    def test_hints_follow_the_filters(self):
+        t = "2026-11-13 10:00:00"
+        self.stack.add_events([
+            client("load:job", seconds(t, 0)),
+            summary(seconds(t, 60), hints={"SWITCH_LOCK": 1}, project=1),
+            summary(seconds(t, 70), hints={"SWITCH_LOCK": 2}, project=2, task=2, job=2),
+            client("load:job", seconds(t, 0), user=BOB),
+            summary(seconds(t, 60), hints={"SAVE_JOB": 4}, user=BOB),
+        ])
+
+        self.assertEqual(self.input()["hints_shown"], 7)
+        self.assertEqual(self.input(project=2)["hints_shown"], 2)
+        self.assertEqual(self.input(annotator=BOB[0])["hints_shown"], 4)
+
+    def test_the_trend_of_the_hotkey_share_does_not_count_hints(self):
+        t = "2026-11-13 10:00:00"
+        self.stack.add_events([
+            client("load:job", seconds(t, 0)),
+            working_time(seconds(t, 0), 60000, user=ALICE, org=ORG),
+            summary(seconds(t, 60), {"NEXT_FRAME": 1}, {"header": 3}, {"SWITCH_LOCK": 50}),
+        ])
+        self.stack.keep_refreshing_since(at("2026-11-05 00:00:00"))
+
+        status, body = self.stack.get("/api/team-analytics/trends", "lead", org="org7")
+
+        self.assertEqual(status, 200, body)
+        week = body["lines"][0]["points"][-1]
+        self.assertEqual((week["hotkey_actions"], week["mouse_actions"]), (1, 3))
+        self.assertAlmostEqual(week["hotkey_share"], 0.25)
 
 
 class ScopeTest(KeyboardMouseCase):

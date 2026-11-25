@@ -73,7 +73,8 @@ WITH
                              {line_kind:String} = 'projects', project_id, 0)) AS line,
             greatest(if({monthly:UInt8} = 1, toStartOfMonth(toDate(hour, {tz:String})),
                         toMonday(toDate(hour, {tz:String}))), toDate({first_bucket:String})) AS bucket,
-            count() AS input_rows,
+            -- keyboard and mouse use: a shortcut hint shown (kind 'hint') is neither
+            countIf(kind IN ('hotkey', 'mouse')) AS input_rows,
             sumIf(actions, kind = 'hotkey') AS hotkey_actions,
             sumIf(actions, kind = 'mouse' AND name != 'canvas') AS mouse_actions
         FROM $totals_db.input_hourly

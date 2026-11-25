@@ -83,6 +83,21 @@ test('the card shows hotkey actions, mouse actions and the hotkey share for the 
     assert.match(html, /title="1\u00a0234\u00a0567\u00a0действий горячими клавишами из 1\u00a0646\u00a0089"/);
 });
 
+test('the card shows how many shortcut hints were shown, apart from the actions', () => {
+    const html = card(render(View, ready({ input: { ...INPUT, hints_shown: 123456 } })));
+    const figures = text(html);
+    assert.match(figures, /Показано подсказок 123 тыс\./);
+    assert.match(html, /title="Точное значение: 123\u00a0456\. [^"]*после действий мышью[^"]*"/);
+    // the other figures are what they are without the hints
+    assert.match(figures, /Действия мышью 412 тыс\./);
+    assert.match(figures, /Доля горячих клавиш 75%/);
+});
+
+test('an answer without the hints figure, from before the hints, shows none', () => {
+    const figures = text(card(render(View, ready({ input: INPUT }))));
+    assert.doesNotMatch(figures, /подсказ/i);
+});
+
 test('the counts of other hotkeys and of hotkey actions take the Russian plural forms', () => {
     const restOf = (count) => text(card(render(View, ready({ input: { ...INPUT, rest: { count, actions: 10 } } }))));
     assert.match(restOf(1), /1 другая горячая клавиша не показана 10/);
