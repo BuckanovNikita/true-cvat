@@ -52,7 +52,8 @@
 #                         only administrators create organizations: user, worker, owner and maintainer refused
 #                         (403, nothing created), an administrator creates one (deleted again); part of up
 #   run.sh check-settings the Team Analytics settings API: non-administrators refused, bad bodies refused, a save
-#                         one generation step, the user search, project names, a deleted user kept on the list,
+#                         one generation step, the client settings read by everyone and their switch saved by
+#                         administrators only, the user search, project names, a deleted user kept on the list,
 #                         and an account joining and leaving the list changing and restoring the week's
 #                         figures (ta-org-s); part of up after check-final (its search needs more than 20 users)
 #   run.sh check-issues   the issue and comment matrix through the real API, with its own accounts

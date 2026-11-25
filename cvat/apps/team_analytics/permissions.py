@@ -9,11 +9,13 @@ from cvat.apps.iam.permissions import OpenPolicyAgentPermission
 
 class TeamAnalyticsPermission(OpenPolicyAgentPermission):
     """Who may use Team Analytics (rules/team_analytics.rego): administrators, with or without an
-    organization selected; nobody else."""
+    organization selected; nobody else. The one exception is the client settings, which the
+    interface of every signed-in user reads."""
 
     class Scopes(StrEnum):
         VIEW = "view"
         UPDATE = "update"
+        VIEW_CLIENT_SETTINGS = "view:client-settings"
 
     @classmethod
     def create(cls, request, view, obj, iam_context):
@@ -43,6 +45,7 @@ class TeamAnalyticsPermission(OpenPolicyAgentPermission):
                 ("team_settings", "PUT"): Scopes.UPDATE,
                 ("settings_users", "GET"): Scopes.VIEW,
                 ("project_names", "GET"): Scopes.VIEW,
+                ("client_settings", "GET"): Scopes.VIEW_CLIENT_SETTINGS,
             }[(view.action, method)]
         ]
 

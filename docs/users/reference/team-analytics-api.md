@@ -6,7 +6,7 @@
 
 ## Доступ
 
-Вызывать API может только администратор (administrator) — участник группы `admin`. Роль в организации (organization) ничего не даёт, роль `owner` тоже. Без права сервер отвечает `403`, без входа — `401`. Какую страницу видит администратор, описано в [team-analytics.md](../features/team-analytics.md).
+Вызывать API может только администратор (administrator) — участник группы `admin`. Роль в организации (organization) ничего не даёт, роль `owner` тоже. Без права сервер отвечает `403`, без входа — `401`. Единственное исключение — [`GET client-settings`](#get-apiteam-analyticsclient-settings): его может вызвать любой вошедший пользователь. Какую страницу видит администратор, описано в [team-analytics.md](../features/team-analytics.md).
 
 Сервер принимает те же способы входа, что весь API CVAT:
 
@@ -40,7 +40,7 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
 
 Неизвестная организация — `404` с телом `{"detail": "<имя> organization does not exist."}`. `org_id` вместе с `org` или `X-Organization`, либо `org` и `X-Organization` с разными значениями — `400` с телом-списком из одного предложения CVAT.
 
-Организация влияет на `overview`, `trends`, `list` и `details`. `status` описывает весь сервер при любой организации. Список «Технические учётные записи» один на весь сервер, поэтому `settings`, `settings/users` и `project-names` от организации тоже не зависят.
+Организация влияет на `overview`, `trends`, `list` и `details`. `status` описывает весь сервер при любой организации. Список «Технические учётные записи» и переключатель подсказок о горячих клавишах одни на весь сервер, поэтому `settings`, `client-settings`, `settings/users` и `project-names` от организации тоже не зависят.
 
 ### Часовой пояс
 
@@ -392,7 +392,7 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
 
 ## GET /api/team-analytics/settings
 
-Список «Технические учётные записи» ([Technical accounts list](../../../GLOSSARY.md#technical-accounts-list)), один на весь сервер. Что он меняет в цифрах, описано в [team-analytics-settings.md](../features/team-analytics-settings.md). Отвечает сразу, без очереди и без `429`.
+Список «Технические учётные записи» ([Technical accounts list](../../../GLOSSARY.md#technical-accounts-list)) и переключатель [подсказок о горячих клавишах](../features/shortcut-hints.md), одни на весь сервер. Что они меняют, описано в [team-analytics-settings.md](../features/team-analytics-settings.md). Отвечает сразу, без очереди и без `429`.
 
 ### Параметры
 
@@ -400,10 +400,10 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" \
 
 ### Ответ
 
-Записи отсортированы по имени, затем по id. `deleted: true` — пользователь удалён из CVAT, имя последнее известное.
+Записи отсортированы по имени, затем по id. `deleted: true` — пользователь удалён из CVAT, имя последнее известное. `shortcut_hints` — показываются ли подсказки о горячих клавишах; `true`, пока настройки ни разу не сохраняли с этим полем.
 
 ```json
-{"technical_accounts": [{"user_id": 15, "user_name": "model-bot", "deleted": false}]}
+{"technical_accounts": [{"user_id": 15, "user_name": "model-bot", "deleted": false}], "shortcut_hints": true}
 ```
 
 ### Пример
@@ -414,7 +414,7 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" "https://cvat.example.com/api/team-analy
 
 ## PUT /api/team-analytics/settings
 
-Заменяет список «Технические учётные записи» целиком. Правила списка описаны в [team-analytics-settings.md](../features/team-analytics-settings.md).
+Заменяет список «Технические учётные записи» целиком и, если в теле есть `shortcut_hints`, включает или выключает подсказки о горячих клавишах. Правила описаны в [team-analytics-settings.md](../features/team-analytics-settings.md).
 
 ### Параметры
 
@@ -423,12 +423,13 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" "https://cvat.example.com/api/team-analy
 | Параметр | Обязателен | Значения | Что задаёт |
 | --- | --- | --- | --- |
 | `technical_accounts` | да | список id пользователей: целые числа больше 0, без повторов, не больше 1000 | Новый список целиком. Новый id должен быть существующим пользователем; id удалённого пользователя, который уже в списке, можно оставить. |
+| `shortcut_hints` | нет | `true` или `false` | Показывать ли подсказки о горячих клавишах всем пользователям сервера. Без параметра переключатель остаётся прежним. |
 
-Ошибки `400`: `the body could not be read: …`, `technical_accounts: This field is required.`, `technical_accounts must be a list of user ids`, `technical_accounts may name at most 1000 users`, `every technical account must be a user id: a positive integer`, `user <id> is named twice`, `there is no user <id>`. Тело не объект JSON (например, голый список) — `Invalid data. Expected a dictionary, but got list.`
+Ошибки `400`: `the body could not be read: …`, `technical_accounts: This field is required.`, `technical_accounts must be a list of user ids`, `technical_accounts may name at most 1000 users`, `every technical account must be a user id: a positive integer`, `user <id> is named twice`, `there is no user <id>`, `shortcut_hints must be true or false` (значение не `true` и не `false`, например строка или число), `shortcut_hints: This field may not be null.` Тело не объект JSON (например, голый список) — `Invalid data. Expected a dictionary, but got list.`
 
 ### Ответ
 
-`200` и тот же ответ, что у `GET settings`, с новым списком. `503` с телом `{"error": "unavailable"}` — список сохранён, но старые ответы с цифрами ещё могут использоваться; повторите тот же `PUT`.
+`200` и тот же ответ, что у `GET settings`, с новым списком и переключателем. `503` с телом `{"error": "unavailable"}` — список и переключатель сохранены, но старые ответы с цифрами ещё могут использоваться; повторите тот же `PUT`.
 
 ### Пример
 
@@ -437,6 +438,28 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" -X PUT \
   -H "Content-Type: application/json" \
   -d '{"technical_accounts": [15]}' \
   "https://cvat.example.com/api/team-analytics/settings"
+```
+
+## GET /api/team-analytics/client-settings
+
+То, что администратор задал для интерфейса всех пользователей: сейчас это одно поле, включены ли [подсказки о горячих клавишах](../features/shortcut-hints.md). Единственный адрес Team Analytics, который отвечает любому вошедшему пользователю, а не только администратору: его вызывает интерфейс разметки каждого пользователя. Изменить значение можно только через [`PUT settings`](#put-apiteam-analyticssettings). Отвечает сразу, без очереди и без `429`.
+
+### Параметры
+
+Параметров нет. Организация на ответ не влияет.
+
+### Ответ
+
+```json
+{"shortcut_hints": true}
+```
+
+Других полей в ответе нет: ни цифр, ни имён, ни списков. Без входа — `401`.
+
+### Пример
+
+```bash
+curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" "https://cvat.example.com/api/team-analytics/client-settings"
 ```
 
 ## GET /api/team-analytics/settings/users
@@ -494,10 +517,10 @@ curl -sS -u "$CVAT_USER:$CVAT_PASSWORD" "https://cvat.example.com/api/team-analy
 | `400` | `{"error": "bad_request", "detail": "<предложение>"}` | Неверное или слишком длинное значение параметра, неверное тело `PUT`. `detail` называет ошибку. | Исправьте значение. Тот же запрос снова получит `400`. |
 | `400` | `["<предложение CVAT>"]` | Организация указана противоречиво (`org_id` вместе с `org` или `X-Organization`, либо `org` и `X-Organization` различаются). | Укажите организацию одним способом. |
 | `401` | `{"detail": "…"}` | Нет данных входа, они неверны, или почта не подтверждена при обязательном подтверждении. | Проверьте `$CVAT_USER` и `$CVAT_PASSWORD` или токен. |
-| `403` | `{"detail": "…"}` | Пользователь не администратор, или токен «только для чтения» в `PUT`. | Войдите администратором. |
+| `403` | `{"detail": "…"}` | Пользователь не администратор (кроме `GET client-settings`, который отвечает любому вошедшему пользователю), или токен «только для чтения» в `PUT`. | Войдите администратором. |
 | `404` | `{"detail": "<имя> organization does not exist."}` или страница «не найдено» | Нет такой организации, или аналитика на сервере выключена. | Проверьте `org`; про аналитику см. [server-settings.md](../features/server-settings.md). |
 | `429` | нет | Ответ ещё не готов, или очередь чтений переполнена. Заголовок `Retry-After`. | Повторите через `Retry-After` секунд, см. [Ожидание и повторы](#ожидание-и-повторы). |
-| `503` | `{"error": "unavailable"}` | Кэш или очередь недоступны, чтение цифр не удалось, или `PUT settings` сохранил список, но не обновил ответы. | Повторите позже; несколько секунд сервер отвечает тем же. Если не проходит, сообщите администратору сервера. |
+| `503` | `{"error": "unavailable"}` | Кэш или очередь недоступны, чтение цифр не удалось, или `PUT settings` сохранил список и переключатель подсказок, но не обновил ответы. | Повторите позже; несколько секунд сервер отвечает тем же. Если не проходит, сообщите администратору сервера. |
 
 Если `429` или `503` не проходят долго, причина обычно в обработчике очереди Team Analytics на сервере: его состояние проверяет администратор сервера.
 

@@ -52,7 +52,7 @@ tools/gate/node-suite.sh verify/shortcut_hints.cjs
 - Keep upstream's `.github/` deleted (`git rm` any file a release adds or changes there); never enable GitHub Actions.
 - `issues.rego`/`comments.rego` = the release's stock file plus exactly the two additions marked `# Local patch (role floor):`; their test CSVs only add rows. Check with `git diff <tag> HEAD -- cvat/apps/engine/rules`. Never copy an old policy wholesale.
 - Team Analytics API process never queries ClickHouse nor imports `core/` or worker jobs: access check, Redis cache, else queue to the `team_analytics` worker and reply 429. `core/` names neither Django nor callers; every SQL statement lives in `cvat/apps/team_analytics/sql/`; no new Python dependency (`cvat/requirements` is upstream's); `cvat/schema.yml` and the SDK do not change.
-- Team Analytics is for administrators (`admin` group) only: page, API and settings.
+- Team Analytics is for administrators (`admin` group) only: page, API and settings. The one exception is `GET /api/team-analytics/client-settings` (ADR 0012), which every signed-in user reads: its answer holds only the switches an administrator set for everyone's interface, and opening another address this way takes a new decision.
 - Never add a client event type or scope (ADR 0002). Event names live in both `contract.ts` and `sql/` and change together. A new upstream event type, scope, call site or shortcut action needs an explicit decision on whether it is an operation: a rename breaks figures silently.
 - No Team Analytics page or API address may start with `/analytics` (Grafana). A Team Analytics failure must not affect annotation or other CVAT functions.
 - The Team Analytics page is in Russian only (ADR 0010): every user-visible string in `cvat-ui/src/components/team-analytics-page/` is Russian, numbers and dates go through its `format.ts`, a word next to a count through `plural.ts`; no translation library, no language switch. `verify/team-analytics-page/russian.test.cjs` guards it: never allowlist page text there.
@@ -67,7 +67,7 @@ tools/gate/node-suite.sh verify/shortcut_hints.cjs
 
 ## Decisions that bind code
 
-ADR 0002 (no new event types), ADR 0003 (Kubernetes only), ADR 0006 (Team Analytics in the backend, reads on a worker), ADR 0007 (public bases, Debian 12 server image), ADR 0008 (downstream compatibility surface), ADR 0009 (three branches), ADR 0010 (the Team Analytics page is in Russian only), ADR 0011 (shortcut hints are in Russian). Superseded: 0001, 0004, 0005. Spec ids UI-1, UI-2, UI-3, IAM-1, IAM-2, BUILD-1, TA-1. One line each in docs/maintainers/decisions.md.
+ADR 0002 (no new event types), ADR 0003 (Kubernetes only), ADR 0006 (Team Analytics in the backend, reads on a worker), ADR 0007 (public bases, Debian 12 server image), ADR 0008 (downstream compatibility surface), ADR 0009 (three branches), ADR 0010 (the Team Analytics page is in Russian only), ADR 0011 (shortcut hints are in Russian), ADR 0012 (client settings are read by every signed-in user). Superseded: 0001, 0004, 0005. Spec ids UI-1, UI-2, UI-3, IAM-1, IAM-2, BUILD-1, TA-1. One line each in docs/maintainers/decisions.md.
 
 ## Release and delivery
 

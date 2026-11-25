@@ -54,6 +54,8 @@ const CONTROLS = `
 async function annotationView(t, {
     job = { dimension: '2d' }, shownKeys = SHOWN_KEYS, bound = Object.keys(KEY_MAP), canvas = true, shownMs = 60000,
     hintOf = null, declined = [],
+    // what the administrator's setting answers (components/shortcut-hints/client-settings.ts)
+    setting = async () => true,
 } = {}) {
     globalThis.localStorage.clear();
     t.mock.timers.enable({ apis: ['Date'], now: START });
@@ -72,6 +74,8 @@ async function annotationView(t, {
     });
     // what the host tells Team Analytics (utils/team-analytics-logging, hintShown)
     const reported = [];
+    // how many times the host asked for the administrator's setting
+    const asked = { count: 0 };
     const { default: ShortcutHintHost } = loadSource(HOST, {
         // `hintOf`, when a test names one, replaces what the hint says (to make drawing it fail)
         'utils/shortcut-hints': hintOf ? { ...hints, hintOf } : hints,
@@ -79,6 +83,7 @@ async function annotationView(t, {
         'utils/team-analytics-logging': { hintShown: (action) => { reported.push(action); } },
         // cvat-core's own enums (DimensionType)
         'cvat-core-wrapper': loadSource('cvat-core/src/enums.ts'),
+        './client-settings': { shortcutHintsShown: () => { asked.count += 1; return setting(); } },
     });
 
     const keyMap = Object.fromEntries(Object.entries(KEY_MAP).map(([action, item]) => [
@@ -106,11 +111,15 @@ async function annotationView(t, {
         await view.unmount();
         document.body.innerHTML = '';
     });
+    // the setting is asked when the view opens: its answer is in before the first click
+    await view.settle();
 
     const page = {
         hints,
         store,
         reported,
+        asked,
+        settle: () => view.settle(),
         async click(id, times = 1) {
             for (let i = 0; i < times; i += 1) {
                 // eslint-disable-next-line no-await-in-loop
@@ -310,6 +319,64 @@ test('a control used from the keyboard (Enter or Space on it) is no mouse use', 
     assert.equal(globalThis.localStorage.getItem('shortcutHints'), null);
     await page.click('save', 3);
     assert.notEqual(page.hint(), null, 'three clicks of the mouse are hinted as usual');
+});
+
+test('no hint is shown when an administrator has switched the hints off, and such clicks do not count', async (t) => {
+    const page = await annotationView(t, { setting: async () => false });
+    await page.click('lock', 5);
+    assert.equal(page.hint(), null);
+    assert.equal(globalThis.localStorage.getItem('shortcutHints'), null);
+    assert.deepEqual(page.reported, []);
+});
+
+test('no hint is shown while the setting is not known', async (t) => {
+    const page = await annotationView(t, { setting: () => new Promise(() => {}) });
+    await page.click('lock', 5);
+    assert.equal(page.hint(), null);
+    assert.equal(globalThis.localStorage.getItem('shortcutHints'), null);
+});
+
+test('no hint is shown when the setting cannot be read, and that is no failure of the hints', async (t) => {
+    const page = await annotationView(t, { setting: async () => { throw new Error('no answer'); } });
+    await page.click('lock', 5);
+    assert.equal(page.hint(), null);
+    assert.equal(page.hints.switchedOff(), false);
+});
+
+// Presses count only where clicks do: while the hints are off, one press would otherwise weigh as all the uses
+// and silence the hint for three days once an administrator switches them on.
+for (const [why, setting] of [
+    ['the hints are switched off', async () => false],
+    ['the setting is not known yet', () => new Promise(() => {})],
+    ['the setting cannot be read', async () => { throw new Error('no answer'); }],
+]) {
+    test(`a press while ${why} is not counted, as the clicks are not`, async (t) => {
+        const page = await annotationView(t, { setting });
+        await page.click('lock', 5);
+        await page.press('l');
+        assert.equal(globalThis.localStorage.getItem('shortcutHints'), null);
+    });
+}
+
+test('the setting is asked once, when a 2D job is first open', async (t) => {
+    const page = await annotationView(t, { job: null });
+    assert.equal(page.asked.count, 0, 'outside a job nothing is asked');
+    const open = (job) => act(async () => {
+        page.store.dispatch({
+            type: 'set', state: { ...page.store.getState(), annotation: { job: { instance: job } } },
+        });
+    });
+    await open({ dimension: '3d' });
+    assert.equal(page.asked.count, 0, 'a 3D job shows no hints, so it asks nothing');
+    await open({ dimension: '2d' });
+    await page.settle();
+    assert.equal(page.asked.count, 1);
+    await open(null);
+    await open({ dimension: '2d' });
+    await page.settle();
+    assert.equal(page.asked.count, 1, 'another job of the same page load does not ask again');
+    await page.click('lock', 3);
+    assert.notEqual(page.hint(), null);
 });
 
 test('a click on something that is no control shows nothing', async (t) => {

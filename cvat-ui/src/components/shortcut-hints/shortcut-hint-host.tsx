@@ -4,7 +4,8 @@
 
 // Shortcut hints (UI-3) on the screen: mounted once by cvat-app.tsx. It listens to the clicks of the whole
 // window and, when a click used a control that a shortcut stands in for (utils/shortcut-hints), shows the
-// shortcut in a corner of the 2D canvas for a few seconds. The hint is in Russian (ADR 0011).
+// shortcut in a corner of the 2D canvas for a few seconds. The hint is in Russian (ADR 0011). An administrator
+// can switch the hints off for everyone (client-settings.ts); until that setting is read, nothing is shown.
 
 import './styles.scss';
 
@@ -20,6 +21,8 @@ import {
 } from 'utils/shortcut-hints';
 import { hintShown } from 'utils/team-analytics-logging';
 
+import { shortcutHintsShown } from './client-settings';
+
 // How long a hint stays on the screen.
 export const SHOWN_MS = 5000;
 
@@ -33,6 +36,8 @@ interface View {
     shortcuts: Shortcuts;
     // an open job with a 2D canvas: the hint is placed over that canvas
     in2DJob: boolean;
+    // the administrator's setting says the hints are shown
+    switchedOn: boolean;
 }
 
 // The hint itself, drawn into the canvas container the way CVAT's own canvas controls are.
@@ -88,13 +93,26 @@ function ShortcutHintHost({ shownMs = SHOWN_MS }: Props): JSX.Element {
         state.annotation.job.instance?.dimension === DimensionType.DIMENSION_2D
     ));
     const [hint, setHint] = useState<Hint | null>(null);
+    const [switchedOn, setSwitchedOn] = useState(false);
+    // the setting is asked once per page load, when a 2D job is first open
+    const asked = useRef(false);
     // what the click listener, attached once, reads at the time of a click
-    const view = useRef<View>({ shortcuts, in2DJob });
-    view.current = { shortcuts, in2DJob };
+    const view = useRef<View>({ shortcuts, in2DJob, switchedOn });
+    view.current = { shortcuts, in2DJob, switchedOn };
 
     useEffect(() => {
-        // where clicks are counted; hotkey presses are counted only there too (utils/shortcut-hints)
-        const counted = (): boolean => view.current.in2DJob && !!window.document.querySelector(CANVAS);
+        if (!in2DJob || asked.current) return;
+        asked.current = true;
+        // a component that is gone ignores the state update, so the answer needs no cancelling
+        shortcutHintsShown().then(setSwitchedOn, () => {});
+    }, [in2DJob]);
+
+    useEffect(() => {
+        // where clicks are counted (hints switched on, an open 2D job with its canvas); hotkey presses are
+        // counted only there too (utils/shortcut-hints)
+        const counted = (): boolean => (
+            view.current.switchedOn && view.current.in2DJob && !!window.document.querySelector(CANVAS)
+        );
         const onClick = (event: MouseEvent): void => {
             guarded(undefined, () => {
                 // detail 0: the click a browser makes of Enter or Space on a focused control, no mouse use

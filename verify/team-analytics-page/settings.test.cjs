@@ -596,3 +596,70 @@ test('a success that arrives after the limit neither closes a reopened modal nor
         assert.equal(calls.saved, 1, 'one reload, from the save answered in time');
     });
 });
+
+// --- shortcut hints (UI-3): the switch an administrator sets for the interface of everyone --------------------
+
+const hintsSwitch = () => modal().querySelector('.cvat-team-analytics-settings-hints input[type="checkbox"]');
+
+for (const shown of [true, false]) {
+    test(`the settings show the shortcut hints switched ${shown ? 'on' : 'off'}, as the server holds it`, async () => {
+        const { Page } = openPage({ settings: () => ({ body: { ...SETTINGS, shortcut_hints: shown } }) });
+        await opened(Page, async (view) => {
+            await openSettings(view);
+            assert.equal(hintsSwitch().checked, shown);
+            const section = modal().querySelector('.cvat-team-analytics-settings-hints');
+            assert.equal(section.querySelector('h3').textContent, 'Подсказки о горячих клавишах');
+            assert.match(section.textContent, /Показывать подсказки аннотаторам/);
+        });
+    });
+}
+
+test('Save sends the switch of the shortcut hints with the list, changed or not', async () => {
+    const { settings, Page } = openPage({ settings: () => ({ body: { ...SETTINGS, shortcut_hints: true } }) });
+    await opened(Page, async (view) => {
+        await openSettings(view);
+        await click(hintsSwitch());
+        assert.equal(hintsSwitch().checked, false);
+        await click(document.body.querySelector('.cvat-team-analytics-settings-save'));
+        await view.settle();
+        assert.deepEqual(settings.at(-1), { method: 'PUT', body: { technical_accounts: [12, 40], shortcut_hints: false } });
+
+        await openSettings(view);
+        await click(document.body.querySelector('.cvat-team-analytics-settings-save'));
+        await view.settle();
+        assert.deepEqual(settings.at(-1), { method: 'PUT', body: { technical_accounts: [12, 40], shortcut_hints: true } });
+    });
+});
+
+test('Cancel leaves the switch of the shortcut hints as the server holds it', async () => {
+    const { settings, Page } = openPage({ settings: () => ({ body: { ...SETTINGS, shortcut_hints: true } }) });
+    await opened(Page, async (view) => {
+        await openSettings(view);
+        await click(hintsSwitch());
+        await click(document.body.querySelector('.cvat-team-analytics-settings-cancel'));
+        await view.settle();
+        assert.deepEqual(settings.map((sent) => sent.method), ['GET']);
+        await openSettings(view);
+        assert.equal(hintsSwitch().checked, true);
+    });
+});
+
+test('settings from a server without the switch show none, and Save sends the list alone', async () => {
+    const { settings, Page } = openPage();
+    await opened(Page, async (view) => {
+        await openSettings(view);
+        assert.equal(modal().querySelector('.cvat-team-analytics-settings-hints'), null);
+        await click(document.body.querySelector('.cvat-team-analytics-settings-save'));
+        await view.settle();
+        assert.deepEqual(settings.at(-1), { method: 'PUT', body: { technical_accounts: [12, 40] } });
+    });
+});
+
+test('settings whose switch is neither true nor false are not shown as loaded', async () => {
+    const { Page } = openPage({ settings: () => ({ body: { ...SETTINGS, shortcut_hints: 'yes' } }) });
+    await opened(Page, async (view) => {
+        await openSettings(view);
+        assert.match(modal().textContent, /Не удалось загрузить настройки\./);
+        assert.equal(modal().querySelector('.cvat-team-analytics-settings-hints'), null);
+    });
+});

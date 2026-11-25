@@ -38,6 +38,8 @@ What a non-administrator gets:
 - On a direct link to the page: the panel «Страница Team Analytics недоступна» ("The Team Analytics page is unavailable") and no figures.
 - From the API: `403` for a signed-in user, `401` for a request without credentials.
 
+One address is the exception: `GET /api/team-analytics/client-settings` answers every signed-in user (`401` without credentials). The annotation view reads from it what an administrator set for the interface of everyone. Its answer is `{"shortcut_hints": true}` or `false`, the switch of the [shortcut hints](../GLOSSARY.md#shortcut-hint), and nothing else: no figure, no name and no list. The switch itself is changed only by administrators, in the Team Analytics settings ([shortcut hints](team-analytics.md#shortcut-hints)).
+
 Operating Team Analytics is described on the [Team Analytics page](team-analytics.md).
 
 ## Grafana when analytics is enabled

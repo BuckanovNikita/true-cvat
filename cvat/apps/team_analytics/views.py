@@ -7,9 +7,13 @@ then answered from the cache or, on a miss, queued for the app's worker (reads.p
 queries ClickHouse, and nothing here imports the code that does: the worker's job is named by its
 path.
 
-GET and PUT settings (the Technical accounts list), GET settings/users (the user search of the
-settings screen) and GET project-names: answered here from Postgres, never through the queue
-(technical_accounts.py has the rules).
+GET and PUT settings (the Technical accounts list and the switch of the shortcut hints), GET
+settings/users (the user search of the settings screen) and GET project-names: answered here from
+Postgres, never through the queue (technical_accounts.py and client_settings.py have the rules).
+
+GET client-settings is the one address for every signed-in user, not only for administrators
+(rules/team_analytics.rego): the interface asks it what an administrator set for it. It answers from
+Postgres too.
 """
 
 from __future__ import annotations
@@ -33,9 +37,11 @@ from rq.utils import utcnow
 from cvat.apps.engine.models import Project
 from cvat.apps.iam.models import User
 
-from . import QUEUE, reads
+from . import QUEUE
+from . import client_settings as client_rules
+from . import reads
 from . import technical_accounts as rules
-from .models import TechnicalAccount
+from .models import ClientSettings, TechnicalAccount
 from .permissions import TeamAnalyticsPermission
 from .serializers import (
     ProjectNamesSerializer,
@@ -200,11 +206,15 @@ class TeamAnalyticsViewSet(viewsets.ViewSet):
         if not body.is_valid():
             return self._refuse(first_error(body.errors))
         ids = body.validated_data["technical_accounts"]
+        # None: the body does not name the switch, which stays as it is
+        hints = body.validated_data.get("shortcut_hints")
         # what the callback after the commit did: None while it has not run
         advanced: dict[str, bool | None] = {"advanced": None}
         try:
             with transaction.atomic():
                 added, removed = _replace_technical_accounts(ids)
+                if hints is not None:
+                    _save_shortcut_hints(request.user, hints)
                 # after the commit, never before: a read that starts in between must not store an
                 # answer computed on the old list under the new generation
                 transaction.on_commit(
@@ -227,6 +237,10 @@ class TeamAnalyticsViewSet(viewsets.ViewSet):
         return Response(
             {"error": "bad_request", "detail": detail}, status=status.HTTP_400_BAD_REQUEST
         )
+
+    @action(detail=False, methods=["GET"], url_path="client-settings")
+    def client_settings(self, request):
+        return Response(client_rules.answer(_stored_shortcut_hints()))
 
     @action(detail=False, methods=["GET"], url_path="settings/users")
     def settings_users(self, request):
@@ -254,10 +268,37 @@ class TeamAnalyticsViewSet(viewsets.ViewSet):
 
 
 def _settings_answer() -> dict:
-    """The Technical accounts list with the current names of the users that still exist."""
+    """The Technical accounts list with the current names of the users that still exist, and the
+    switch of the shortcut hints."""
     stored = dict(TechnicalAccount.objects.values_list("user_id", "user_name"))
     live = dict(User.objects.filter(id__in=stored).values_list("id", "username"))
-    return {"technical_accounts": rules.listing(stored, live)}
+    return {
+        "technical_accounts": rules.listing(stored, live),
+        **client_rules.answer(_stored_shortcut_hints()),
+    }
+
+
+def _stored_shortcut_hints() -> bool | None:
+    """The saved switch of the shortcut hints; None while the settings were never saved with one."""
+    return (
+        ClientSettings.objects.filter(pk=ClientSettings.ROW)
+        .values_list("shortcut_hints", flat=True)
+        .first()
+    )
+
+
+def _save_shortcut_hints(user, shown: bool) -> None:
+    """Stores the switch of the shortcut hints. Runs inside the caller's transaction."""
+    _, created = ClientSettings.objects.update_or_create(
+        pk=ClientSettings.ROW, defaults={"shortcut_hints": shown}
+    )
+    log.info(
+        "Team Analytics shortcut hints set to %s by %s (user %s)%s",
+        "shown" if shown else "not shown",
+        user.username,
+        user.id,
+        ", for the first time" if created else "",
+    )
 
 
 def _after_save(user, added: list[int], removed: list[int]) -> bool:

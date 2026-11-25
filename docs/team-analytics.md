@@ -20,7 +20,7 @@ Switching analytics off does not delete the stored totals in ClickHouse.
 
 | Part | Where it runs | What it does |
 | --- | --- | --- |
-| API | the CVAT server | Checks access, answers from the Redis cache, otherwise queues a read for the worker and waits. It never queries ClickHouse. The settings (the technical accounts list, the user search, project names) are answered from Postgres. |
+| API | the CVAT server | Checks access, answers from the Redis cache, otherwise queues a read for the worker and waits. It never queries ClickHouse. The settings (the technical accounts list, the switch of the shortcut hints, the user search, project names) are answered from Postgres. |
 | Team Analytics worker | Deployment `<release>-backend-worker-team-analytics`, running `run worker team_analytics` from the [fork server image](../GLOSSARY.md#fork-server-image) | Computes the answers and stores them in the cache; runs the refresh job. Every ClickHouse query of Team Analytics runs here. |
 | Refresh job | on the Team Analytics worker, queue `team_analytics`, job id `team_analytics_refresh` | Runs every minute (cron `* * * * *`). |
 | Scheduler | `rqscheduler` in the utils worker (`<release>-backend-worker-utils`) | Queues the refresh job every minute. The schedule is written to Redis by `django-admin syncperiodicjobs`, which the initializer Job runs on every install and upgrade. |
@@ -58,8 +58,9 @@ All addresses start with `/api/team-analytics/` and have no trailing slash. They
 | `GET`, `PUT` | `/api/team-analytics/settings` | server, Postgres |
 | `GET` | `/api/team-analytics/settings/users` | server, Postgres |
 | `GET` | `/api/team-analytics/project-names` | server, Postgres |
+| `GET` | `/api/team-analytics/client-settings` | server, Postgres |
 
-Only [administrators](../GLOSSARY.md#administrator) get answers ([access](access.md#team-analytics)). For a probe, use `status` with an administrator's credentials:
+Only [administrators](../GLOSSARY.md#administrator) get answers, except from `client-settings`, which answers every signed-in user ([access](access.md#team-analytics)). For a probe, use `status` with an administrator's credentials:
 
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' -u '<admin>:<password>' https://cvat.example.com/api/team-analytics/status
@@ -126,6 +127,18 @@ The variable no longer has any effect ([configuration](configuration.md#team_ana
 4. Run `helm upgrade`. The warning `TEAM_ANALYTICS_TECHNICAL_ACCOUNTS is ignored: ...` no longer appears in the logs of the backend pods (every backend process that loads Team Analytics writes it once at start while the variable is set).
 
 Until step 2 is done, the figures count those accounts as people. Once it is done, past periods are corrected too.
+
+## Shortcut hints
+
+[Shortcut hints](../GLOSSARY.md#shortcut-hint) are shown in the 2D annotation view to every signed-in user, and an administrator switches them on or off for the whole instance in the Team Analytics settings. What a user sees and how an administrator changes the switch are on the user pages (Russian): [shortcut hints](users/features/shortcut-hints.md) and [Team Analytics settings](users/features/team-analytics-settings.md).
+
+What matters for operating the server:
+
+- The annotation view reads the switch once per page load from `GET /api/team-analytics/client-settings`, the one Team Analytics address that answers every signed-in user ([access](access.md#team-analytics)).
+- The switch is one row in Postgres ([state](state.md#postgres)). The row does not exist until the settings are first saved; until then the hints are on.
+- Where analytics is disabled the address does not exist, so no hints are shown and there is no switch.
+- After an upgrade to a version with the hints, the server must run the new [fork server image](../GLOSSARY.md#fork-server-image) and have restarted on it: a server still serving the older policies answers `403` to non-administrators, and they see no hints ([after a policy change](access.md#after-a-policy-change)).
+- Each change is logged by the server as `Team Analytics shortcut hints set to shown|not shown by <user> (user <id>)`.
 
 ## Processed history and stale data
 

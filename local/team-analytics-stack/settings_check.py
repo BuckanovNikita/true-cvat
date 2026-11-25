@@ -20,6 +20,11 @@ Parts:
                   application/x-www-form-urlencoded (not 415); neither the list nor the answer generation changes
   generation      every save advances the answer generation by exactly one, a save of the same list too (it
                   answers 200 and keeps the list)
+  client-settings GET client-settings answers an owner, a maintainer and a worker (with and without their
+                  organization) 200 with the switch of the shortcut hints and nothing else, signed out 401; a
+                  save without the switch keeps it, a save with it changes what everyone reads, a switch that
+                  is not true or false is refused (400) and a worker's save is refused (403), both leaving it
+                  as it was; the switch is put back as it was found
   user-search     with an organization selected, the search finds a user of another organization and a user of
                   none, answers at most 20 users ordered by username, and refuses a search over 150 characters
   project-names   names projects of two organizations in one answer and leaves out an unknown id; refuses a bad id
@@ -73,6 +78,7 @@ from stack_api import (  # noqa: E402
 from stack_ops import RELEASE, WORKER, WORKER_SELECTOR, generation, kubectl, scale  # noqa: E402
 
 PROJECT_NAMES = API + "project-names"
+CLIENT_SETTINGS = API + "client-settings"
 SERVER_SELECTOR = f"app.kubernetes.io/instance={RELEASE},tier=backend,component=server"
 PROBE_ORG = "ta-org-s"
 PROBE = "ta-worker-s"  # joins the list and leaves it again
@@ -400,6 +406,66 @@ def generation_steps(admin: Session, base: list[int]) -> str:
             f"200, list unchanged), removing {g2}->{g3}")
 
 
+def client_settings(admin: Session, base: list[int]) -> str:
+    """The one address of Team Analytics for every signed-in user (ADR 0012), and the switch it answers."""
+
+    def held() -> bool:
+        status, body = admin.send("GET", SETTINGS, None)
+        need(status == 200 and isinstance(body, dict) and isinstance(body.get("shortcut_hints"), bool),
+             f"GET settings: {status} {str(body)[:300]}, expected 200 with shortcut_hints true or false")
+        return body["shortcut_hints"]
+
+    def read_by_everyone(expected: bool) -> int:
+        seen = 0
+        for username, org in (("ta-owner", "ta-org-a"), ("ta-maintainer", "ta-org-a"), ("ta-worker", "ta-org-a")):
+            session = Session(username)
+            for path in (CLIENT_SETTINGS, with_org(CLIENT_SETTINGS, org)):
+                status, body = session.send("GET", path, None)
+                need((status, body) == (200, {"shortcut_hints": expected}),
+                     f"{username} GET {path}: {status} {str(body)[:200]}, expected 200 "
+                     f"{{'shortcut_hints': {expected}}} and nothing else")
+                seen += 1
+        return seen
+
+    before = held()
+    try:
+        seen = read_by_everyone(before)
+        log(f"three accounts read the switch ({before}) on {seen} requests, and nothing else")
+        status, body = send(urllib.request.build_opener(), "GET", CLIENT_SETTINGS, None)
+        need((status, refusal(status, body)) == (401, "not_authenticated"),
+             f"signed out GET client-settings: {status} {str(body)[:200]}, expected 401 not_authenticated")
+
+        status, body = put(admin, base)
+        need(status == 200 and isinstance(body, dict) and body.get("shortcut_hints") is before,
+             f"PUT settings without the switch: {status} {str(body)[:300]}, expected 200 with shortcut_hints {before}")
+        read_by_everyone(before)
+        log("a save without the switch keeps it")
+
+        changed = not before
+        status, body = admin.send("PUT", SETTINGS, {"technical_accounts": base, "shortcut_hints": changed})
+        need(status == 200 and isinstance(body, dict) and body.get("shortcut_hints") is changed,
+             f"PUT settings with shortcut_hints {changed}: {status} {str(body)[:300]}, expected 200 with it")
+        need(ids_of(body["technical_accounts"]) == sorted(base), "the save with the switch changed the list")
+        read_by_everyone(changed)
+        log(f"a save with the switch changes what everyone reads ({changed})")
+
+        for bad in ("no", 1, None, [True]):
+            status, body = admin.send("PUT", SETTINGS, {"technical_accounts": base, "shortcut_hints": bad})
+            need((status, refusal(status, body)) == (400, "bad_request"),
+                 f"PUT settings with shortcut_hints {bad!r}: {status} {str(body)[:200]}, expected 400 bad_request")
+        status, body = Session("ta-worker").send(
+            "PUT", SETTINGS, {"technical_accounts": base, "shortcut_hints": before})
+        need((status, refusal(status, body)) == (403, "forbidden"),
+             f"ta-worker PUT settings with the switch: {status} {str(body)[:200]}, expected 403 forbidden")
+        need(held() is changed, "a refused save changed the switch")
+        log("a switch that is not true or false (400) and a worker's save (403) leave it as it was")
+    finally:
+        if held() is not before:
+            admin.send("PUT", SETTINGS, {"technical_accounts": base, "shortcut_hints": before})
+    need(held() is before, f"the switch was not put back to {before}")
+    return f"the switch ({before}) read by three accounts, kept, changed, refused and put back"
+
+
 def user_search(admin: Session) -> str:
     def search(text: str, org: str = "ta-org-a") -> tuple[int, object]:
         return admin.send("GET", with_org(USER_SEARCH + "?" + urllib.parse.urlencode({"search": text}), org))
@@ -628,6 +694,7 @@ def check(timeout_s: int, gone: str) -> None:
         ("writes", lambda: writes(admin, base)),
         ("bad-bodies", lambda: bad_bodies(admin, base)),
         ("generation", lambda: generation_steps(admin, base)),
+        ("client-settings", lambda: client_settings(admin, base)),
         ("user-search", lambda: user_search(admin)),
         ("retroactive", lambda: retroactive(admin, base, timeout_s)),
         ("project-names", lambda: project_names(admin)),

@@ -131,7 +131,7 @@ _Avoid_: bot list, service accounts
 
 <a id="team-analytics-settings"></a>
 **Team Analytics settings**:
-The window an administrator opens with the «Настройки» button of the Team Analytics page. It holds the [technical accounts list](#technical-accounts-list) and nothing else.
+The window an administrator opens with the «Настройки» button of the Team Analytics page. It holds the [technical accounts list](#technical-accounts-list) and the switch of the [shortcut hints](#shortcut-hint), and nothing else.
 _Russian_: Настройки Team Analytics
 _Avoid_: using it for the backend's environment settings
 
@@ -219,8 +219,8 @@ _Russian_: Доля горячих клавиш
 
 <a id="shortcut-hint"></a>
 **Shortcut hint**:
-The box in the 2D annotation view that names an action and its hotkey to a person who keeps doing that action by mouse. It is shown rarely and stops for three days once the person does the action mostly by hotkey: a press of the hotkey that brings the action's [hotkey share](#hotkey-share) within the last hour, in that browser, above half. A held key counts as one press.
-_Russian_: Горячая клавиша (the line under the action's Russian name in the hint)
+The box in the 2D annotation view that names an action and its hotkey to a person who keeps doing that action by mouse. It is shown rarely and stops for three days once the person does the action mostly by hotkey: a press of the hotkey that brings the action's [hotkey share](#hotkey-share) within the last hour, in that browser, above half. A held key counts as one press. Administrators switch the hints on or off for the whole instance in the Team Analytics settings.
+_Russian_: Горячая клавиша (the line under the action's Russian name in the hint); Подсказки о горячих клавишах (the section of «Настройки Team Analytics»); Показывать подсказки аннотаторам (its switch)
 _Avoid_: tooltip, tip, popup
 
 <a id="hints-shown"></a>
